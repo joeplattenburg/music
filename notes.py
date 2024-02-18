@@ -1,7 +1,7 @@
 #! /usr/bin/python
 import itertools
 from functools import total_ordering
-from itertools import combinations
+from itertools import permutations
 
 
 @total_ordering
@@ -54,7 +54,7 @@ class Chord:
             list(note.guitar_positions(valid_only=False).values())
             for note in self.notes
         ]
-        valid_combinations = combinations(range(len(TUNING)), len(self.notes))
+        valid_combinations = permutations(range(len(TUNING)), len(self.notes))
         valid_positions: list[tuple[dict[str, int], int]] = []
         for comb in valid_combinations:
             test_position = {
@@ -66,7 +66,12 @@ class Chord:
                 lowest_fret = min(f for f in test_position.values() if f != 0)
                 highest_fret = max(test_position.values())
                 fret_span = highest_fret - lowest_fret
-                valid_positions.append((test_position, fret_span))
+                test_position_sorted = {
+                    string: test_position[string]
+                    for string in string_names
+                    if string in test_position
+                }
+                valid_positions.append((test_position_sorted, fret_span))
         return [p for p, _ in sorted(valid_positions, key=lambda x: x[1])]
 
     def __repr__(self):
