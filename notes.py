@@ -53,6 +53,22 @@ class Note:
             or not valid_only
         }
 
+    @staticmethod
+    def from_semitones(semitones: int) -> 'Note':
+        octave = semitones // 12
+        remainder = semitones % 12
+        if remainder not in Note.SEMITONE_MAPPER.values():
+            remainder += 1
+            modifier = 'b'
+        else:
+            modifier = ''
+        inverse_mapper = {v: k for k, v in Note.SEMITONE_MAPPER.items()}
+        name = inverse_mapper[remainder] + modifier
+        return Note(name=name, octave=octave)
+
+    def add_semitones(self, semitones: int) -> 'Note':
+        return self.from_semitones(self.semitones + semitones)
+
     def __repr__(self):
         return self.simple_name + self.modifier + str(self.octave)
 
@@ -117,6 +133,7 @@ class Guitar:
         'B': Note('B', 3),
         'e': Note('E', 4),
     }
+
     def __init__(self, tuning: dict[any, 'Note'] = None, frets: int = 22):
         self.tuning = tuning or self.STANDARD_TUNING
         self.string_names = list(self.tuning.keys())

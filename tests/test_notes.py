@@ -3,6 +3,32 @@ import pytest
 import notes
 
 
+@pytest.mark.parametrize(
+    'semitones,expected',
+    [
+        (0, notes.Note('C', 0)),
+        (12, notes.Note('C', 1)),
+        (39, notes.Note('Eb', 3)),
+    ]
+)
+def test_note_from_semitones(semitones: int, expected: notes.Note) -> None:
+    actual = notes.Note.from_semitones(semitones=semitones)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'semitones,expected',
+    [
+        (0, notes.Note('C', 3)),
+        (12, notes.Note('C', 4)),
+        (8, notes.Note('Ab', 3)),
+    ]
+)
+def test_add_semitones(semitones: int, expected: notes.Note) -> None:
+    actual = notes.Note('C', 3).add_semitones(semitones)
+    assert actual == expected
+
+
 def test_positions_found_with_lower_notes_on_higher_strings() -> None:
     chord = notes.Chord([
         notes.Note('A', 2), notes.Note('C#', 3)
