@@ -134,7 +134,9 @@ class Guitar:
         'e': Note('E', 4),
     }
 
-    def __init__(self, tuning: dict[any, 'Note'] = None, frets: int = 22):
+    def __init__(self, tuning: dict[any, 'Note'] = None, frets: int = 22, capo: int = 0):
         self.tuning = tuning or self.STANDARD_TUNING
+        self.capo = capo
+        self.tuning = {name: note.add_semitones(capo) for name, note in self.tuning.items()}
         self.string_names = list(self.tuning.keys())
         self.frets = frets

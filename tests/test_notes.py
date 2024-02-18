@@ -62,11 +62,13 @@ def test_guitar_with_different_fret_count(frets: int, expected: dict[str, int]) 
         [('B', 1), ('E', 2), ('A', 2), ('D', 3), ('G', 3), ('B', 3), ('E', 4), ('A', 4)],
     ]
 )
-def test_different_guitar_tunings(strings: list[tuple[str, int]]) -> None:
+@pytest.mark.parametrize('capo', [0, 2, 10])
+def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> None:
     guitar = notes.Guitar(
-        tuning={i: notes.Note(*string) for i, string in enumerate(strings)}
+        tuning={i: notes.Note(*string) for i, string in enumerate(strings)},
+        capo=capo
     )
-    chord = notes.Chord([notes.Note(*string) for string in strings])
+    chord = notes.Chord([notes.Note(*string).add_semitones(capo) for string in strings])
     expected = [{i: 0 for i in range(len(strings))}]
     acutal = chord.guitar_positions(guitar=guitar)
     assert acutal == expected
