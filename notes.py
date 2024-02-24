@@ -139,4 +139,4 @@ class Guitar:
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.tuning.items()}
         self.string_names = list(self.tuning.keys())
-        self.frets = frets
+        self.frets = frets - capo

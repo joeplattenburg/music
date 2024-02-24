@@ -72,3 +72,9 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     expected = [{i: 0 for i in range(len(strings))}]
     acutal = chord.guitar_positions(guitar=guitar)
     assert acutal == expected
+
+
+def test_validity_of_high_frets_with_capo() -> None:
+    guitar = notes.Guitar(frets=5, capo=4)
+    assert notes.Note('A', 2).guitar_positions(guitar, valid_only=True) == {'E': 1}
+    assert notes.Note('A#', 2).guitar_positions(guitar, valid_only=True) == {}
