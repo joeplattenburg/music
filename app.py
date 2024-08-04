@@ -19,5 +19,5 @@ def demo(notes_string: str, top_n: int) -> str:
     positions = chord.guitar_positions()[:top_n]
     return render_template(
         'demo.html',
-        chord=chord, top_n=top_n, positions=positions
+        chord=chord, top_n=top_n, positions=[p.print().replace('\n', '<br>') for p in positions]
     )

@@ -5,10 +5,11 @@
 <p>The chord you entered was: {{ chord }}</p>
 <p>The top {{ top_n }} fingerings for that chord are:</p>
 
-<ul>
+{% autoescape false %}
 {% for position in positions %}
-  <li>{{ position }}</li>
+  <pre>{{ position }}</pre>
 {% endfor %}
-</ul>
+{% endautoescape %}
+
 
 {% endblock %}
