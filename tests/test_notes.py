@@ -17,6 +17,33 @@ def test_note_from_semitones(semitones: int, expected: notes.Note) -> None:
 
 
 @pytest.mark.parametrize(
+    'name,expected',
+    [
+        ('C0', notes.Note('C', 0)),
+        ('C1', notes.Note('C', 1)),
+        ('Eb3', notes.Note('Eb', 3)),
+        ('Ebb3', notes.Note('Ebb', 3)),
+    ]
+)
+def test_note_from_string(name: str, expected: notes.Note) -> None:
+    actual = notes.Note.from_string(note=name)
+    assert actual == expected
+
+
+def test_both_sharps_work() -> None:
+    assert (
+        notes.Note('F#', 3) ==
+        notes.Note('Fs', 3) ==
+        notes.Note('Gb', 3)
+    )
+    assert (
+        notes.Note('C##', 2) ==
+        notes.Note('Css', 2) ==
+        notes.Note('D', 2)
+    )
+
+
+@pytest.mark.parametrize(
     'semitones,expected',
     [
         (0, notes.Note('C', 3)),

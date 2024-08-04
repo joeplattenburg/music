@@ -22,6 +22,8 @@ class Note:
         'b': -1,
         '#': 1,
         '##': 2,
+        's': 1,
+        'ss': 2,
     }
 
     def __init__(self, name: str, octave: int):
@@ -65,6 +67,10 @@ class Note:
         inverse_mapper = {v: k for k, v in Note.SEMITONE_MAPPER.items()}
         name = inverse_mapper[remainder] + modifier
         return Note(name=name, octave=octave)
+
+    @staticmethod
+    def from_string(note: str) -> 'Note':
+        return Note(note[:-1], int(note[-1]))
 
     def add_semitones(self, semitones: int) -> 'Note':
         return self.from_semitones(self.semitones + semitones)
