@@ -64,7 +64,7 @@ def test_positions_found_with_lower_notes_on_higher_strings() -> None:
         {'E': 9, 'A': 0},
         {'E': 5, 'A': 4},
     ]
-    actual = chord.guitar_positions()
+    actual = [p.positions_dict for p in chord.guitar_positions()]
     assert actual == expected
 
 
@@ -78,7 +78,7 @@ def test_positions_found_with_lower_notes_on_higher_strings() -> None:
 def test_guitar_with_different_fret_count(frets: int, expected: dict[str, int]) -> None:
     guitar = notes.Guitar(frets=frets)
     note = notes.Note('C', 3)
-    actual = note.guitar_positions(guitar)
+    actual = note.guitar_positions(guitar).positions_dict
     assert actual == expected
 
 @pytest.mark.parametrize(
@@ -96,12 +96,12 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
         capo=capo
     )
     chord = notes.Chord([notes.Note(*string).add_semitones(capo) for string in strings])
-    expected = [{i: 0 for i in range(len(strings))}]
-    acutal = chord.guitar_positions(guitar=guitar)
-    assert acutal == expected
+    expected = {i: 0 for i in range(len(strings))}
+    actual = chord.guitar_positions(guitar=guitar)[0].positions_dict
+    assert actual == expected
 
 
 def test_validity_of_high_frets_with_capo() -> None:
     guitar = notes.Guitar(frets=5, capo=4)
-    assert notes.Note('A', 2).guitar_positions(guitar, valid_only=True) == {'E': 1}
-    assert notes.Note('A#', 2).guitar_positions(guitar, valid_only=True) == {}
+    assert notes.Note('A', 2).guitar_positions(guitar, valid_only=True).positions_dict == {'E': 1}
+    assert notes.Note('A#', 2).guitar_positions(guitar, valid_only=True).positions_dict == {}
