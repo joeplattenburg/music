@@ -1,0 +1,7 @@
+name: music
+channels:
+  - defaults
+dependencies:
+  - python
+  - flask
+  - pytest
