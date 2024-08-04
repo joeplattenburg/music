@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{% block title %} User Input {% endblock %}</h2>
+    <form method="post">
+        <label for="title">Chord Notes</label>
+        <br>
+        <input type="text" name="notes"
+               placeholder="C3,G3,E4,Bb4"
+               value="{{ request.form['notes'] }}"></input>
+        <br>
+        <br>
+        <label for="title">Number of Positions</label>
+        <br>
+        <input type="text" name="top_n"
+               placeholder="3"
+               value="{{ request.form['top_n'] }}"></input>
+        <br>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}
+
+
