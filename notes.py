@@ -1,8 +1,7 @@
 #! /usr/bin/python
-import itertools
 from functools import total_ordering
 from itertools import permutations
-
+from typing import Hashable
 
 @total_ordering
 class Note:
@@ -46,14 +45,15 @@ class Note:
             modifier = ''
         return simple_name, modifier
 
-    def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> dict[any, int]:
+    def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> 'GuitarPosition':
         guitar = guitar or Guitar()
-        return {
+        positions = {
             string: self.semitones - note.semitones
             for string, note in guitar.tuning.items()
             if (valid_only and self >= note and (self.semitones - note.semitones) <= guitar.frets)
             or not valid_only
         }
+        return GuitarPosition(positions, guitar=guitar)
 
     @staticmethod
     def from_semitones(semitones: int) -> 'Note':
@@ -89,45 +89,76 @@ class Chord:
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
 
-    def guitar_positions(self, guitar: 'Guitar' = None) -> list[dict[str, int]]:
+    def guitar_positions(self, guitar: 'Guitar' = None) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a list of lists
         # The outer list has the length of the number of notes in the chord
         # Each note has the length of the number of strings of the guitar,
         # corresponding to the fret positions that note can be played on that string
         all_positions = [
-            list(note.guitar_positions(guitar=guitar, valid_only=False).values())
+            list(note.guitar_positions(guitar=guitar, valid_only=False).positions_dict.values())
             for note in self.notes
         ]
         # This gives all the permutations (n_strings P n_notes) of where the notes can be played on the strings
         valid_combinations = permutations(range(len(guitar.tuning)), len(self.notes))
-        valid_positions: list[tuple[dict[str, int], int]] = []
+        valid_positions = []
         for comb in valid_combinations:
-            test_position = {
+            positions_dict = {
                 guitar.string_names[string]: all_positions[note][string]
                 for note, string in enumerate(comb)
             }
-            if all(0 <= fret <= guitar.frets for fret in test_position.values()):
-                if all(f == 0 for f in test_position.values()):
-                    fret_span = 0
-                else:
-                    # Don't penalize open strings
-                    lowest_fret = min(f for f in test_position.values() if f != 0)
-                    highest_fret = max(test_position.values())
-                    fret_span = highest_fret - lowest_fret
-                # Sort the position in order of the guitar strings
-                # (they will be out of order if a higher note appears on a lower string
-                # due to the ordering of `permutations`
-                test_position_sorted = {
-                    string: test_position[string]
-                    for string in guitar.string_names
-                    if string in test_position
-                }
-                valid_positions.append((test_position_sorted, fret_span))
-        return [p for p, _ in sorted(valid_positions, key=lambda x: x[1])]
+            guitar_position = GuitarPosition(positions_dict, guitar=guitar)
+            if guitar_position.valid:
+                valid_positions.append(guitar_position)
+        return sorted(valid_positions, key=lambda x: x.fret_span)
 
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
+
+
+class GuitarPosition:
+    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
+        self.guitar = guitar or Guitar()
+        self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
+        if len(positions) == 0:
+            self.lowest_fret = None
+            self.fret_span = None
+        else:
+            self.lowest_fret = (
+                0 if all(f == 0 for f in positions.values())
+                else min(f for f in positions.values() if f != 0)
+            )
+            highest_fret = max(positions.values())
+            self.fret_span = highest_fret - self.lowest_fret
+        # Sort the position in order of the guitar strings
+        self.positions_dict = {
+            string: positions[string]
+            for string in self.guitar.string_names
+            if string in positions
+        }
+
+    def __repr__(self) -> str:
+        return str(self.positions_dict)
+
+    def printable(self) -> list[str]:
+        """
+        Given a chord position, return ASCII art for the position; each line is an item of the list
+        (e.g., you can `print('\n'.join(position.printable()))`)
+        """
+        rows = []
+        for string in reversed(self.guitar.string_names):
+            frets = ['---'] * (self.fret_span + 1)
+            fret = self.positions_dict.get(string, -1)
+            if fret > 0:
+                frets[fret - self.lowest_fret] = '-@-'
+                ring_status = ' '
+            else:
+                ring_status = 'o' if fret == 0 else 'x'
+            row = f'{string} {ring_status}|{"|".join(frets)}|'
+            rows.append(row)
+        if self.lowest_fret > 1:
+            rows.append(f'  {self.lowest_fret - 1}fr')
+        return rows
 
 
 class Guitar:
@@ -140,7 +171,7 @@ class Guitar:
         'e': Note('E', 4),
     }
 
-    def __init__(self, tuning: dict[any, 'Note'] = None, frets: int = 22, capo: int = 0):
+    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = 22, capo: int = 0):
         self.tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.tuning.items()}
