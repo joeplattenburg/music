@@ -140,7 +140,11 @@ class GuitarPosition:
     def __repr__(self) -> str:
         return str(self.positions_dict)
 
-    def print(self) -> str:
+    def printable(self) -> list[str]:
+        """
+        Given a chord position, return ASCII art for the position; each line is an item of the list
+        (e.g., you can `print('\n'.join(position.printable()))`)
+        """
         rows = []
         for string in reversed(self.guitar.string_names):
             frets = ['---'] * (self.fret_span + 1)
@@ -154,7 +158,7 @@ class GuitarPosition:
             rows.append(row)
         if self.lowest_fret > 1:
             rows.append(f'  {self.lowest_fret - 1}fr')
-        return '\n'.join(rows)
+        return rows
 
 
 class Guitar:

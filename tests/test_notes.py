@@ -109,15 +109,15 @@ def test_validity_of_high_frets_with_capo() -> None:
 
 def test_print() -> None:
     position = notes.GuitarPosition({'A': 2, 'D': 2})
-    expected = (
-        "e x|---|\n"
-        "B x|---|\n"
-        "G x|---|\n"
-        "D  |-@-|\n"
-        "A  |-@-|\n"
-        "E x|---|\n"
-        "  1fr"
-    )
-    actual = position.print()
+    expected = [
+        "e x|---|",
+        "B x|---|",
+        "G x|---|",
+        "D  |-@-|",
+        "A  |-@-|",
+        "E x|---|",
+        "  1fr",
+    ]
+    actual = position.printable()
     print(actual)
     assert actual == expected

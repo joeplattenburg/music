@@ -17,7 +17,8 @@ def demo(notes_string: str, top_n: int) -> str:
     notes_list = [notes.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = notes.Chord(notes_list)
     positions = chord.guitar_positions()[:top_n]
+    positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
         'demo.html',
-        chord=chord, top_n=top_n, positions=[p.print().replace('\n', '<br>') for p in positions]
+        chord=chord, top_n=top_n, positions=positions_printable
     )
