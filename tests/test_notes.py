@@ -105,3 +105,19 @@ def test_validity_of_high_frets_with_capo() -> None:
     guitar = notes.Guitar(frets=5, capo=4)
     assert notes.Note('A', 2).guitar_positions(guitar, valid_only=True).positions_dict == {'E': 1}
     assert notes.Note('A#', 2).guitar_positions(guitar, valid_only=True).positions_dict == {}
+
+
+def test_print() -> None:
+    position = notes.GuitarPosition({'A': 2, 'D': 2})
+    expected = (
+        "e x|---|\n"
+        "B x|---|\n"
+        "G x|---|\n"
+        "D  |-@-|\n"
+        "A  |-@-|\n"
+        "E x|---|\n"
+        "  1fr"
+    )
+    actual = position.print()
+    print(actual)
+    assert actual == expected

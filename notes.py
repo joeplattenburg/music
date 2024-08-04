@@ -118,22 +118,43 @@ class Chord:
 
 class GuitarPosition:
     def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
-        self.valid = all(0 <= fret <= guitar.frets for fret in positions.values())
+        self.guitar = guitar or Guitar()
+        self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
+            self.lowest_fret = None
             self.fret_span = None
         else:
-            lowest_fret = (
+            self.lowest_fret = (
                 0 if all(f == 0 for f in positions.values())
                 else min(f for f in positions.values() if f != 0)
             )
             highest_fret = max(positions.values())
-            self.fret_span = highest_fret - lowest_fret
+            self.fret_span = highest_fret - self.lowest_fret
         # Sort the position in order of the guitar strings
         self.positions_dict = {
             string: positions[string]
-            for string in guitar.string_names
+            for string in self.guitar.string_names
             if string in positions
         }
+
+    def __repr__(self) -> str:
+        return str(self.positions_dict)
+
+    def print(self) -> str:
+        rows = []
+        for string in reversed(self.guitar.string_names):
+            frets = ['---'] * (self.fret_span + 1)
+            fret = self.positions_dict.get(string, -1)
+            if fret > 0:
+                frets[fret - self.lowest_fret] = '-@-'
+                ring_status = ' '
+            else:
+                ring_status = 'o' if fret == 0 else 'x'
+            row = f'{string} {ring_status}|{"|".join(frets)}|'
+            rows.append(row)
+        if self.lowest_fret > 1:
+            rows.append(f'  {self.lowest_fret - 1}fr')
+        return '\n'.join(rows)
 
 
 class Guitar:
