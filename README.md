@@ -55,3 +55,11 @@ E  |---|---|---|-@-|
   5fr
 
 ```
+
+## Web App
+
+This includes a Flask web app to run a server that will accept user requests and display the chord positions.
+
+Run the app with `python -m flask run`. The main landing page looks like this:
+
+![web app](images/web_app_sample.png "Web App")

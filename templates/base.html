@@ -14,13 +14,14 @@
 </head>
 <body>
     <h1>Guitar Position Calculator</h1>
-    <hr>
+    <p>This app gives guitar fingerings for any chord</p>
     <a href="{{ url_for('input') }}">Input</a>
+    <hr>
     <div class="content">
         {% for message in get_flashed_messages() %}
             <div class="alert">{{ message }}</div>
         {% endfor %}
-        <p>This app gives guitar fingerings for any chord</p>
+
         {% block content %}
         {% endblock %}
     </div>
