@@ -1,3 +1,4 @@
+import argparse
 import os
 
 from flask import Flask, render_template, request, url_for, flash, redirect
@@ -36,4 +37,8 @@ def display(notes_string: str, top_n: int) -> str:
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, host='0.0.0.0')
+    parser = argparse.ArgumentParser(description='Run the Guitar Position Calculator web server')
+    parser.add_argument('--port', type=int, default=5000)
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+    app.run(debug=args.debug, port=args.port, host='0.0.0.0')
