@@ -33,3 +33,7 @@ def display(notes_string: str, top_n: int) -> str:
         'display.html',
         chord=chord, top_n=top_n, positions=positions_printable
     )
+
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000, host='0.0.0.0')
