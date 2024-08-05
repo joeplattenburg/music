@@ -146,7 +146,9 @@ class GuitarPosition:
         (e.g., you can `print('\n'.join(position.printable()))`)
         """
         rows = []
+        widest_name = max(len(str(string)) for string in self.guitar.string_names)
         for string in reversed(self.guitar.string_names):
+            left_padding = ' ' * (widest_name - len(str(string)))
             frets = ['---'] * (self.fret_span + 1)
             fret = self.positions_dict.get(string, -1)
             if fret > 0:
@@ -154,10 +156,10 @@ class GuitarPosition:
                 ring_status = ' '
             else:
                 ring_status = 'o' if fret == 0 else 'x'
-            row = f'{string} {ring_status}|{"|".join(frets)}|'
+            row = f'{left_padding}{string} {ring_status}|{"|".join(frets)}|'
             rows.append(row)
         if self.lowest_fret > 1:
-            rows.append(f'  {self.lowest_fret - 1}fr')
+            rows.append(f'{' ' * widest_name} {self.lowest_fret - 1}fr')
         return rows
 
 
@@ -172,8 +174,11 @@ class Guitar:
     }
 
     def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = 22, capo: int = 0):
-        self.tuning = tuning or self.STANDARD_TUNING
+        self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
-        self.tuning = {name: note.add_semitones(capo) for name, note in self.tuning.items()}
+        self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
+
+    def __repr__(self):
+        return str(self.tuning)
