@@ -60,6 +60,15 @@ E  |---|---|---|-@-|
 
 This includes a Flask web app to run a server that will accept user requests and display the chord positions.
 
-Run the app with `python -m flask run`. The main landing page looks like this:
+Run the app with `python app.py`. The main landing page looks like this:
 
 ![web app](images/web_app_sample.png "Web App")
+
+## Environment
+
+To generate a compatible environment with required dependencies, you can use conda:
+
+```commandline
+conda env create --file environment.yml
+conda activate music
+```
