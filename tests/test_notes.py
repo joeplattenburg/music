@@ -139,5 +139,20 @@ def test_print_more_complex() -> None:
         "   1fr",
     ]
     actual = position.printable()
-    #print('\n'.join(actual))
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'string',
+    [
+        '{"E": "E2", "A": "A2"}',
+        "{'E': 'E2', 'A': 'A2'}",
+        str({"E": notes.Note('E', 2), "A": notes.Note('A', 2)}),
+    ]
+)
+def test_parse_tuning(string: str) -> None:
+    expected = {
+        "E": notes.Note('E', 2),
+        "A": notes.Note('A', 2)
+    }
+    assert notes.Guitar.parse_tuning(string) == expected

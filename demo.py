@@ -1,5 +1,4 @@
 import argparse
-import json
 
 import notes
 
@@ -17,7 +16,7 @@ if __name__ == "__main__":
         '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
     )
     parser.add_argument(
-        '--tuning', type=str,
+        '--tuning', type=notes.Guitar.parse_tuning, default=None,
         help='A json dict specifying a different guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
     )
     parser.add_argument(
@@ -30,14 +29,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     note_list = [notes.Note.from_string(note) for note in args.notes.split(',')]
     chord = notes.Chord(note_list)
-    if args.tuning:
-        tuning = {
-            string: notes.Note.from_string(note)
-            for string, note in json.loads(args.tuning).items()
-        }
-    else:
-        tuning = None
-    guitar = notes.Guitar(tuning=tuning, capo=args.capo, frets=args.frets)
+    guitar = notes.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
     positions = chord.guitar_positions(guitar=guitar)[:args.top_n]
     print(f'Here are the top {args.top_n} guitar positions for the chord: {chord} with a guitar tuned to: {guitar}')
     for p in positions:

@@ -1,6 +1,7 @@
 #! /usr/bin/python
 from functools import total_ordering
 from itertools import permutations
+import json
 from typing import Hashable
 
 @total_ordering
@@ -76,7 +77,7 @@ class Note:
         return self.from_semitones(self.semitones + semitones)
 
     def __repr__(self):
-        return self.simple_name + self.modifier + str(self.octave)
+        return str(self.simple_name + self.modifier + str(self.octave))
 
     def __eq__(self, other: 'Note'):
         return self.semitones == other.semitones
@@ -182,3 +183,10 @@ class Guitar:
 
     def __repr__(self):
         return str(self.tuning)
+
+    @staticmethod
+    def parse_tuning(tuning: str) -> dict[str, 'Note']:
+        return {
+            string: Note.from_string(note)
+            for string, note in json.loads(tuning.replace("'", '"')).items()
+        }

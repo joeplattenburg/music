@@ -10,11 +10,18 @@
                value="{{ request.form['notes'] }}"></input>
         <br>
         <br>
-        <label for="title">Number of Positions</label>
+        <label for="title">Number of Positions (default 5)</label>
         <br>
         <input type="text" name="top_n"
-               placeholder="3"
+               placeholder="5"
                value="{{ request.form['top_n'] }}"></input>
+        <br>
+        <br>
+        <label for="title">(Optional) Guitar Tuning</label>
+        <br>
+        <input type="text" name="tuning"
+               placeholder='{"E": "E2", "A": "A2", ...}'
+               value="{{ request.form['tuning'] }}"></input>
         <br>
         <br>
         <button type="submit">Submit</button>
