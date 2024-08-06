@@ -119,5 +119,40 @@ def test_print() -> None:
         "  1fr",
     ]
     actual = position.printable()
-    print(actual)
     assert actual == expected
+
+
+def test_print_more_complex() -> None:
+    open_d = {"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}
+    guitar = notes.Guitar(tuning={
+        string: notes.Note.from_string(note) for string, note in open_d.items()
+    })
+    position = notes.GuitarPosition({'A': 2, 'd': 2, 'F#': 3, 'a': 4, 'dd': 0}, guitar=guitar)
+
+    expected = [
+        "dd o|---|---|---|",
+        " a  |---|---|-@-|",
+        "F#  |---|-@-|---|",
+        " d  |-@-|---|---|",
+        " A  |-@-|---|---|",
+        " D x|---|---|---|",
+        "   1fr",
+    ]
+    actual = position.printable()
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'string',
+    [
+        '{"E": "E2", "A": "A2"}',
+        "{'E': 'E2', 'A': 'A2'}",
+        str({"E": notes.Note('E', 2), "A": notes.Note('A', 2)}),
+    ]
+)
+def test_parse_tuning(string: str) -> None:
+    expected = {
+        "E": notes.Note('E', 2),
+        "A": notes.Note('A', 2)
+    }
+    assert notes.Guitar.parse_tuning(string) == expected

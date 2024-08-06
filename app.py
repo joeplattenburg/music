@@ -14,25 +14,28 @@ app.config['SECRET_KEY'] = os.urandom(24).hex()
 def input():
     if request.method == 'POST':
         notes_string = request.form['notes']
-        top_n = request.form['top_n']
+        top_n = request.form['top_n'] or 5
+        tuning = (
+            request.form['tuning'] or
+            str({string: str(note) for string, note in notes.Guitar.STANDARD_TUNING.items()})
+        )
         if not notes_string:
             flash('Notes are required!')
-        elif not top_n:
-            flash('Number of positions is required!')
         else:
-            return redirect(url_for('display', notes_string=notes_string, top_n=top_n))
+            return redirect(url_for('display', notes_string=notes_string, top_n=top_n, tuning=tuning))
     return render_template('input.html')
 
 
-@app.route("/<notes_string>/<int:top_n>/")
-def display(notes_string: str, top_n: int) -> str:
+@app.route("/<notes_string>/<int:top_n>/<tuning>/")
+def display(notes_string: str, top_n: int, tuning: str) -> str:
     notes_list = [notes.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = notes.Chord(notes_list)
-    positions = chord.guitar_positions()[:top_n]
+    guitar = notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning))
+    positions = chord.guitar_positions(guitar=guitar)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
         'display.html',
-        chord=chord, top_n=top_n, positions=positions_printable
+        chord=chord, tuning=tuning, top_n=top_n, positions=positions_printable
     )
 
 

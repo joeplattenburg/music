@@ -56,6 +56,34 @@ E  |---|---|---|-@-|
 
 ```
 
+You can specify different tunings, numbers of frets, and a capo location:
+
+```commandline
+$ python demo.py -g \
+    --notes C3,G3,E4,Bb4 \
+    --top_n 2 \
+    --tuning '{"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}' \
+    --capo 1
+Here are the top 2 guitar positions for the chord: C3,G3,E4,Bb4 with a guitar tuned to: {'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}
+
+dd  |-@-|---|---|
+ a x|---|---|---|
+F#  |---|---|-@-|
+ d x|---|---|---|
+ A  |---|---|-@-|
+ D  |---|---|-@-|
+   6fr
+
+dd x|---|---|---|---|
+ a  |---|---|---|-@-|
+F#  |-@-|---|---|---|
+ d x|---|---|---|---|
+ A  |-@-|---|---|---|
+ D  |-@-|---|---|---|
+   8fr
+
+```
+
 ## Web App
 
 This includes a Flask web app to run a server that will accept user requests and display the chord positions.
