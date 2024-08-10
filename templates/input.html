@@ -2,12 +2,21 @@
 
 {% block content %}
     <h2>{% block title %} User Input {% endblock %}</h2>
+    <p>Enter either a set of notes (comma separated with octave) or a chord name<br>
+    (note, chord name currently only supports close root position)</p>
     <form method="post">
         <label for="title">Chord Notes</label>
         <br>
         <input type="text" name="notes"
                placeholder="C3,G3,E4,Bb4"
                value="{{ request.form['notes'] }}"></input>
+        <br>
+        <br>
+        <label for="title">Chord Name</label>
+        <br>
+        <input type="text" name="chord_name"
+               placeholder="C7"
+               value="{{ request.form['chord_name'] }}"></input>
         <br>
         <br>
         <label for="title">Number of Positions (default 5)</label>

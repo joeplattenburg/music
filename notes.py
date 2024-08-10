@@ -2,7 +2,7 @@
 from functools import total_ordering
 from itertools import permutations, product
 import json
-from typing import Hashable
+from typing import Hashable, Optional
 
 @total_ordering
 class Note:
@@ -252,8 +252,11 @@ class Guitar:
         return str(self.tuning)
 
     @staticmethod
-    def parse_tuning(tuning: str) -> dict[str, 'Note']:
-        return {
-            string: Note.from_string(note)
-            for string, note in json.loads(tuning.replace("'", '"')).items()
-        }
+    def parse_tuning(tuning: Optional[str] = None) -> dict[str, 'Note']:
+        if not tuning:
+            return Guitar.STANDARD_TUNING
+        else:
+            return {
+                string: Note.from_string(note)
+                for string, note in json.loads(tuning.replace("'", '"')).items()
+            }

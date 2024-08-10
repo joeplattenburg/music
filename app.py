@@ -13,16 +13,21 @@ app.config['SECRET_KEY'] = os.urandom(24).hex()
 @app.route("/", methods=('GET', 'POST'))
 def input():
     if request.method == 'POST':
-        notes_string = request.form['notes']
-        top_n = request.form['top_n'] or 5
+        guitar = notes.Guitar(notes.Guitar.parse_tuning(request.form['tuning']))
         tuning = (
             request.form['tuning'] or
             str({string: str(note) for string, note in notes.Guitar.STANDARD_TUNING.items()})
         )
+        top_n = request.form['top_n'] or 5
+        notes_string = request.form['notes']
+        chord_name = request.form['chord_name']
         if not notes_string:
-            flash('Notes are required!')
-        else:
-            return redirect(url_for('display', notes_string=notes_string, top_n=top_n, tuning=tuning))
+            if not chord_name:
+                flash('Either notes or name are required!')
+            else:
+                chord = notes.ChordName(chord_name).get_chord(lower=guitar.lowest)
+                notes_string = str(chord)
+        return redirect(url_for('display', notes_string=notes_string, top_n=top_n, tuning=tuning))
     return render_template('input.html')
 
 
