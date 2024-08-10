@@ -27,7 +27,7 @@ class Note:
         'ss': 2,
     }
 
-    ALL_NOTES_NAMES = [
+    ALL_NOTES_NAMES: list[str] = [
         name + mod for name, mod in product(SEMITONE_MAPPER.keys(), MODIFIER_MAPPER.keys())
     ]
 
@@ -81,6 +81,9 @@ class Note:
 
     def add_semitones(self, semitones: int) -> 'Note':
         return self.from_semitones(self.semitones + semitones)
+
+    def same_name(self, other) -> bool:
+        return self.semitones % 12 == other.semitones % 12
 
     def __repr__(self):
         return str(self.simple_name + self.modifier + str(self.octave))
@@ -162,11 +165,18 @@ class ChordName:
         self.quality = quality
 
     def get_chord(self, lower: 'Note' = Note('C', 0)) -> 'Chord':
+        """
+        For a chord name, return the `Chord` in close root position whose root is the lowest note >= `lower`
+        """
+        # Note, this doesn't actually respect the root note yet
+        chord_note_ref = Note(self.chord_note, octave=0)
         root_note = lower
         for s in range(12):
-            root_note = root_note.add_semitones(s)
-            if root_note.name == self.chord_note:
+            root_note = lower.add_semitones(s)
+            if chord_note_ref.same_name(root_note):
                 break
+            elif s == 11:
+                raise ValueError("This shouldn't be possible!")
         notes = [root_note.add_semitones(s) for s in self.QUALITY_SEMITONE_MAPPER[self.quality]]
         return Chord(notes)
 
@@ -235,6 +245,8 @@ class Guitar:
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
+        self.lowest = min(note for note in self.tuning.values())
+        self.highest = max(note for note in self.tuning.values()).add_semitones(self.frets)
 
     def __repr__(self):
         return str(self.tuning)

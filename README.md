@@ -14,7 +14,11 @@ Classes include:
 
 ## Demo
 
-There is a `demo.py` script that will generate guitar chord positions. E.g.:
+There is a `demo.py` script that will generate guitar chord positions. See `--help` for more info on the args.
+
+### `notes` Mode
+
+In `notes` mode, you must specify the notes (including octave) that you want as a comma-separated string:
 
 ```commandline
 $ python demo.py --notes C3,G3,E4,Bb4 --top_n 3
@@ -23,6 +27,23 @@ Here are the top 3 guitar positions for the chord: C3,G3,E4,Bb4
 {'E': 8, 'A': 10, 'B': 11, 'e': 0}
 {'E': 8, 'D': 5, 'B': 5, 'e': 6}
 ```
+
+### `name` Mode
+
+In `name` mode, you can just pass a chord name (e.g., `Bbmaj7`). 
+Currently, only close root position (with root lowest possible for the guitar tuning) is supported.
+
+```commandline
+$ python demo.py --name C7 --top_n 3   
+C3,E3,G3,Bb3
+Here are the top 3 guitar positions for the chord: C3,E3,G3,Bb3 with a guitar tuned to: {'E': E2, 'A': A2, 'D': D3, 'G': G3, 'B': B3, 'e': E4}
+{'E': 8, 'A': 7, 'D': 8, 'G': 0}
+{'E': 8, 'A': 7, 'D': 5, 'G': 3}
+{'E': 8, 'A': 10, 'D': 2, 'G': 3}
+
+```
+
+### Other features
 
 You can use the `--graphical` (`-g`) flag for ASCII art:
 
