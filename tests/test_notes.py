@@ -147,7 +147,7 @@ def test_print_more_complex() -> None:
     [
         '{"E": "E2", "A": "A2"}',
         "{'E': 'E2', 'A': 'A2'}",
-        str({"E": notes.Note('E', 2), "A": notes.Note('A', 2)}),
+        str({"E": str(notes.Note('E', 2)), "A": str(notes.Note('A', 2))}),
     ]
 )
 def test_parse_tuning(string: str) -> None:
