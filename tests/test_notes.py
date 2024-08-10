@@ -56,6 +56,21 @@ def test_add_semitones(semitones: int, expected: notes.Note) -> None:
     assert actual == expected
 
 
+@pytest.mark.parametrize(
+    'self,other',
+    [
+        (('C', 0), ('C', 0)),
+        (('C', 0), ('C', 1)),
+        (('C', 10), ('C', -3)),
+        (('F#', 0), ('Gb', 0)),
+        (('F#', 0), ('Gb', 3)),
+        (('C##', 3), ('D', 0)),
+    ]
+)
+def test_same_name(self, other) -> None:
+    assert notes.Note(*self).same_name(notes.Note(*other))
+
+
 def test_positions_found_with_lower_notes_on_higher_strings() -> None:
     chord = notes.Chord([
         notes.Note('A', 2), notes.Note('C#', 3)
@@ -99,6 +114,15 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     expected = {i: 0 for i in range(len(strings))}
     actual = chord.guitar_positions(guitar=guitar)[0].positions_dict
     assert actual == expected
+
+
+def test_guitar_extremes() -> None:
+    guitar = notes.Guitar(
+        tuning={'E': notes.Note('E', 2), 'A': notes.Note('A', 2)},
+        frets=3
+    )
+    assert guitar.lowest == notes.Note('E', 2)
+    assert guitar.highest == notes.Note('C', 3)
 
 
 def test_validity_of_high_frets_with_capo() -> None:
@@ -147,7 +171,7 @@ def test_print_more_complex() -> None:
     [
         '{"E": "E2", "A": "A2"}',
         "{'E': 'E2', 'A': 'A2'}",
-        str({"E": notes.Note('E', 2), "A": notes.Note('A', 2)}),
+        str({"E": str(notes.Note('E', 2)), "A": str(notes.Note('A', 2))}),
     ]
 )
 def test_parse_tuning(string: str) -> None:
@@ -156,3 +180,47 @@ def test_parse_tuning(string: str) -> None:
         "A": notes.Note('A', 2)
     }
     assert notes.Guitar.parse_tuning(string) == expected
+
+
+@pytest.mark.parametrize(
+    'name,expected',
+    [
+        ('C', {'chord_note': 'C', 'root': 'C', 'quality': ''}),
+        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7'}),
+    ]
+)
+def test_chord_name(name: str, expected: dict) -> None:
+    chord_name = notes.ChordName(name)
+    assert chord_name.root == expected['root']
+    assert chord_name.chord_note == expected['chord_note']
+    assert chord_name.quality == expected['quality']
+
+
+def test_chord_name_error() -> None:
+    with pytest.raises(ValueError):
+        notes.ChordName('Hb7')
+
+
+@pytest.mark.parametrize(
+    'name,expected',
+    [
+        ('C', [('C', 0), ('E', 0), ('G', 0)]),
+        ('C7', [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
+        ('Bbmaj7/D', [('Bb', 0), ('D', 1), ('F', 1), ('A', 1)]),
+    ]
+)
+def test_chord_name_to_chord(name: str, expected: list) -> None:
+    chord_name = notes.ChordName(name)
+    expected = notes.Chord([notes.Note(*n) for n in expected])
+    actual = chord_name.get_chord()
+    assert actual == expected
+
+
+def test_chord_name_to_chord_different_lower() -> None:
+    actual = notes.ChordName('C').get_chord(lower=notes.Note('E', 2))
+    expected = notes.Chord([
+        notes.Note('C', 3),
+        notes.Note('E', 3),
+        notes.Note('G', 3),
+    ])
+    assert actual == expected
