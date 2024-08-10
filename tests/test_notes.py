@@ -156,3 +156,37 @@ def test_parse_tuning(string: str) -> None:
         "A": notes.Note('A', 2)
     }
     assert notes.Guitar.parse_tuning(string) == expected
+
+
+@pytest.mark.parametrize(
+    'name,expected',
+    [
+        ('C', {'chord_note': 'C', 'root': 'C', 'quality': ''}),
+        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7'}),
+    ]
+)
+def test_chord_name(name: str, expected: dict) -> None:
+    chord_name = notes.ChordName(name)
+    assert chord_name.root == expected['root']
+    assert chord_name.chord_note == expected['chord_note']
+    assert chord_name.quality == expected['quality']
+
+
+def test_chord_name_error() -> None:
+    with pytest.raises(ValueError):
+        notes.ChordName('Hb7')
+
+
+@pytest.mark.parametrize(
+    'name,expected',
+    [
+        ('C', [('C', 0), ('E', 0), ('G', 0)]),
+        ('C7', [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
+        ('Bbmaj7/D', [('Bb', 0), ('D', 1), ('F', 1), ('A', 1)]),
+    ]
+)
+def test_chord_name_to_chord(name: str, expected: list) -> None:
+    chord_name = notes.ChordName(name)
+    expected = notes.Chord([notes.Note(*n) for n in expected])
+    actual = chord_name.get_chord()
+    assert actual == expected
