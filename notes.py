@@ -2,7 +2,7 @@
 from functools import total_ordering
 from itertools import permutations, product
 import json
-from typing import Hashable, Optional
+from typing import Hashable, Optional, Any, Literal
 
 @total_ordering
 class Note:
@@ -63,12 +63,12 @@ class Note:
         return GuitarPosition(positions, guitar=guitar)
 
     @staticmethod
-    def from_semitones(semitones: int) -> 'Note':
+    def from_semitones(semitones: int, bias: Literal['b', '#'] = 'b') -> 'Note':
         octave = semitones // 12
         remainder = semitones % 12
         if remainder not in Note.SEMITONE_MAPPER.values():
-            remainder += 1
-            modifier = 'b'
+            modifier = bias
+            remainder = remainder + 1 if bias == 'b' else remainder - 1
         else:
             modifier = ''
         inverse_mapper = {v: k for k, v in Note.SEMITONE_MAPPER.items()}
@@ -79,10 +79,10 @@ class Note:
     def from_string(note: str) -> 'Note':
         return Note(note[:-1], int(note[-1]))
 
-    def add_semitones(self, semitones: int) -> 'Note':
-        return self.from_semitones(self.semitones + semitones)
+    def add_semitones(self, semitones: int, bias: Literal['b', '#'] = 'b') -> 'Note':
+        return self.from_semitones(self.semitones + semitones, bias)
 
-    def same_name(self, other) -> bool:
+    def same_name(self, other: 'Note') -> bool:
         return self.semitones % 12 == other.semitones % 12
 
     def nearest_above(self, note: str, allow_equal: bool = True) -> 'Note':
@@ -96,6 +96,7 @@ class Note:
         if not allow_equal and interval == 0:
             interval = 12
         return self.add_semitones(-interval)
+
 
     def __repr__(self):
         return str(self.simple_name + self.modifier + str(self.octave))
@@ -158,14 +159,21 @@ class ChordName:
         'dim7': [0, 3, 6, 9],
         'aug7': [0, 4, 8, 11],
     }
+    FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
+    SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
+    KEY_BIAS = {
+        **{k: 'b' for k in FLAT_KEYS},
+        **{k: '#' for k in SHARP_KEYS},
+    }
 
     def __init__(self, chord_name: str):
-        chord_note = None
+        chord_notes = []
         for note_name in Note.ALL_NOTES_NAMES:
             if chord_name.startswith(note_name):
-                chord_note = note_name
-                break
-        if chord_note is None:
+                chord_notes.append(note_name)
+        try:
+            chord_note = max(chord_notes, key=len)
+        except ValueError:
             raise ValueError(f'Invalid chord name; must start with one of {Note.ALL_NOTES_NAMES}')
         if '/' in chord_name:
             chord_name, root = chord_name.split('/')
@@ -175,6 +183,15 @@ class ChordName:
         self.chord_note = chord_note
         self.root = root
         self.quality = quality
+        self.notes = [
+            Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
+            for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
+        ]
+        if self.root in self.notes:
+            self.notes = _rotate_list(self.notes, self.notes.index(self.root))
+        else:
+            self.notes.insert(0, self.root)
+
 
     def get_chord(self, lower: 'Note' = Note('C', 0)) -> 'Chord':
         """
@@ -266,3 +283,9 @@ class Guitar:
                 string: Note.from_string(note)
                 for string, note in json.loads(tuning.replace("'", '"')).items()
             }
+
+
+def _rotate_list(l: list[Any], n: int) -> list[Any]:
+    if n >= len(l):
+        raise ValueError
+    return l[n:] + l[:n]

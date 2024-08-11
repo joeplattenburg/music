@@ -4,15 +4,16 @@ import notes
 
 
 @pytest.mark.parametrize(
-    'semitones,expected',
+    'semitones,bias,expected',
     [
-        (0, notes.Note('C', 0)),
-        (12, notes.Note('C', 1)),
-        (39, notes.Note('Eb', 3)),
+        (0, 'b', notes.Note('C', 0)),
+        (12, 'b', notes.Note('C', 1)),
+        (39, 'b', notes.Note('Eb', 3)),
+        (39, '#', notes.Note('D#', 3)),
     ]
 )
-def test_note_from_semitones(semitones: int, expected: notes.Note) -> None:
-    actual = notes.Note.from_semitones(semitones=semitones)
+def test_note_from_semitones(semitones: int, bias: str, expected: notes.Note) -> None:
+    actual = notes.Note.from_semitones(semitones=semitones, bias=bias)
     assert actual == expected
 
 
@@ -185,8 +186,12 @@ def test_parse_tuning(string: str) -> None:
 @pytest.mark.parametrize(
     'name,expected',
     [
-        ('C', {'chord_note': 'C', 'root': 'C', 'quality': ''}),
-        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7'}),
+        ('C', {'chord_note': 'C', 'root': 'C', 'quality': '', 'notes': ['C', 'E', 'G']}),
+        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7', 'notes': ['D', 'F', 'A', 'Bb']}),
+        ('C/D', {'chord_note': 'C', 'root': 'D', 'quality': '', 'notes': ['D', 'C', 'E', 'G']}),
+        ('F#', {'chord_note': 'F#', 'root': 'F#', 'quality': '', 'notes': ['F#', 'A#', 'C#']}),
+        # TODO: Fix this?
+        ('Gm/Bb', {'chord_note': 'G', 'root': 'Bb', 'quality': 'm', 'notes': ['Bb', 'D', 'G']}),
     ]
 )
 def test_chord_name(name: str, expected: dict) -> None:
@@ -194,6 +199,7 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.root == expected['root']
     assert chord_name.chord_note == expected['chord_note']
     assert chord_name.quality == expected['quality']
+    assert chord_name.notes == expected['notes']
 
 
 def test_chord_name_error() -> None:
@@ -254,3 +260,22 @@ def test_nearest_above(note: tuple[str, int], other: str, allow_equal: bool, oct
     expected = notes.Note(other, octave)
     actual = notes.Note(*note).nearest_below(other, allow_equal=allow_equal)
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'l,n,expected',
+    [
+        ([1, 2, 3, 4], 0, [1, 2, 3, 4]),
+        ([1, 2, 3, 4], 1, [2, 3, 4, 1]),
+        ([1, 2, 3, 4], 3, [4, 1, 2, 3]),
+        ([1, 2, 3, 4], 5, None),
+    ]
+)
+def test_rotate_list(l: list[int], n: int, expected: list[int]) -> None:
+
+    if expected is None:
+        with pytest.raises(ValueError):
+            notes._rotate_list(l, n)
+    else:
+        actual = notes._rotate_list(l, n)
+        assert actual == expected
