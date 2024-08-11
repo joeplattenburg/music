@@ -138,7 +138,7 @@ class Chord:
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Chord'):
         return (
             (len(self.notes) == len(other.notes)) and
             all(s == o for s, o in zip(self.notes, other.notes))
@@ -183,28 +183,27 @@ class ChordName:
         self.chord_note = chord_note
         self.root = root
         self.quality = quality
-        self.notes = [
+        self.note_names = [
             Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
             for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
         ]
         root_index = None
-        for ind, note in enumerate(self.notes):
+        for ind, note in enumerate(self.note_names):
             if Note(note, 0).same_name(Note(self.root, 0)):
                 root_index = ind
         if root_index is not None:
-            self.notes = _rotate_list(self.notes, root_index)
+            self.note_names = _rotate_list(self.note_names, root_index)
         else:
-            self.notes.insert(0, self.root)
-
+            self.note_names.insert(0, self.root)
 
     def get_chord(self, lower: 'Note' = Note('C', 0)) -> 'Chord':
         """
-        For a chord name, return the `Chord` in close root position whose root is the lowest note >= `lower`
+        For a chord name, return the `Chord` in close position whose root is the lowest note >= `lower`
         """
-        # Note, this doesn't actually respect the root note yet
-        chord_note_ref = Note(self.chord_note, octave=0)
-        root_note = lower.nearest_above(self.chord_note)
-        notes = [root_note.add_semitones(s) for s in self.QUALITY_SEMITONE_MAPPER[self.quality]]
+        notes = []
+        for note_name in self.note_names:
+            notes.append(lower.nearest_above(note_name))
+            lower = notes[-1]
         return Chord(notes)
 
 

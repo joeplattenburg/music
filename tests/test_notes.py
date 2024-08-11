@@ -215,7 +215,7 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.root == expected['root']
     assert chord_name.chord_note == expected['chord_note']
     assert chord_name.quality == expected['quality']
-    assert chord_name.notes == expected['notes']
+    assert chord_name.note_names == expected['notes']
 
 
 def test_chord_name_error() -> None:
@@ -228,7 +228,7 @@ def test_chord_name_error() -> None:
     [
         ('C', [('C', 0), ('E', 0), ('G', 0)]),
         ('C7', [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
-        ('Bbmaj7/D', [('Bb', 0), ('D', 1), ('F', 1), ('A', 1)]),
+        ('Bbmaj7/D', [('D', 0), ('F', 0), ('A', 0), ('Bb', 0)]),
     ]
 )
 def test_chord_name_to_chord(name: str, expected: list) -> None:
