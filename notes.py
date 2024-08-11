@@ -228,6 +228,15 @@ class ChordName:
             )
 
         chord_list = []
+        root_valid = True
+        raise_octave = {0: 0}
+        while root_valid:
+            test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
+            if test_chord.notes[0] > upper:
+                break
+            if _is_valid(test_chord.notes):
+                chord_list.append(test_chord)
+            raise_octave[0] += 1
         return chord_list
 
 
