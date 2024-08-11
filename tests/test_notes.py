@@ -218,6 +218,20 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.note_names == expected['notes']
 
 
+@pytest.mark.parametrize(
+    'raise_octave,expected',
+    [
+        ({}, [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
+        ({0: 0, 2: 0}, [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
+        ({0: 1}, [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]),
+        ({0: 1, 2: 2}, [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]),
+    ]
+)
+def test_chord_name_with_add_octave(raise_octave: dict[int, int], expected: list[tuple[str, int]]) -> None:
+    chord = notes.ChordName('C7').get_chord(raise_octave=raise_octave)
+    assert chord.notes == [notes.Note(*note) for note in expected]
+
+
 def test_chord_name_error() -> None:
     with pytest.raises(ValueError):
         notes.ChordName('Hb7')
@@ -234,12 +248,12 @@ def test_chord_name_error() -> None:
 def test_chord_name_to_chord(name: str, expected: list) -> None:
     chord_name = notes.ChordName(name)
     expected = notes.Chord([notes.Note(*n) for n in expected])
-    actual = chord_name.get_close_chord()
+    actual = chord_name.get_chord()
     assert actual == expected
 
 
 def test_chord_name_to_chord_different_lower() -> None:
-    actual = notes.ChordName('C').get_close_chord(lower=notes.Note('E', 2))
+    actual = notes.ChordName('C').get_chord(lower=notes.Note('E', 2))
     expected = notes.Chord([
         notes.Note('C', 3),
         notes.Note('E', 3),
