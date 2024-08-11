@@ -4,7 +4,7 @@
 
 <p>The chord you entered was: {{ chord }}</p>
 <p>For a guitar tuned to {{ tuning }}</p>
-<p>The top {{ top_n }} fingerings for that chord are:</p>
+<p>The top {{ top_n }} fingerings for that chord (out of {{ total_n }} possible) are:</p>
 
 {% autoescape false %}
 {% for position in positions %}
