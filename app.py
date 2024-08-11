@@ -25,7 +25,7 @@ def input():
             if not chord_name:
                 flash('Either notes or name are required!')
             else:
-                chord = notes.ChordName(chord_name).get_chord(lower=guitar.lowest)
+                chord = notes.ChordName(chord_name).get_close_chord(lower=guitar.lowest)
                 notes_string = str(chord)
         return redirect(url_for('display', notes_string=notes_string, top_n=top_n, tuning=tuning))
     return render_template('input.html')

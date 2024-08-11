@@ -37,7 +37,7 @@ if __name__ == "__main__":
         note_list = [notes.Note.from_string(note) for note in args.notes.split(',')]
         chord = notes.Chord(note_list)
     elif args.name:
-        chord = notes.ChordName(args.name).get_chord(lower=guitar.lowest)
+        chord = notes.ChordName(args.name).get_close_chord(lower=guitar.lowest)
         print(chord)
     else:
         raise ValueError('Either `notes` or `name` is required')

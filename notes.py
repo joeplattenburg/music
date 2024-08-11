@@ -196,7 +196,7 @@ class ChordName:
         else:
             self.note_names.insert(0, self.root)
 
-    def get_chord(self, lower: 'Note' = Note('C', 0)) -> 'Chord':
+    def get_close_chord(self, *, lower: 'Note' = Note('C', 0)) -> 'Chord':
         """
         For a chord name, return the `Chord` in close position whose root is the lowest note >= `lower`
         """
@@ -205,6 +205,20 @@ class ChordName:
             notes.append(lower.nearest_above(note_name))
             lower = notes[-1]
         return Chord(notes)
+
+    def get_all_chords(self, *, lower: 'Note' = Note('C', 0), upper: 'Note') -> list['Chord']:
+        """
+        For a chord name, return all `Chord`s that can fit between `lower` and `upper`
+        """
+
+        def _is_valid(notes: list[Note]) -> bool:
+            return (
+                all(lower <= note <= upper for note in notes) and
+                (notes[0] < other for other in notes[1:])
+            )
+
+        chord_list = []
+        return chord_list
 
 
 class GuitarPosition:

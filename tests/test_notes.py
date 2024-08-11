@@ -234,12 +234,12 @@ def test_chord_name_error() -> None:
 def test_chord_name_to_chord(name: str, expected: list) -> None:
     chord_name = notes.ChordName(name)
     expected = notes.Chord([notes.Note(*n) for n in expected])
-    actual = chord_name.get_chord()
+    actual = chord_name.get_close_chord()
     assert actual == expected
 
 
 def test_chord_name_to_chord_different_lower() -> None:
-    actual = notes.ChordName('C').get_chord(lower=notes.Note('E', 2))
+    actual = notes.ChordName('C').get_close_chord(lower=notes.Note('E', 2))
     expected = notes.Chord([
         notes.Note('C', 3),
         notes.Note('E', 3),
