@@ -4,15 +4,16 @@ import notes
 
 
 @pytest.mark.parametrize(
-    'semitones,expected',
+    'semitones,bias,expected',
     [
-        (0, notes.Note('C', 0)),
-        (12, notes.Note('C', 1)),
-        (39, notes.Note('Eb', 3)),
+        (0, 'b', notes.Note('C', 0)),
+        (12, 'b', notes.Note('C', 1)),
+        (39, 'b', notes.Note('Eb', 3)),
+        (39, '#', notes.Note('D#', 3)),
     ]
 )
-def test_note_from_semitones(semitones: int, expected: notes.Note) -> None:
-    actual = notes.Note.from_semitones(semitones=semitones)
+def test_note_from_semitones(semitones: int, bias: str, expected: notes.Note) -> None:
+    actual = notes.Note.from_semitones(semitones=semitones, bias=bias)
     assert actual == expected
 
 
@@ -185,8 +186,28 @@ def test_parse_tuning(string: str) -> None:
 @pytest.mark.parametrize(
     'name,expected',
     [
-        ('C', {'chord_note': 'C', 'root': 'C', 'quality': ''}),
-        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7'}),
+        # TODO: this gets some enharmonics wrong, but it shouldn't double count the root note at least
+        # all qualities
+        ('C', {'chord_note': 'C', 'root': 'C', 'quality': '', 'notes': ['C', 'E', 'G']}),
+        ('Cm', {'chord_note': 'C', 'root': 'C', 'quality': 'm', 'notes': ['C', 'Eb', 'G']}),
+        ('Cdim', {'chord_note': 'C', 'root': 'C', 'quality': 'dim', 'notes': ['C', 'Eb', 'Gb']}),
+        ('Caug', {'chord_note': 'C', 'root': 'C', 'quality': 'aug', 'notes': ['C', 'E', 'Ab']}),
+        ('Cmaj7', {'chord_note': 'C', 'root': 'C', 'quality': 'maj7', 'notes': ['C', 'E', 'G', 'B']}),
+        ('C7', {'chord_note': 'C', 'root': 'C', 'quality': '7', 'notes': ['C', 'E', 'G', 'Bb']}),
+        ('Cm7', {'chord_note': 'C', 'root': 'C', 'quality': 'm7', 'notes': ['C', 'Eb', 'G', 'Bb']}),
+        ('Cm7b5', {'chord_note': 'C', 'root': 'C', 'quality': 'm7b5', 'notes': ['C', 'Eb', 'Gb', 'Bb']}),
+        ('Cdim7', {'chord_note': 'C', 'root': 'C', 'quality': 'dim7', 'notes': ['C', 'Eb', 'Gb', 'A']}),
+        ('Caug7', {'chord_note': 'C', 'root': 'C', 'quality': 'aug7', 'notes': ['C', 'E', 'Ab', 'Bb']}),
+        # other keys
+        ('F#', {'chord_note': 'F#', 'root': 'F#', 'quality': '', 'notes': ['F#', 'A#', 'C#']}),
+        ('F#m7b5', {'chord_note': 'F#', 'root': 'F#', 'quality': 'm7b5', 'notes': ['F#', 'A', 'C', 'E']}),
+        # inversions
+        ('Bbmaj7/D', {'chord_note': 'Bb', 'root': 'D', 'quality': 'maj7', 'notes': ['D', 'F', 'A', 'Bb']}),
+        ('F#m7b5/E', {'chord_note': 'F#', 'root': 'E', 'quality': 'm7b5', 'notes': ['E', 'F#', 'A', 'C']}),
+        ('C/D', {'chord_note': 'C', 'root': 'D', 'quality': '', 'notes': ['D', 'C', 'E', 'G']}),
+        ('C/C', {'chord_note': 'C', 'root': 'C', 'quality': '', 'notes': ['C', 'E', 'G']}),
+        ('Gm/Bb', {'chord_note': 'G', 'root': 'Bb', 'quality': 'm', 'notes': ['A#', 'D', 'G']}),
+        ('Gm/A#', {'chord_note': 'G', 'root': 'A#', 'quality': 'm', 'notes': ['A#', 'D', 'G']}),
     ]
 )
 def test_chord_name(name: str, expected: dict) -> None:
@@ -194,6 +215,7 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.root == expected['root']
     assert chord_name.chord_note == expected['chord_note']
     assert chord_name.quality == expected['quality']
+    assert chord_name.note_names == expected['notes']
 
 
 def test_chord_name_error() -> None:
@@ -206,21 +228,70 @@ def test_chord_name_error() -> None:
     [
         ('C', [('C', 0), ('E', 0), ('G', 0)]),
         ('C7', [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
-        ('Bbmaj7/D', [('Bb', 0), ('D', 1), ('F', 1), ('A', 1)]),
+        ('Bbmaj7/D', [('D', 0), ('F', 0), ('A', 0), ('Bb', 0)]),
     ]
 )
 def test_chord_name_to_chord(name: str, expected: list) -> None:
     chord_name = notes.ChordName(name)
     expected = notes.Chord([notes.Note(*n) for n in expected])
-    actual = chord_name.get_chord()
+    actual = chord_name.get_close_chord()
     assert actual == expected
 
 
 def test_chord_name_to_chord_different_lower() -> None:
-    actual = notes.ChordName('C').get_chord(lower=notes.Note('E', 2))
+    actual = notes.ChordName('C').get_close_chord(lower=notes.Note('E', 2))
     expected = notes.Chord([
         notes.Note('C', 3),
         notes.Note('E', 3),
         notes.Note('G', 3),
     ])
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'note,other,allow_equal,octave',
+    [
+        (notes.Note('C', 3), 'E', True, 3),
+        (notes.Note('C', 3), 'C', True, 3),
+        (notes.Note('C', 3), 'C', False, 4),
+        (notes.Note('G', 3), 'D', True, 4),
+    ]
+)
+def test_nearest_above(note: notes.Note, other: str, allow_equal: bool, octave: int) -> None:
+    expected = notes.Note(other, octave)
+    actual = note.nearest_above(other, allow_equal=allow_equal)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'note,other,allow_equal,octave',
+    [
+        (notes.Note('C', 3), 'E', True, 2),
+        (notes.Note('C', 3), 'C', True, 3),
+        (notes.Note('C', 3), 'C', False, 2),
+        (notes.Note('G', 3), 'D', True, 3),
+    ]
+)
+def test_nearest_above(note: notes.Note, other: str, allow_equal: bool, octave: int) -> None:
+    expected = notes.Note(other, octave)
+    actual = note.nearest_below(other, allow_equal=allow_equal)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'l,n,expected',
+    [
+        ([1, 2, 3, 4], 0, [1, 2, 3, 4]),
+        ([1, 2, 3, 4], 1, [2, 3, 4, 1]),
+        ([1, 2, 3, 4], 3, [4, 1, 2, 3]),
+        ([1, 2, 3, 4], 5, None),
+    ]
+)
+def test_rotate_list(l: list[int], n: int, expected: list[int]) -> None:
+
+    if expected is None:
+        with pytest.raises(ValueError):
+            notes._rotate_list(l, n)
+    else:
+        actual = notes._rotate_list(l, n)
+        assert actual == expected
