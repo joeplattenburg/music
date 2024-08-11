@@ -17,6 +17,15 @@ def test_note_from_semitones(semitones: int, bias: str, expected: notes.Note) ->
     assert actual == expected
 
 
+def test_add_and_subtract() -> None:
+    assert notes.Note('C', 0) + notes.Note('G', 1) == notes.Note('G', 1)
+    assert notes.Note('C', 1) + notes.Note('G', 1) == notes.Note('G', 2)
+    assert notes.Note('D', 0) + notes.Note('G', 1) == notes.Note('A', 1)
+    assert notes.Note('C', 0) - notes.Note('C', 0) == 0
+    assert notes.Note('C', 1) - notes.Note('C', 0) == 12
+    assert notes.Note('G', 0) - notes.Note('C', 0) == 7
+
+
 @pytest.mark.parametrize(
     'name,expected',
     [
@@ -263,14 +272,20 @@ def test_get_chord_with_add_octave(raise_octave: dict[int, int], expected: list[
 
 
 def test_get_all_chords() -> None:
-    chords = notes.ChordName('C').get_all_chords(
-        lower=notes.Note('C', 0), upper=notes.Note('C', 2)
+    actual = notes.ChordName('C').get_all_chords(
+        lower=notes.Note('C', 0), upper=notes.Note('E', 2)
     )
     expected = [
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 2), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 2), ('G', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 2), ('G', 1)]]),
     ]
-    assert chords == expected
+    assert sorted(expected, key=str) == sorted(actual, key=str)
 
 @pytest.mark.parametrize(
     'note,other,allow_equal,octave',

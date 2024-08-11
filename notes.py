@@ -97,15 +97,20 @@ class Note:
             interval = 12
         return self.add_semitones(-interval)
 
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.simple_name + self.modifier + str(self.octave))
 
-    def __eq__(self, other: 'Note'):
+    def __eq__(self, other: 'Note') -> bool:
         return self.semitones == other.semitones
 
-    def __lt__(self, other: 'Note'):
+    def __lt__(self, other: 'Note') -> bool:
         return self.semitones < other.semitones
+
+    def __add__(self, other) -> 'Note':
+        return self.add_semitones(other.semitones)
+
+    def __sub__(self, other) -> int:
+        return self.semitones - other.semitones
 
 
 class Chord:
@@ -227,16 +232,19 @@ class ChordName:
                 (notes[0] < other for other in notes[1:])
             )
 
+        note_count = len(self.note_names)
+        max_octaves = (upper - lower) // 12
+        # This is a list of dicts containing all the possible raise_octave combinations that might work
+        # There are actually a lot of invalid ones but those get handled by _is_valid
+        possible_raises = [
+            dict(zip(range(note_count), combination))
+            for combination in product(range(max_octaves + 1), repeat=note_count)
+        ]
         chord_list = []
-        root_valid = True
-        raise_octave = {0: 0}
-        while root_valid:
+        for raise_octave in possible_raises:
             test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
-            if test_chord.notes[0] > upper:
-                break
             if _is_valid(test_chord.notes):
                 chord_list.append(test_chord)
-            raise_octave[0] += 1
         return chord_list
 
 
