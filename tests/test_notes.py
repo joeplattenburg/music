@@ -224,3 +224,33 @@ def test_chord_name_to_chord_different_lower() -> None:
         notes.Note('G', 3),
     ])
     assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'note,other,allow_equal,octave',
+    [
+        (('C', 3), 'E', True, 3),
+        (('C', 3), 'C', True, 3),
+        (('C', 3), 'C', False, 4),
+        (('G', 3), 'D', True, 4),
+    ]
+)
+def test_nearest_above(note: tuple[str, int], other: str, allow_equal: bool, octave: int) -> None:
+    expected = notes.Note(other, octave)
+    actual = notes.Note(*note).nearest_above(other, allow_equal=allow_equal)
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'note,other,allow_equal,octave',
+    [
+        (('C', 3), 'E', True, 2),
+        (('C', 3), 'C', True, 3),
+        (('C', 3), 'C', False, 2),
+        (('G', 3), 'D', True, 3),
+    ]
+)
+def test_nearest_above(note: tuple[str, int], other: str, allow_equal: bool, octave: int) -> None:
+    expected = notes.Note(other, octave)
+    actual = notes.Note(*note).nearest_below(other, allow_equal=allow_equal)
+    assert actual == expected

@@ -85,6 +85,18 @@ class Note:
     def same_name(self, other) -> bool:
         return self.semitones % 12 == other.semitones % 12
 
+    def nearest_above(self, note: str, allow_equal: bool = True) -> 'Note':
+        interval = (Note(note, 0).semitones - self.semitones) % 12
+        if not allow_equal and interval == 0:
+            interval = 12
+        return self.add_semitones(interval)
+
+    def nearest_below(self, note: str, allow_equal: bool = True) -> 'Note':
+        interval = (self.semitones - Note(note, 0).semitones) % 12
+        if not allow_equal and interval == 0:
+            interval = 12
+        return self.add_semitones(-interval)
+
     def __repr__(self):
         return str(self.simple_name + self.modifier + str(self.octave))
 
@@ -170,13 +182,7 @@ class ChordName:
         """
         # Note, this doesn't actually respect the root note yet
         chord_note_ref = Note(self.chord_note, octave=0)
-        root_note = lower
-        for s in range(12):
-            root_note = lower.add_semitones(s)
-            if chord_note_ref.same_name(root_note):
-                break
-            elif s == 11:
-                raise ValueError("This shouldn't be possible!")
+        root_note = lower.nearest_above(self.chord_note)
         notes = [root_note.add_semitones(s) for s in self.QUALITY_SEMITONE_MAPPER[self.quality]]
         return Chord(notes)
 
