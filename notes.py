@@ -157,7 +157,7 @@ class ChordName:
         'm7': [0, 3, 7, 10],
         'm7b5': [0, 3, 6, 10],
         'dim7': [0, 3, 6, 9],
-        'aug7': [0, 4, 8, 11],
+        'aug7': [0, 4, 8, 10],
     }
     FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
     SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
@@ -187,8 +187,12 @@ class ChordName:
             Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
             for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
         ]
-        if self.root in self.notes:
-            self.notes = _rotate_list(self.notes, self.notes.index(self.root))
+        root_index = None
+        for ind, note in enumerate(self.notes):
+            if Note(note, 0).same_name(Note(self.root, 0)):
+                root_index = ind
+        if root_index is not None:
+            self.notes = _rotate_list(self.notes, root_index)
         else:
             self.notes.insert(0, self.root)
 
