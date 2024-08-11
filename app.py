@@ -14,10 +14,7 @@ app.config['SECRET_KEY'] = os.urandom(24).hex()
 def input():
     if request.method == 'POST':
         guitar = notes.Guitar(notes.Guitar.parse_tuning(request.form['tuning']))
-        tuning = (
-            request.form['tuning'] or
-            str({string: str(note) for string, note in notes.Guitar.STANDARD_TUNING.items()})
-        )
+        tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
         top_n = request.form['top_n'] or 5
         notes_string = request.form['notes']
         chord_name = request.form['chord_name']
@@ -35,7 +32,11 @@ def input():
 def display(notes_string: str, top_n: int, tuning: str) -> str:
     notes_list = [notes.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = notes.Chord(notes_list)
-    guitar = notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning))
+    print('tuning')
+    guitar = (
+        notes.Guitar() if tuning == 'standard' else
+        notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning.split(';')[1]))
+    )
     positions = chord.guitar_positions(guitar=guitar)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(

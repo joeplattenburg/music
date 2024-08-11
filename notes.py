@@ -310,6 +310,7 @@ class Guitar:
         self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
+        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
         self.lowest = min(note for note in self.tuning.values())
