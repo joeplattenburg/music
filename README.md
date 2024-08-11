@@ -30,17 +30,17 @@ Here are the top 3 guitar positions for the chord: C3,G3,E4,Bb4
 
 ### `name` Mode
 
-In `name` mode, you can just pass a chord name (e.g., `Bbmaj7`). 
-Currently, only close root position (with root lowest possible for the guitar tuning) is supported.
+In `name` mode, you can just pass a chord name (e.g., `Cmaj7/E`)
 
 ```commandline
-$ python demo.py --name C7 --top_n 3   
-C3,E3,G3,Bb3
-Here are the top 3 guitar positions for the chord: C3,E3,G3,Bb3 with a guitar tuned to: {'E': E2, 'A': A2, 'D': D3, 'G': G3, 'B': B3, 'e': E4}
-{'E': 8, 'A': 7, 'D': 8, 'G': 0}
-{'E': 8, 'A': 7, 'D': 5, 'G': 3}
-{'E': 8, 'A': 10, 'D': 2, 'G': 3}
-
+$ python demo.py --name Cmaj7/E   
+You input the chord: Cmaj7/E
+Here are the top 5 guitar positions (out of 1604 possible) for a guitar tuned to: {'E': E2, 'A': A2, 'D': D3, 'G': G3, 'B': B3, 'e': E4}
+{'E': 0, 'A': 3, 'G': 0, 'B': 0}
+{'E': 0, 'A': 10, 'D': 10, 'B': 0}
+{'E': 0, 'D': 5, 'G': 5, 'B': 0}
+{'E': 0, 'A': 15, 'G': 0, 'B': 0}
+{'E': 0, 'D': 10, 'G': 0, 'B': 0}
 ```
 
 ### Other features
