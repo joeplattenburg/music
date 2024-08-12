@@ -260,15 +260,15 @@ def test_chord_name_to_chord_different_lower() -> None:
 @pytest.mark.parametrize(
     'raise_octave,expected',
     [
-        ({}, [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
-        ({0: 0, 2: 0}, [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]),
-        ({0: 1}, [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]),
-        ({0: 1, 2: 2}, [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]),
+        ({}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
+        ({'C': 0, 'G': 0}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
+        ({'C': 1}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]]),
+        ({'C': 1, 'G': 2}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]]),
     ]
 )
-def test_get_chord_with_add_octave(raise_octave: dict[int, int], expected: list[tuple[str, int]]) -> None:
+def test_get_chord_with_add_octave(raise_octave: dict[str, int], expected: list[notes.Note]) -> None:
     chord = notes.ChordName('C7').get_chord(raise_octave=raise_octave)
-    assert chord.notes == [notes.Note(*note) for note in expected]
+    assert chord.notes == expected
 
 
 def test_get_all_chords() -> None:
