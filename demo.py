@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         raise ValueError('Either `notes` or `name` is required')
     positions = sorted(positions_all, key=lambda x: x.fret_span)[:args.top_n]
-    tuning_display = guitar.tuning_name if guitar.tuning_name is 'standard' else f'{guitar.tuning_name} ({guitar}):'
+    tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'Here are the top {args.top_n} guitar positions (out of {len(positions_all)} possible)\n'
         f'for a guitar tuned to {tuning_display}'
