@@ -22,24 +22,29 @@ In `notes` mode, you must specify the notes (including octave) that you want as 
 
 ```commandline
 $ python demo.py --notes C3,G3,E4,Bb4 --top_n 3
-Here are the top 3 guitar positions for the chord: C3,G3,E4,Bb4
+You input the chord: C3,G3,E4,Bb4
+Here are the top 3 guitar positions (out of 54 possible)
+for a guitar tuned to standard
 {'E': 8, 'A': 10, 'G': 9, 'B': 11}
 {'E': 8, 'A': 10, 'B': 11, 'e': 0}
 {'E': 8, 'D': 5, 'B': 5, 'e': 6}
+
 ```
 
 ### `name` Mode
 
-In `name` mode, you can just pass a chord name (e.g., `Bbmaj7`). 
-Currently, only close root position (with root lowest possible for the guitar tuning) is supported.
+In `name` mode, you can just pass a chord name (e.g., `Cmaj7/E`)
 
 ```commandline
-$ python demo.py --name C7 --top_n 3   
-C3,E3,G3,Bb3
-Here are the top 3 guitar positions for the chord: C3,E3,G3,Bb3 with a guitar tuned to: {'E': E2, 'A': A2, 'D': D3, 'G': G3, 'B': B3, 'e': E4}
-{'E': 8, 'A': 7, 'D': 8, 'G': 0}
-{'E': 8, 'A': 7, 'D': 5, 'G': 3}
-{'E': 8, 'A': 10, 'D': 2, 'G': 3}
+$ python demo.py --name Cmaj7/E   
+You input the chord: Cmaj7/E
+Here are the top 5 guitar positions (out of 1604 possible)
+for a guitar tuned to standard
+{'E': 0, 'A': 3, 'G': 0, 'B': 0}
+{'E': 0, 'A': 10, 'D': 10, 'B': 0}
+{'E': 0, 'D': 5, 'G': 5, 'B': 0}
+{'E': 0, 'A': 15, 'G': 0, 'B': 0}
+{'E': 0, 'D': 10, 'G': 0, 'B': 0}
 
 ```
 
@@ -49,7 +54,9 @@ You can use the `--graphical` (`-g`) flag for ASCII art:
 
 ```commandline
 $ python demo.py --notes C3,G3,E4,Bb4 --top_n 3 --graphical
-Here are the top 3 guitar positions for the chord: C3,G3,E4,Bb4
+You input the chord: C3,G3,E4,Bb4
+Here are the top 3 guitar positions (out of 54 possible)
+for a guitar tuned to standard
 
 e x|---|---|---|---|
 B  |---|---|---|-@-|
@@ -57,7 +64,7 @@ G  |---|-@-|---|---|
 D x|---|---|---|---|
 A  |---|---|-@-|---|
 E  |-@-|---|---|---|
-  8fr
+  7fr
 
 e o|---|---|---|---|
 B  |---|---|---|-@-|
@@ -65,7 +72,7 @@ G x|---|---|---|---|
 D x|---|---|---|---|
 A  |---|---|-@-|---|
 E  |-@-|---|---|---|
-  8fr
+  7fr
 
 e  |---|-@-|---|---|
 B  |-@-|---|---|---|
@@ -73,7 +80,7 @@ G x|---|---|---|---|
 D  |-@-|---|---|---|
 A x|---|---|---|---|
 E  |---|---|---|-@-|
-  5fr
+  4fr
 
 ```
 
@@ -85,7 +92,9 @@ $ python demo.py -g \
     --top_n 2 \
     --tuning '{"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}' \
     --capo 1
-Here are the top 2 guitar positions for the chord: C3,G3,E4,Bb4 with a guitar tuned to: {'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}
+You input the chord: C3,G3,E4,Bb4
+Here are the top 2 guitar positions (out of 54 possible)
+for a guitar tuned to custom ({'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}):
 
 dd  |-@-|---|---|
  a x|---|---|---|
@@ -102,6 +111,7 @@ F#  |-@-|---|---|---|
  A  |-@-|---|---|---|
  D  |-@-|---|---|---|
    8fr
+
 
 ```
 

@@ -17,6 +17,15 @@ def test_note_from_semitones(semitones: int, bias: str, expected: notes.Note) ->
     assert actual == expected
 
 
+def test_add_and_subtract() -> None:
+    assert notes.Note('C', 0) + notes.Note('G', 1) == notes.Note('G', 1)
+    assert notes.Note('C', 1) + notes.Note('G', 1) == notes.Note('G', 2)
+    assert notes.Note('D', 0) + notes.Note('G', 1) == notes.Note('A', 1)
+    assert notes.Note('C', 0) - notes.Note('C', 0) == 0
+    assert notes.Note('C', 1) - notes.Note('C', 0) == 12
+    assert notes.Note('G', 0) - notes.Note('C', 0) == 7
+
+
 @pytest.mark.parametrize(
     'name,expected',
     [
@@ -234,12 +243,12 @@ def test_chord_name_error() -> None:
 def test_chord_name_to_chord(name: str, expected: list) -> None:
     chord_name = notes.ChordName(name)
     expected = notes.Chord([notes.Note(*n) for n in expected])
-    actual = chord_name.get_close_chord()
+    actual = chord_name.get_chord()
     assert actual == expected
 
 
 def test_chord_name_to_chord_different_lower() -> None:
-    actual = notes.ChordName('C').get_close_chord(lower=notes.Note('E', 2))
+    actual = notes.ChordName('C').get_chord(lower=notes.Note('E', 2))
     expected = notes.Chord([
         notes.Note('C', 3),
         notes.Note('E', 3),
@@ -247,6 +256,36 @@ def test_chord_name_to_chord_different_lower() -> None:
     ])
     assert actual == expected
 
+
+@pytest.mark.parametrize(
+    'raise_octave,expected',
+    [
+        ({}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
+        ({'C': 0, 'G': 0}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
+        ({'C': 1}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]]),
+        ({'C': 1, 'G': 2}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]]),
+    ]
+)
+def test_get_chord_with_add_octave(raise_octave: dict[str, int], expected: list[notes.Note]) -> None:
+    chord = notes.ChordName('C7').get_chord(raise_octave=raise_octave)
+    assert chord.notes == expected
+
+
+def test_get_all_chords() -> None:
+    actual = notes.ChordName('C').get_all_chords(
+        lower=notes.Note('C', 0), upper=notes.Note('E', 2)
+    )
+    expected = [
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 2), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 2), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 2), ('G', 1)]]),
+    ]
+    assert sorted(expected, key=str) == sorted(actual, key=str)
 
 @pytest.mark.parametrize(
     'note,other,allow_equal,octave',

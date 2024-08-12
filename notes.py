@@ -97,15 +97,20 @@ class Note:
             interval = 12
         return self.add_semitones(-interval)
 
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.simple_name + self.modifier + str(self.octave))
 
-    def __eq__(self, other: 'Note'):
+    def __eq__(self, other: 'Note') -> bool:
         return self.semitones == other.semitones
 
-    def __lt__(self, other: 'Note'):
+    def __lt__(self, other: 'Note') -> bool:
         return self.semitones < other.semitones
+
+    def __add__(self, other) -> 'Note':
+        return self.add_semitones(other.semitones)
+
+    def __sub__(self, other) -> int:
+        return self.semitones - other.semitones
 
 
 class Chord:
@@ -196,14 +201,24 @@ class ChordName:
         else:
             self.note_names.insert(0, self.root)
 
-    def get_close_chord(self, *, lower: 'Note' = Note('C', 0)) -> 'Chord':
+    def get_chord(
+            self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[str, int] = None
+    ) -> 'Chord':
         """
-        For a chord name, return the `Chord` in close position whose root is the lowest note >= `lower`
+        For a chord name, return a `Chord` in close position whose root is the lowest note >= `lower`;
+        alternately, `raise_octave` can raise one or more of the chord tones by one or more octaves
+        E.g., for notes [C, E, G], close position would be [C0, E0, G0]
+        if we set raise_octave = {'E': 1, 'G': 2}, it would do the following:
+          - raise the root (C) by one octave -> C1
+          - raise the E to the nearest above -> E1
+          - raise the G by two octaves above the nearest above -> G3
         """
+        raise_octave = raise_octave or {}
         notes = []
         for note_name in self.note_names:
-            notes.append(lower.nearest_above(note_name))
-            lower = notes[-1]
+            semitones_to_add = raise_octave.get(note_name, 0) * 12
+            notes.append(lower.nearest_above(note_name).add_semitones(semitones_to_add))
+            lower = notes[0]  # each subsequent note must be above root
         return Chord(notes)
 
     def get_all_chords(self, *, lower: 'Note' = Note('C', 0), upper: 'Note') -> list['Chord']:
@@ -217,7 +232,18 @@ class ChordName:
                 (notes[0] < other for other in notes[1:])
             )
 
+        max_octaves = (upper - lower) // 12
+        # This is a list of dicts containing all the possible raise_octave combinations that might work
+        # There are actually a lot of invalid ones but those get handled by _is_valid
+        possible_raises = [
+            dict(zip(self.note_names, combination))
+            for combination in product(range(max_octaves + 1), repeat=len(self.note_names))
+        ]
         chord_list = []
+        for raise_octave in possible_raises:
+            test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
+            if _is_valid(test_chord.notes):
+                chord_list.append(test_chord)
         return chord_list
 
 
@@ -283,6 +309,7 @@ class Guitar:
         self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
+        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
         self.lowest = min(note for note in self.tuning.values())
