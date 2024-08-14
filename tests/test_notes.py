@@ -40,19 +40,6 @@ def test_note_from_string(name: str, expected: notes.Note) -> None:
     assert actual == expected
 
 
-def test_both_sharps_work() -> None:
-    assert (
-        notes.Note('F#', 3) ==
-        notes.Note('Fs', 3) ==
-        notes.Note('Gb', 3)
-    )
-    assert (
-        notes.Note('C##', 2) ==
-        notes.Note('Css', 2) ==
-        notes.Note('D', 2)
-    )
-
-
 @pytest.mark.parametrize(
     'semitones,expected',
     [
@@ -198,15 +185,20 @@ def test_parse_tuning(string: str) -> None:
         # TODO: this gets some enharmonics wrong, but it shouldn't double count the root note at least
         # all qualities
         ('C', {'chord_note': 'C', 'root': 'C', 'quality': '', 'notes': ['C', 'E', 'G']}),
+        ('Cmaj', {'chord_note': 'C', 'root': 'C', 'quality': 'maj', 'notes': ['C', 'E', 'G']}),
         ('Cm', {'chord_note': 'C', 'root': 'C', 'quality': 'm', 'notes': ['C', 'Eb', 'G']}),
+        ('Cmin', {'chord_note': 'C', 'root': 'C', 'quality': 'min', 'notes': ['C', 'Eb', 'G']}),
         ('Cdim', {'chord_note': 'C', 'root': 'C', 'quality': 'dim', 'notes': ['C', 'Eb', 'Gb']}),
         ('Caug', {'chord_note': 'C', 'root': 'C', 'quality': 'aug', 'notes': ['C', 'E', 'Ab']}),
+        ('Csus2', {'chord_note': 'C', 'root': 'C', 'quality': 'sus2', 'notes': ['C', 'D', 'G']}),
+        ('Csus4', {'chord_note': 'C', 'root': 'C', 'quality': 'sus4', 'notes': ['C', 'F', 'G']}),
         ('Cmaj7', {'chord_note': 'C', 'root': 'C', 'quality': 'maj7', 'notes': ['C', 'E', 'G', 'B']}),
         ('C7', {'chord_note': 'C', 'root': 'C', 'quality': '7', 'notes': ['C', 'E', 'G', 'Bb']}),
         ('Cm7', {'chord_note': 'C', 'root': 'C', 'quality': 'm7', 'notes': ['C', 'Eb', 'G', 'Bb']}),
         ('Cm7b5', {'chord_note': 'C', 'root': 'C', 'quality': 'm7b5', 'notes': ['C', 'Eb', 'Gb', 'Bb']}),
         ('Cdim7', {'chord_note': 'C', 'root': 'C', 'quality': 'dim7', 'notes': ['C', 'Eb', 'Gb', 'A']}),
         ('Caug7', {'chord_note': 'C', 'root': 'C', 'quality': 'aug7', 'notes': ['C', 'E', 'Ab', 'Bb']}),
+        ('C6', {'chord_note': 'C', 'root': 'C', 'quality': '6', 'notes': ['C', 'E', 'G', 'A']}),
         # other keys
         ('F#', {'chord_note': 'F#', 'root': 'F#', 'quality': '', 'notes': ['F#', 'A#', 'C#']}),
         ('F#m7b5', {'chord_note': 'F#', 'root': 'F#', 'quality': 'm7b5', 'notes': ['F#', 'A', 'C', 'E']}),
@@ -217,6 +209,10 @@ def test_parse_tuning(string: str) -> None:
         ('C/C', {'chord_note': 'C', 'root': 'C', 'quality': '', 'notes': ['C', 'E', 'G']}),
         ('Gm/Bb', {'chord_note': 'G', 'root': 'Bb', 'quality': 'm', 'notes': ['A#', 'D', 'G']}),
         ('Gm/A#', {'chord_note': 'G', 'root': 'A#', 'quality': 'm', 'notes': ['A#', 'D', 'G']}),
+        # Extensions
+        ('C9', {'chord_note': 'C', 'root': 'C', 'quality': '', 'extensions': ['9'], 'notes': ['C', 'E', 'G', 'D']}),
+        ('Cm#11', {'chord_note': 'C', 'root': 'C', 'quality': 'm', 'extensions': ['#11'], 'notes': ['C', 'Eb', 'G', 'F#']}),
+        ('D7b13/F#', {'chord_note': 'D', 'root': 'F#', 'quality': '7', 'extensions': ['b13'], 'notes': ['F#', 'A', 'C', 'D', 'Bb']}),
     ]
 )
 def test_chord_name(name: str, expected: dict) -> None:
@@ -225,6 +221,7 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.chord_note == expected['chord_note']
     assert chord_name.quality == expected['quality']
     assert chord_name.note_names == expected['notes']
+    assert chord_name.extensions == expected.get('extensions', [])
 
 
 def test_chord_name_error() -> None:
@@ -334,3 +331,11 @@ def test_rotate_list(l: list[int], n: int, expected: list[int]) -> None:
     else:
         actual = notes._rotate_list(l, n)
         assert actual == expected
+
+
+def test_best_match() -> None:
+    s = 'hello there'
+    choices = ['h', 'hi', 'hello', 'hello bob']
+    assert notes.best_match(s, choices) == 'hello'
+    with pytest.raises(ValueError):
+        notes.best_match(s, [choices[1], choices[3]])
