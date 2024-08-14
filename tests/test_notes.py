@@ -220,7 +220,7 @@ def test_chord_name(name: str, expected: dict) -> None:
     assert chord_name.root == expected['root']
     assert chord_name.chord_note == expected['chord_note']
     assert chord_name.quality == expected['quality']
-    assert chord_name.note_names == expected['notes']
+    assert chord_name.note_names + chord_name.extension_names == expected['notes']
     assert chord_name.extensions == expected.get('extensions', [])
 
 
@@ -281,6 +281,20 @@ def test_get_all_chords() -> None:
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 2), ('G', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 2), ('G', 1)]]),
+    ]
+    assert sorted(expected, key=str) == sorted(actual, key=str)
+
+def test_get_all_chords_extension() -> None:
+    actual = notes.ChordName('C9').get_all_chords(
+        lower=notes.Note('C', 0), upper=notes.Note('E', 2)
+    )
+    expected = [
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('D', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('D', 2)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('D', 2)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 1), ('D', 2)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 1), ('D', 2)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1), ('D', 2)]]),
     ]
     assert sorted(expected, key=str) == sorted(actual, key=str)
 

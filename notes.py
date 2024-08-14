@@ -202,9 +202,10 @@ class ChordName:
             self.note_names = _rotate_list(self.note_names, root_index)
         else:
             self.note_names.insert(0, self.root)
+        self.extension_names = []
         for ext in self.extensions:
             bias = ext[0] if len(ext) > 1 else 'b'
-            self.note_names.append(
+            self.extension_names.append(
                 Note(self.chord_note, octave=1).add_semitones(
                     self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
                 ).name
@@ -254,6 +255,10 @@ class ChordName:
             semitones_to_add = raise_octave.get(note_name, 0) * 12
             notes.append(lower.nearest_above(note_name).add_semitones(semitones_to_add))
             lower = notes[0]  # each subsequent note must be above root
+        upper_chord = max(notes)  # extensions must be above chord
+        for note_name in self.extension_names:
+            semitones_to_add = raise_octave.get(note_name, 0) * 12
+            notes.append(upper_chord.nearest_above(note_name).add_semitones(semitones_to_add))
         return Chord(notes)
 
     def get_all_chords(self, *, lower: 'Note' = Note('C', 0), upper: 'Note') -> list['Chord']:
@@ -263,16 +268,18 @@ class ChordName:
 
         def _is_valid(notes: list[Note]) -> bool:
             return (
+                # All notes must fit between upper and lower
                 all(lower <= note <= upper for note in notes) and
-                (notes[0] < other for other in notes[1:])
+                # Root should be the lowest note (this should never be false based on `get_chord` definition)
+                all(notes[0] < other for other in notes[1:])
             )
 
         max_octaves = (upper - lower) // 12
         # This is a list of dicts containing all the possible raise_octave combinations that might work
         # There are actually a lot of invalid ones but those get handled by _is_valid
         possible_raises = [
-            dict(zip(self.note_names, combination))
-            for combination in product(range(max_octaves + 1), repeat=len(self.note_names))
+            dict(zip(self.note_names + self.extension_names, combination))
+            for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
         ]
         chord_list = []
         for raise_octave in possible_raises:
