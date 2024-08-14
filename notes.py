@@ -16,15 +16,12 @@ class Note:
         'A': 9,
         'B': 11
     }
-
     MODIFIER_MAPPER: dict[str, int] = {
         'bb': -2,
         'b': -1,
         '': 0,
         '#': 1,
         '##': 2,
-        's': 1,
-        'ss': 2,
     }
 
     ALL_NOTES_NAMES: list[str] = [
@@ -154,15 +151,34 @@ class ChordName:
 
     QUALITY_SEMITONE_MAPPER = {
         '': [0, 4, 7],
+        'maj': [0, 4, 7],
         'm': [0, 3, 7],
+        'min': [0, 3, 7],
         'dim': [0, 3, 6],
         'aug': [0, 4, 8],
+        'sus2': [0, 2, 7],
+        'sus4': [0, 5, 7],
         'maj7': [0, 4, 7, 11],
+        'M7': [0, 4, 7, 11],
         '7': [0, 4, 7, 10],
+        'min7': [0, 3, 7, 10],
         'm7': [0, 3, 7, 10],
         'm7b5': [0, 3, 6, 10],
         'dim7': [0, 3, 6, 9],
         'aug7': [0, 4, 8, 10],
+        '6': [0, 4, 7, 9],
+    }
+    DEGREE_SEMITONE_MAPPER = {
+        1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11
+    }
+    EXTENSION_SEMITONE_MAPPER = {
+        str((deg - 1) + 8): semitones + 12
+        for deg, semitones in DEGREE_SEMITONE_MAPPER.items()
+    }
+    EXTENSION_SEMITONE_MAPPER = {
+        mod + ext: semis + mod_semis
+        for ext, semis in EXTENSION_SEMITONE_MAPPER.items()
+        for  mod, mod_semis in Note.MODIFIER_MAPPER.items()
     }
     FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
     SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
@@ -172,22 +188,8 @@ class ChordName:
     }
 
     def __init__(self, chord_name: str):
-        chord_notes = []
-        for note_name in Note.ALL_NOTES_NAMES:
-            if chord_name.startswith(note_name):
-                chord_notes.append(note_name)
-        try:
-            chord_note = max(chord_notes, key=len)
-        except ValueError:
-            raise ValueError(f'Invalid chord name; must start with one of {Note.ALL_NOTES_NAMES}')
-        if '/' in chord_name:
-            chord_name, root = chord_name.split('/')
-        else:
-            root = chord_note
-        quality = chord_name.replace(chord_note, '')
-        self.chord_note = chord_note
-        self.root = root
-        self.quality = quality
+        self.chord_note, self.quality, self.extensions, self.root = self.parse_name(chord_name)
+        self.chord_name = chord_name
         self.note_names = [
             Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
             for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
@@ -200,6 +202,40 @@ class ChordName:
             self.note_names = _rotate_list(self.note_names, root_index)
         else:
             self.note_names.insert(0, self.root)
+        self.extension_names = []
+        for ext in self.extensions:
+            bias = ext[0] if len(ext) > 1 else 'b'
+            self.extension_names.append(
+                Note(self.chord_note, octave=1).add_semitones(
+                    self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
+                ).name
+            )
+
+    def parse_name(self, name: str) -> tuple[str, str, list[str], str]:
+        try:
+            chord_note = best_match(name, Note.ALL_NOTES_NAMES)
+        except ValueError:
+            raise ValueError(f'Invalid chord name; must start with one of {Note.ALL_NOTES_NAMES}')
+        if '/' in name:
+            remainder, root = name.split('/')
+        else:
+            remainder = name
+            root = chord_note
+        remainder = remainder.replace(chord_note, '')
+        try:
+            quality = best_match(remainder, list(self.QUALITY_SEMITONE_MAPPER.keys()))
+        except ValueError:
+            raise ValueError(f'Invalid chord name; quality must be one of {self.QUALITY_SEMITONE_MAPPER.keys()}')
+        remainder = remainder.replace(quality, '')
+        extensions = []
+        while remainder:
+            try:
+                extensions.append(best_match(remainder, list(self.EXTENSION_SEMITONE_MAPPER.keys())))
+            except ValueError:
+                raise ValueError(f'Invalid chord name; extensions must be one of {self.EXTENSION_SEMITONE_MAPPER.keys()}')
+            remainder = remainder.replace(extensions[-1], '')
+        assert not remainder
+        return chord_note, quality, extensions, root
 
     def get_chord(
             self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[str, int] = None
@@ -219,6 +255,10 @@ class ChordName:
             semitones_to_add = raise_octave.get(note_name, 0) * 12
             notes.append(lower.nearest_above(note_name).add_semitones(semitones_to_add))
             lower = notes[0]  # each subsequent note must be above root
+        upper_chord = max(notes)  # extensions must be above chord
+        for note_name in self.extension_names:
+            semitones_to_add = raise_octave.get(note_name, 0) * 12
+            notes.append(upper_chord.nearest_above(note_name).add_semitones(semitones_to_add))
         return Chord(notes)
 
     def get_all_chords(self, *, lower: 'Note' = Note('C', 0), upper: 'Note') -> list['Chord']:
@@ -228,16 +268,18 @@ class ChordName:
 
         def _is_valid(notes: list[Note]) -> bool:
             return (
+                # All notes must fit between upper and lower
                 all(lower <= note <= upper for note in notes) and
-                (notes[0] < other for other in notes[1:])
+                # Root should be the lowest note (this should never be false based on `get_chord` definition)
+                all(notes[0] < other for other in notes[1:])
             )
 
         max_octaves = (upper - lower) // 12
         # This is a list of dicts containing all the possible raise_octave combinations that might work
         # There are actually a lot of invalid ones but those get handled by _is_valid
         possible_raises = [
-            dict(zip(self.note_names, combination))
-            for combination in product(range(max_octaves + 1), repeat=len(self.note_names))
+            dict(zip(self.note_names + self.extension_names, combination))
+            for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
         ]
         chord_list = []
         for raise_octave in possible_raises:
@@ -333,3 +375,11 @@ def _rotate_list(l: list[Any], n: int) -> list[Any]:
     if n >= len(l):
         raise ValueError
     return l[n:] + l[:n]
+
+
+def best_match(s: str, choices: list[str]) -> str:
+    matches = []
+    for choice in choices:
+        if s.startswith(choice):
+            matches.append(choice)
+    return max(matches, key=len)

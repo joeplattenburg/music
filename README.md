@@ -131,3 +131,16 @@ To generate a compatible environment with required dependencies, you can use con
 conda env create --file environment.yml
 conda activate music
 ```
+
+## TODO
+
+- [ ] Add upper extensions
+- [ ] Add playability heuristics
+- [ ] Better ranking
+- [ ] Show voicings on staff
+- [ ] Better GUI
+  - [ ] Sort on different metrics
+  - [ ] Better input for specifying tuning
+- [ ] Automated testing
+- [ ] Deploy on AWS
+- [ ] Request logging?
