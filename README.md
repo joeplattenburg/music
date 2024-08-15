@@ -21,31 +21,27 @@ There is a `demo.py` script that will generate guitar chord positions. See `--he
 In `notes` mode, you must specify the notes (including octave) that you want as a comma-separated string:
 
 ```commandline
-$ python demo.py --notes C3,G3,E4,Bb4 --top_n 3
+$ python demo.py --notes C3,G3,E4,Bb4 -n 3
 You input the chord: C3,G3,E4,Bb4
-Here are the top 3 guitar positions (out of 54 possible)
-for a guitar tuned to standard
+There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
+Here are the top 3:
 {'E': 8, 'A': 10, 'G': 9, 'B': 11}
 {'E': 8, 'A': 10, 'B': 11, 'e': 0}
-{'E': 8, 'D': 5, 'B': 5, 'e': 6}
-
+{'E': 8, 'G': 0, 'B': 11, 'e': 0}
 ```
 
 ### `name` Mode
 
-In `name` mode, you can just pass a chord name (e.g., `Cmaj7/E`)
+In `name` mode, you can just pass a chord name (e.g., `Cmaj7#11/E`)
 
 ```commandline
 $ python demo.py --name Cmaj7/E   
-You input the chord: Cmaj7/E
-Here are the top 5 guitar positions (out of 1604 possible)
-for a guitar tuned to standard
-{'E': 0, 'A': 3, 'G': 0, 'B': 0}
-{'E': 0, 'A': 10, 'D': 10, 'B': 0}
-{'E': 0, 'D': 5, 'G': 5, 'B': 0}
-{'E': 0, 'A': 15, 'G': 0, 'B': 0}
-{'E': 0, 'D': 10, 'G': 0, 'B': 0}
-
+You input the chord: Cmaj7#11/E
+There are 48 playable guitar positions (out of 986 possible) for a guitar tuned to standard.
+Here are the top 3:
+{'E': 0, 'A': 10, 'D': 10, 'G': 11, 'B': 0}
+{'E': 0, 'A': 3, 'G': 0, 'B': 0, 'e': 2}
+{'E': 0, 'A': 2, 'G': 0, 'B': 1, 'e': 2}
 ```
 
 ### Other features
@@ -55,8 +51,8 @@ You can use the `--graphical` (`-g`) flag for ASCII art:
 ```commandline
 $ python demo.py --notes C3,G3,E4,Bb4 --top_n 3 --graphical
 You input the chord: C3,G3,E4,Bb4
-Here are the top 3 guitar positions (out of 54 possible)
-for a guitar tuned to standard
+There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
+Here are the top 3:
 
 e x|---|---|---|---|
 B  |---|---|---|-@-|
@@ -74,14 +70,13 @@ A  |---|---|-@-|---|
 E  |-@-|---|---|---|
   7fr
 
-e  |---|-@-|---|---|
-B  |-@-|---|---|---|
-G x|---|---|---|---|
-D  |-@-|---|---|---|
+e o|---|---|---|---|
+B  |---|---|---|-@-|
+G o|---|---|---|---|
+D x|---|---|---|---|
 A x|---|---|---|---|
-E  |---|---|---|-@-|
-  4fr
-
+E  |-@-|---|---|---|
+  7fr
 ```
 
 You can specify different tunings, numbers of frets, and a capo location:
@@ -93,8 +88,8 @@ $ python demo.py -g \
     --tuning '{"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}' \
     --capo 1
 You input the chord: C3,G3,E4,Bb4
-Here are the top 2 guitar positions (out of 54 possible)
-for a guitar tuned to custom ({'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}):
+There are 6 playable guitar positions (out of 54 possible) for a guitar tuned to custom ({'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}):.
+Here are the top 2:
 
 dd  |-@-|---|---|
  a x|---|---|---|
@@ -104,15 +99,13 @@ F#  |---|---|-@-|
  D  |---|---|-@-|
    6fr
 
-dd x|---|---|---|---|
- a  |---|---|---|-@-|
-F#  |-@-|---|---|---|
+dd  |---|-@-|---|---|
+ a  |-@-|---|---|---|
+F# x|---|---|---|---|
  d x|---|---|---|---|
- A  |-@-|---|---|---|
- D  |-@-|---|---|---|
-   8fr
-
-
+ A  |---|---|---|-@-|
+ D  |---|---|---|-@-|
+   5fr
 ```
 
 ## Web App
@@ -134,7 +127,7 @@ conda activate music
 
 ## TODO
 
-- [ ] Add upper extensions
+- [x] Add upper extensions
 - [ ] Add playability heuristics
 - [ ] Better ranking
 - [ ] Show voicings on staff
