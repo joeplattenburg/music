@@ -309,6 +309,8 @@ class GuitarPosition:
             for string in self.guitar.string_names
             if string in positions
         }
+        self.playable = self.fret_span <= 4
+
 
     def __repr__(self) -> str:
         return str(self.positions_dict)
