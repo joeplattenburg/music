@@ -3,8 +3,10 @@
 {% block content %}
 
 <p>The chord you entered was: {{ chord }}</p>
-<p>For a guitar tuned to {{ tuning }}</p>
-<p>The top {{ top_n }} fingerings for that chord (out of {{ total_n }} possible) are:</p>
+<p>There are {{ playable_n }} playable guitar positions (out of {{ total_n }} possible) for a guitar tuned to {{ tuning }}.</p>
+    {% if positions|length < playable_n %}
+        <p>Here are the top {{ positions|length }}:</p>
+    {% endif %}
 
 {% autoescape false %}
 {% for position in positions %}

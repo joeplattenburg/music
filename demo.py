@@ -14,7 +14,7 @@ if __name__ == "__main__":
         help='A chord name, like Bbmaj7/D; will return all possible voicings'
     )
     parser.add_argument(
-        '--top_n', type=int, default=5, help='How many positions to return'
+        '--top_n', '-n', type=int, default=None, help='How many positions to return'
     )
     parser.add_argument(
         '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
@@ -45,11 +45,14 @@ if __name__ == "__main__":
             positions_all += chord.guitar_positions(guitar=guitar)
     else:
         raise ValueError('Either `notes` or `name` is required')
-    positions = sorted(positions_all, key=lambda x: x.fret_span)[:args.top_n]
+    positions_playable = list(filter(lambda x: x.playable, positions_all))
+    positions = sorted(positions_playable, key=lambda x: (x.fret_span, abs(x.lowest_fret - 7)))[:args.top_n]
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
-        f'Here are the top {args.top_n} guitar positions (out of {len(positions_all)} possible)\n'
-        f'for a guitar tuned to {tuning_display}'
+        f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
+        f'for a guitar tuned to {tuning_display}.'
     )
+    if args.top_n:
+        print(f'Here are the top {args.top_n}:')
     for p in positions:
         print('\n' + '\n'.join(p.printable())) if args.graphical else print(p)
