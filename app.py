@@ -26,12 +26,12 @@ def input():
         elif chord_name:
             try:
                 notes.ChordName(chord_name)
+                return redirect(url_for(
+                    'display_name',
+                    chord_name=chord_name.replace('/', '_'), top_n=top_n, tuning=tuning
+                ))
             except ValueError:
                 flash('Invalid chord name!')
-            return redirect(url_for(
-                'display_name',
-                chord_name=chord_name.replace('/', '_'), top_n=top_n, tuning=tuning
-            ))
         else:
             flash('Either notes or name are required!')
     return render_template('input.html')

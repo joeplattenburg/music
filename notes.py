@@ -212,27 +212,18 @@ class ChordName:
             )
 
     def parse_name(self, name: str) -> tuple[str, str, list[str], str]:
-        try:
-            chord_note = best_match(name, Note.ALL_NOTES_NAMES)
-        except ValueError:
-            raise ValueError(f'Invalid chord name; must start with one of {Note.ALL_NOTES_NAMES}')
+        chord_note = best_match(name, Note.ALL_NOTES_NAMES)
         if '/' in name:
             remainder, root = name.split('/')
         else:
             remainder = name
             root = chord_note
         remainder = remainder.replace(chord_note, '')
-        try:
-            quality = best_match(remainder, list(self.QUALITY_SEMITONE_MAPPER.keys()))
-        except ValueError:
-            raise ValueError(f'Invalid chord name; quality must be one of {self.QUALITY_SEMITONE_MAPPER.keys()}')
+        quality = best_match(remainder, list(self.QUALITY_SEMITONE_MAPPER.keys()))
         remainder = remainder.replace(quality, '')
         extensions = []
         while remainder:
-            try:
-                extensions.append(best_match(remainder, list(self.EXTENSION_SEMITONE_MAPPER.keys())))
-            except ValueError:
-                raise ValueError(f'Invalid chord name; extensions must be one of {self.EXTENSION_SEMITONE_MAPPER.keys()}')
+            extensions.append(best_match(remainder, list(self.EXTENSION_SEMITONE_MAPPER.keys())))
             remainder = remainder.replace(extensions[-1], '')
         assert not remainder
         return chord_note, quality, extensions, root
@@ -309,7 +300,7 @@ class GuitarPosition:
             for string in self.guitar.string_names
             if string in positions
         }
-        self.playable = self.fret_span <= 4
+        self.playable = False if not self.fret_span else self.fret_span <= 4
 
 
     def __repr__(self) -> str:
@@ -384,4 +375,7 @@ def best_match(s: str, choices: list[str]) -> str:
     for choice in choices:
         if s.startswith(choice):
             matches.append(choice)
-    return max(matches, key=len)
+    try:
+        return max(matches, key=len)
+    except ValueError:
+        raise ValueError(f'Invalid Input: {s} did not match any of {choices}!')
