@@ -1,0 +1,23 @@
+name: CI Build
+run-name: Running CI build for branch ${{ github.ref_name }}
+on: [pull_request]
+permissions:
+  contents: read
+jobs:
+  CI-Build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Cloned ${{ github.repository }} repository to the runner."
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+      - name: Test with pytest
+        run: |
+          python -m pytest
+      - run: echo "This job's status is ${{ job.status }}."
