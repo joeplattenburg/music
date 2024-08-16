@@ -93,6 +93,7 @@ def test_guitar_with_different_fret_count(frets: int, expected: dict[str, int]) 
     actual = note.guitar_positions(guitar).positions_dict
     assert actual == expected
 
+
 @pytest.mark.parametrize(
     'strings',
     [
@@ -110,6 +111,37 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     chord = notes.Chord([notes.Note(*string).add_semitones(capo) for string in strings])
     expected = {i: 0 for i in range(len(strings))}
     actual = chord.guitar_positions(guitar=guitar)[0].positions_dict
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    'position,expected',
+    [
+        ({"E": 3, "e": 3}, 4),
+        ({"E": 3, "D": 1, "e": 3}, 2),
+        ({"E": 3, "D": 1, "b": 0, "e": 3}, 2),
+        ({"E": 3, "D": 1}, 1),
+        ({"E": 3, "A": 2, "D": 1}, 0),
+    ]
+)
+def test_guitar_position_gaps(position: dict, expected: int) -> None:
+    assert notes.GuitarPosition(position).max_interior_gap == expected
+
+
+def test_sort_guitar_positions() -> None:
+    positions = [
+        notes.GuitarPosition({"E": 5, "G": 5}),
+        notes.GuitarPosition({"E": 1, "A": 5}),
+        notes.GuitarPosition({"E": 7, "A": 7}),
+        notes.GuitarPosition({"E": 7, "G": 7}),
+    ]
+    expected = [
+        notes.GuitarPosition({"E": 7, "A": 7}),
+        notes.GuitarPosition({"E": 7, "G": 7}),
+        notes.GuitarPosition({"E": 5, "G": 5}),
+        notes.GuitarPosition({"E": 1, "A": 5}),
+    ]
+    actual = notes.sort_guitar_positions(positions)
     assert actual == expected
 
 

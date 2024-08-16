@@ -49,7 +49,7 @@ def display_notes(notes_string: str, top_n: int, tuning: str) -> str:
     )
     positions_all = chord.guitar_positions(guitar=guitar)
     positions_playable = list(filter(lambda x: x.playable, positions_all))
-    positions = sorted(positions_playable, key=lambda x: (x.fret_span, abs(x.lowest_fret - 7)))[:top_n]
+    positions = notes.sort_guitar_positions(positions_playable)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
         'display.html',
@@ -72,7 +72,7 @@ def display_name(chord_name: str, top_n: int, tuning: str) -> str:
     for chord in chords:
         positions_all += chord.guitar_positions(guitar=guitar)
     positions_playable = list(filter(lambda x: x.playable, positions_all))
-    positions = sorted(positions_playable, key=lambda x: (x.fret_span, abs(x.lowest_fret - 7)))[:top_n]
+    positions = notes.sort_guitar_positions(positions_playable)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
         'display.html',

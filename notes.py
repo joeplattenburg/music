@@ -293,15 +293,58 @@ class GuitarPosition:
                 else min(f for f in positions.values() if f != 0)
             )
             highest_fret = max(positions.values())
-            self.fret_span = highest_fret - self.lowest_fret
+            self.fret_span = highest_fret - self.lowest_fret + 1
         # Sort the position in order of the guitar strings
         self.positions_dict = {
             string: positions[string]
             for string in self.guitar.string_names
             if string in positions
         }
-        self.playable = False if not self.fret_span else self.fret_span <= 4
+        self.open_strings = [string for string, position in self.positions_dict.items() if position == 0]
+        self.muted_strings = [string for string in self.guitar.string_names if string not in self.positions_dict]
+        self.max_interior_gap = self._max_interior_gap()
+        self.playable = self.is_playable()
 
+    def _max_interior_gap(self) -> int:
+        if len(self.positions_dict) == 0:
+            return 0
+        lowest_fretted_string = list(self.positions_dict.keys())[0]
+        highest_fretted_string = list(self.positions_dict.keys())[-1]
+        gap = 0
+        max_gap = 0
+        for i in range(
+                self.guitar.string_names.index(lowest_fretted_string),
+                self.guitar.string_names.index(highest_fretted_string)
+        ):
+            if self.positions_dict.get(self.guitar.string_names[i], 0) == 0:
+                gap += 1
+            else:
+                gap = 0
+            max_gap = max(max_gap, gap)
+        return max_gap
+
+    def is_playable(self) -> bool:
+        if self.fret_span is None:
+            return False
+        # Too wide
+        if self.fret_span > 5:
+            return False
+        n_notes = len(self.positions_dict)
+        n_frets = len(set(self.positions_dict.values()))
+        # Can always play 4 fretted notes
+        if n_notes <= 4:
+            return True
+        # Can always play a 5th note with thumb on bottom string
+        if n_notes == 5 and self.guitar.string_names[0] in self.positions_dict:
+            return True
+        # Otherwise, cannot be on more than 4 frets (at least some notes must be barred)
+        if n_frets <= 4:
+            return True
+        else:
+            return False
+
+    def __eq__(self, other: 'GuitarPosition') -> bool:
+        return self.positions_dict == other.positions_dict
 
     def __repr__(self) -> str:
         return str(self.positions_dict)
@@ -315,7 +358,7 @@ class GuitarPosition:
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
         for string in reversed(self.guitar.string_names):
             left_padding = ' ' * (widest_name - len(str(string)))
-            frets = ['---'] * (self.fret_span + 1)
+            frets = ['---'] * self.fret_span
             fret = self.positions_dict.get(string, -1)
             if fret > 0:
                 frets[fret - self.lowest_fret] = '-@-'
@@ -328,6 +371,17 @@ class GuitarPosition:
             left_padding = ' ' * widest_name
             rows.append(f'{left_padding} {self.lowest_fret - 1}fr')
         return rows
+
+
+def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list[GuitarPosition]:
+    return sorted(p, key=lambda x: (
+        # Sort first on fret span
+        x.fret_span,
+        # Then, fewest interior gaps
+        x.max_interior_gap,
+        # Then nearest to target fret
+        abs(x.lowest_fret - target_fret),
+    ))
 
 
 class Guitar:

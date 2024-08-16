@@ -46,7 +46,7 @@ if __name__ == "__main__":
     else:
         raise ValueError('Either `notes` or `name` is required')
     positions_playable = list(filter(lambda x: x.playable, positions_all))
-    positions = sorted(positions_playable, key=lambda x: (x.fret_span, abs(x.lowest_fret - 7)))[:args.top_n]
+    positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
