@@ -300,8 +300,13 @@ class GuitarPosition:
             for string in self.guitar.string_names
             if string in positions
         }
-        self.playable = False if not self.fret_span else self.fret_span <= 4
+        self.playable = self.is_playable()
 
+    def is_playable(self) -> bool:
+        if self.fret_span is None:
+            return False
+        else:
+            return self.fret_span <= 4
 
     def __repr__(self) -> str:
         return str(self.positions_dict)
@@ -328,6 +333,15 @@ class GuitarPosition:
             left_padding = ' ' * widest_name
             rows.append(f'{left_padding} {self.lowest_fret - 1}fr')
         return rows
+
+
+def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list[GuitarPosition]:
+    return sorted(p, key=lambda x: (
+        # Sort first on fret span
+        x.fret_span,
+        # Then nearest to target fret
+        abs(x.lowest_fret - target_fret)
+    ))
 
 
 class Guitar:
