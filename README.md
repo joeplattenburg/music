@@ -128,8 +128,8 @@ conda activate music
 ## TODO
 
 - [x] Add upper extensions
-- [ ] Add playability heuristics
-- [ ] Better ranking
+- [x] Add playability heuristics
+- [x] Better ranking
 - [ ] Show voicings on staff
 - [ ] Better GUI
   - [ ] Sort on different metrics
