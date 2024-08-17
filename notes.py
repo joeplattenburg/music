@@ -383,6 +383,12 @@ class GuitarPosition:
     def __repr__(self) -> str:
         return str(self.positions_dict)
 
+    def is_subset(self, other: 'GuitarPosition') -> bool:
+        return (
+            (self.positions_dict.keys() <= other.positions_dict.keys()) and
+            all(self_val == other.positions_dict[key] for key, self_val in self.positions_dict.items())
+        )
+
     def printable(self) -> list[str]:
         """
         Given a chord position, return ASCII art for the position; each line is an item of the list

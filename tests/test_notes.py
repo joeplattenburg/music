@@ -356,6 +356,12 @@ def test_get_all_chords_with_repeats() -> None:
     assert sorted(expected, key=str) == sorted(actual, key=str)
 
 
+def test_is_subset() -> None:
+    a = notes.GuitarPosition({'E': 3, 'A': 2})
+    b = notes.GuitarPosition({'E': 3, 'A': 2, 'D': 1})
+    assert a.is_subset(b)
+    assert not b.is_subset(a)
+
 def test_get_all_chords_extension() -> None:
     actual = notes.ChordName('C9').get_all_chords(
         lower=notes.Note('C', 0), upper=notes.Note('E', 2)
