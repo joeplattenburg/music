@@ -145,6 +145,11 @@ def test_sort_guitar_positions() -> None:
     assert actual == expected
 
 
+def test_redundant_position() -> None:
+    assert notes.GuitarPosition({'E': 12, 'A': 13, 'b': 14}).redundant
+    assert not notes.GuitarPosition({'E': 12, 'A': 0, 'b': 14}).redundant
+
+
 def test_guitar_extremes() -> None:
     guitar = notes.Guitar(
         tuning={'E': notes.Note('E', 2), 'A': notes.Note('A', 2)},
@@ -290,14 +295,27 @@ def test_chord_name_to_chord_different_lower() -> None:
     'raise_octave,expected',
     [
         ({}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
-        ({'C': 0, 'G': 0}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
-        ({'C': 1}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]]),
-        ({'C': 1, 'G': 2}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]]),
+        ({0: 0, 2: 0}, [notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('Bb', 0)]]),
+        ({0: 1}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('G', 1), ('Bb', 1)]]),
+        ({0: 1, 2: 2}, [notes.Note(*note) for note in [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]]),
     ]
 )
 def test_get_chord_with_add_octave(raise_octave: dict[str, int], expected: list[notes.Note]) -> None:
     chord = notes.ChordName('C7').get_chord(raise_octave=raise_octave)
     assert chord.notes == expected
+
+
+def test_get_chord_with_repeats() -> None:
+    chord = notes.ChordName('C')
+    chord.note_names += ['E']
+    actual = chord.get_chord(raise_octave={3: 1})
+    expected = notes.Chord([
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('E', 1),
+    ])
+    assert actual == expected
 
 
 def test_get_all_chords() -> None:
@@ -315,6 +333,29 @@ def test_get_all_chords() -> None:
         notes.Chord([notes.Note(*note) for note in [('C', 1), ('E', 2), ('G', 1)]]),
     ]
     assert sorted(expected, key=str) == sorted(actual, key=str)
+
+
+def test_get_all_chords_with_repeats() -> None:
+    actual = notes.ChordName('C').get_all_chords(
+        lower=notes.Note('C', 0), upper=notes.Note('E', 1),
+        allow_repeats=True, max_notes=4
+    )
+    expected = [
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('C', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('E', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('C', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('E', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('C', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('E', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('G', 0)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('C', 1)]]),
+        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('E', 1)]]),
+    ]
+    assert sorted(expected, key=str) == sorted(actual, key=str)
+
 
 def test_get_all_chords_extension() -> None:
     actual = notes.ChordName('C9').get_all_chords(

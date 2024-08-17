@@ -1,6 +1,7 @@
 #! /usr/bin/python
+from copy import deepcopy
 from functools import total_ordering
-from itertools import permutations, product
+from itertools import permutations, product, combinations
 import json
 from typing import Hashable, Optional, Any, Literal
 
@@ -190,7 +191,7 @@ class ChordName:
     def __init__(self, chord_name: str):
         self.chord_note, self.quality, self.extensions, self.root = self.parse_name(chord_name)
         self.chord_name = chord_name
-        self.note_names = [
+        self.note_names: list[str] = [
             Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
             for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
         ]
@@ -229,32 +230,38 @@ class ChordName:
         return chord_note, quality, extensions, root
 
     def get_chord(
-            self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[str, int] = None
+            self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[int, int] = None
     ) -> 'Chord':
         """
         For a chord name, return a `Chord` in close position whose root is the lowest note >= `lower`;
         alternately, `raise_octave` can raise one or more of the chord tones by one or more octaves
         E.g., for notes [C, E, G], close position would be [C0, E0, G0]
-        if we set raise_octave = {'E': 1, 'G': 2}, it would do the following:
+        if we set raise_octave = {0: 1, 2: 2}, it would do the following:
           - raise the root (C) by one octave -> C1
           - raise the E to the nearest above -> E1
           - raise the G by two octaves above the nearest above -> G3
         """
         raise_octave = raise_octave or {}
         notes = []
-        for note_name in self.note_names:
-            semitones_to_add = raise_octave.get(note_name, 0) * 12
+        for note_ind, note_name in enumerate(self.note_names):
+            semitones_to_add = raise_octave.get(note_ind, 0) * 12
             notes.append(lower.nearest_above(note_name).add_semitones(semitones_to_add))
             lower = notes[0]  # each subsequent note must be above root
         upper_chord = max(notes)  # extensions must be above chord
-        for note_name in self.extension_names:
-            semitones_to_add = raise_octave.get(note_name, 0) * 12
+        for note_ind_rel, note_name in enumerate(self.extension_names):
+            note_ind = note_ind_rel + len(self.note_names)
+            semitones_to_add = raise_octave.get(note_ind, 0) * 12
             notes.append(upper_chord.nearest_above(note_name).add_semitones(semitones_to_add))
         return Chord(notes)
 
-    def get_all_chords(self, *, lower: 'Note' = Note('C', 0), upper: 'Note') -> list['Chord']:
+    def get_all_chords(
+            self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
+            allow_repeats: bool = False, max_notes: Optional[int] = None
+    ) -> list['Chord']:
         """
-        For a chord name, return all `Chord`s that can fit between `lower` and `upper`
+        For a chord name, return all `Chord`s that can fit between `lower` and `upper`;
+        If `allow_repeats`, chord notes (but not extensions) can be repeated
+        E.g., a G (G, B, D) could also be (G, B, D, G, D)
         """
 
         def _is_valid(notes: list[Note]) -> bool:
@@ -262,21 +269,39 @@ class ChordName:
                 # All notes must fit between upper and lower
                 all(lower <= note <= upper for note in notes) and
                 # Root should be the lowest note (this should never be false based on `get_chord` definition)
-                all(notes[0] < other for other in notes[1:])
+                all(notes[0] <= other for other in notes[1:])
             )
-
         max_octaves = (upper - lower) // 12
-        # This is a list of dicts containing all the possible raise_octave combinations that might work
-        # There are actually a lot of invalid ones but those get handled by _is_valid
-        possible_raises = [
-            dict(zip(self.note_names + self.extension_names, combination))
-            for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
-        ]
         chord_list = []
-        for raise_octave in possible_raises:
-            test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
-            if _is_valid(test_chord.notes):
-                chord_list.append(test_chord)
+        if allow_repeats:
+            note_sets = []
+            available_strings = max_notes - len(self.note_names + self.extension_names)
+            for repeat in range(available_strings + 1):
+                new_note_sets = [self.note_names + list(add) for add in combinations(self.note_names, r=repeat)]
+                note_sets += new_note_sets
+            for note_set in note_sets:
+                mod_self = deepcopy(self)
+                mod_self.note_names = note_set
+                possible_raises = [
+                    dict(zip(range(len(mod_self.note_names) + len(mod_self.extension_names)), combination))
+                    for combination in
+                    product(range(max_octaves + 1), repeat=len(mod_self.note_names) + len(mod_self.extension_names))
+                ]
+                for raise_octave in possible_raises:
+                    test_chord = mod_self.get_chord(lower=lower, raise_octave=raise_octave)
+                    if _is_valid(test_chord.notes):
+                        chord_list.append(test_chord)
+        else:
+            # This is a list of dicts containing all the possible raise_octave combinations that might work
+            # There are actually a lot of invalid ones but those get handled by _is_valid
+            possible_raises = [
+                dict(zip(range(len(self.note_names) + len(self.extension_names)), combination))
+                for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
+            ]
+            for raise_octave in possible_raises:
+                test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
+                if _is_valid(test_chord.notes):
+                    chord_list.append(test_chord)
         return chord_list
 
 
@@ -304,6 +329,9 @@ class GuitarPosition:
         self.muted_strings = [string for string in self.guitar.string_names if string not in self.positions_dict]
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
+        # If all fretted notes are >= fret 12, this is a redundant position
+        # that is exactly an octave above another one with the same voicing / fingeting
+        self.redundant = all(fret >= 12 for fret in self.positions_dict.values())
 
     def _max_interior_gap(self) -> int:
         if len(self.positions_dict) == 0:
