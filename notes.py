@@ -138,6 +138,10 @@ class Chord:
                 valid_positions.append(guitar_position)
         return sorted(valid_positions, key=lambda x: x.fret_span)
 
+    @staticmethod
+    def from_string(string: str) -> 'Chord':
+        return Chord([Note.from_string(n) for n in string.split(',')])
+
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
@@ -302,6 +306,8 @@ class ChordName:
                 test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
                 if _is_valid(test_chord.notes):
                     chord_list.append(test_chord)
+        # remove duplicates
+        chord_list = [Chord.from_string(s) for s in set(str(chord) for chord in chord_list)]
         return chord_list
 
 
@@ -330,8 +336,8 @@ class GuitarPosition:
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
         # If all fretted notes are >= fret 12, this is a redundant position
-        # that is exactly an octave above another one with the same voicing / fingeting
-        self.redundant = all(fret >= 12 for fret in self.positions_dict.values())
+        # there is an identical shape 12 frets below that gives (nearly) the same voicing
+        self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
 
     def _max_interior_gap(self) -> int:
         if len(self.positions_dict) == 0:

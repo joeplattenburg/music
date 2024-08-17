@@ -349,7 +349,6 @@ def test_get_all_chords_with_repeats() -> None:
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('C', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0), ('E', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('C', 0)]]),
-        notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('E', 0)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('G', 0)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('C', 1)]]),
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 1), ('G', 0), ('E', 1)]]),
