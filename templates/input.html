@@ -5,32 +5,37 @@
     <p>You can enter a set of notes (comma separated with octave)<br>
     or a chord name (e.g., Cmaj7#11/E).</p>
     <form method="post">
-        <label for="title">Chord Notes</label>
+        <label for="notes">Chord Notes</label>
         <br>
-        <input type="text" name="notes"
+        <input type="text" name="notes" id="notes"
                placeholder="C3,G3,E4,Bb4"
                value="{{ request.form['notes'] }}"></input>
         <br>
         <br>
-        <label for="title">Chord Name</label>
+        <label for="chord_name">Chord Name</label>
         <br>
-        <input type="text" name="chord_name"
+        <input type="text" name="chord_name" id="chord_name"
                placeholder="Cmaj7#11/E"
                value="{{ request.form['chord_name'] }}"></input>
         <br>
         <br>
-        <label for="title">Number of Positions (default all playable)</label>
+        <label for="top_n">Number of Positions (default all playable)</label>
         <br>
-        <input type="text" name="top_n"
+        <input type="text" name="top_n" id="top_n"
                placeholder="5"
                value="{{ request.form['top_n'] }}"></input>
         <br>
         <br>
-        <label for="title">(Optional) Guitar Tuning</label>
+        <label for="tuning">(Optional) Guitar Tuning</label>
         <br>
-        <input type="text" name="tuning"
+        <input type="text" name="tuning" id="tuning"
                placeholder='{"E": "E2", "A": "A2", ...}'
                value="{{ request.form['tuning'] }}"></input>
+        <br>
+        <br>
+        <input type="checkbox" id="allow_repeats" name="allow_repeats"
+               value="true" checked></input>
+        <label for="allow_repeats"> Allow repeated chord tones</label><br>
         <br>
         <br>
         <button type="submit">Submit</button>

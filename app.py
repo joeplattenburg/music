@@ -18,6 +18,7 @@ def input():
         top_n = request.form['top_n'] or 0
         notes_string = request.form['notes']
         chord_name = request.form['chord_name']
+        allow_repeats = request.form.get('allow_repeats') or 'false'
         if notes_string:
             return redirect(url_for(
                 'display_notes',
@@ -28,7 +29,8 @@ def input():
                 notes.ChordName(chord_name)
                 return redirect(url_for(
                     'display_name',
-                    chord_name=chord_name.replace('/', '_'), top_n=top_n, tuning=tuning
+                    chord_name=chord_name.replace('/', '_'),
+                    top_n=top_n, allow_repeats=allow_repeats, tuning=tuning
                 ))
             except ValueError:
                 flash('Invalid chord name!')
@@ -48,7 +50,7 @@ def display_notes(notes_string: str, top_n: int, tuning: str) -> str:
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning.split(';')[1]))
     )
     positions_all = chord.guitar_positions(guitar=guitar)
-    positions_playable = list(filter(lambda x: x.playable, positions_all))
+    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     positions = notes.sort_guitar_positions(positions_playable)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
@@ -58,8 +60,8 @@ def display_notes(notes_string: str, top_n: int, tuning: str) -> str:
     )
 
 
-@app.route("/chord_name/<chord_name>/<int:top_n>/<tuning>/")
-def display_name(chord_name: str, top_n: int, tuning: str) -> str:
+@app.route("/chord_name/<chord_name>/<int:top_n>/<tuning>/<allow_repeats>/")
+def display_name(chord_name: str, top_n: int, tuning: str, allow_repeats: str) -> str:
     if top_n == 0:
         top_n = None
     guitar = (
@@ -67,11 +69,14 @@ def display_name(chord_name: str, top_n: int, tuning: str) -> str:
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning.split(';')[1]))
     )
     chord_name = chord_name.replace('_', '/')
-    chords = notes.ChordName(escape(chord_name)).get_all_chords(lower=guitar.lowest, upper=guitar.highest)
+    chords = notes.ChordName(escape(chord_name)).get_all_chords(
+        lower=guitar.lowest, upper=guitar.highest,
+        allow_repeats=(allow_repeats == 'true'), max_notes=len(guitar.tuning)
+    )
     positions_all = []
     for chord in chords:
         positions_all += chord.guitar_positions(guitar=guitar)
-    positions_playable = list(filter(lambda x: x.playable, positions_all))
+    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     positions = notes.sort_guitar_positions(positions_playable)[:top_n]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     return render_template(
