@@ -130,8 +130,9 @@ conda activate music
 - [x] Add upper extensions
 - [x] Add playability heuristics
 - [x] Better ranking
-- [ ] Allow repeated notes
-- [ ] Option to remove redundant positions
+- [x] Allow repeated notes
+- [x] Option to remove redundant positions
+- [ ] Clean up app url
 - [ ] Show voicings on staff
 - [ ] Better GUI
   - [ ] Sort on different metrics
