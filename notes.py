@@ -424,6 +424,18 @@ def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list
     ))
 
 
+def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPosition]:
+    """
+    Drop any positions that are subsets of another position,
+    e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
+    """
+    ps = sorted(p, key=lambda x: len(x.positions_dict), reverse=True)
+    out: list[GuitarPosition] = []
+    for test_pos in ps:
+        if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
+            out.append(test_pos)
+    return out
+
 class Guitar:
     STANDARD_TUNING: dict[str, 'Note'] = {
         'E': Note('E', 2),

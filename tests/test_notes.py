@@ -362,6 +362,25 @@ def test_is_subset() -> None:
     assert a.is_subset(b)
     assert not b.is_subset(a)
 
+
+def test_filter_subsets() -> None:
+    positions = [
+        notes.GuitarPosition({'E': 3, 'A': 2}),
+        notes.GuitarPosition({'E': 3, 'D': 1}),
+        notes.GuitarPosition({'E': 3, 'G': 1}),
+        notes.GuitarPosition({'E': 3, 'e': 1}),
+        notes.GuitarPosition({'E': 3, 'A': 2, 'D': 1}),
+        notes.GuitarPosition({'E': 3, 'A': 2, 'G': 1}),
+    ]
+    expected = [
+        notes.GuitarPosition({'E': 3, 'A': 2, 'D': 1}),
+        notes.GuitarPosition({'E': 3, 'A': 2, 'G': 1}),
+        notes.GuitarPosition({'E': 3, 'e': 1}),
+    ]
+    actual = notes.filter_subset_guitar_positions(positions)
+    assert actual == expected
+
+
 def test_get_all_chords_extension() -> None:
     actual = notes.ChordName('C9').get_all_chords(
         lower=notes.Note('C', 0), upper=notes.Note('E', 2)

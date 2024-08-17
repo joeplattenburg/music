@@ -57,6 +57,8 @@ if __name__ == "__main__":
     positions_playable = list(filter(lambda x: x.playable, positions_all))
     if not args.allow_redundant:
         positions_playable = list(filter(lambda x: not x.redundant, positions_playable))
+    if args.allow_repeats:
+        positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
