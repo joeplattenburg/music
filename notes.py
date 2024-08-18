@@ -334,8 +334,13 @@ class GuitarPosition:
         }
         self.open_strings = [string for string, position in self.positions_dict.items() if position == 0]
         self.muted_strings = [string for string in self.guitar.string_names if string not in self.positions_dict]
+        self.fretted_strings = [string for string, position in self.positions_dict.items() if position > 0]
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
+        self.barre = (
+            self.playable and len(self.fretted_strings) > 4 and
+            sum(fret == self.lowest_fret for fret in self.positions_dict.values()) > 1
+        )
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
@@ -364,19 +369,24 @@ class GuitarPosition:
         # Too wide
         if self.fret_span > 5:
             return False
-        n_notes = len(self.positions_dict)
+        n_notes = len([val for val in self.positions_dict.values() if val > 0])
         n_frets = len(set(self.positions_dict.values()))
         # Can always play 4 fretted notes
         if n_notes <= 4:
             return True
         # Can always play a 5th note with thumb on bottom string
-        if n_notes == 5 and self.guitar.string_names[0] in self.positions_dict:
+        if n_notes == 5 and self.positions_dict.get(self.guitar.string_names[0], 0) > 0:
             return True
         # Otherwise, cannot be on more than 4 frets (at least some notes must be barred)
-        if n_frets <= 4:
-            return True
-        else:
+        if n_frets > 4:
             return False
+        # Cannot have more than 3 fretted notes above barred
+        if sum(fret > self.lowest_fret for fret in self.positions_dict.values()) > 3:
+            return False
+        if sum(fret == self.lowest_fret for fret in self.positions_dict.values()) == 1:
+            return False
+        else:
+            return True
 
     def __eq__(self, other: 'GuitarPosition') -> bool:
         return self.positions_dict == other.positions_dict
