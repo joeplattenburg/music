@@ -147,7 +147,8 @@ def test_sort_guitar_positions() -> None:
 
 def test_redundant_position() -> None:
     assert notes.GuitarPosition({'E': 12, 'A': 13, 'b': 14}).redundant
-    assert not notes.GuitarPosition({'E': 12, 'A': 0, 'b': 14}).redundant
+    assert notes.GuitarPosition({'E': 12, 'A': 0, 'b': 14}).redundant
+    assert not notes.GuitarPosition({'E': 11, 'A': 0, 'b': 14}).redundant
 
 
 def test_guitar_extremes() -> None:

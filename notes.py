@@ -5,6 +5,7 @@ from itertools import permutations, product, combinations
 import json
 from typing import Hashable, Optional, Any, Literal
 
+
 @total_ordering
 class Note:
 
@@ -34,9 +35,9 @@ class Note:
         self.name = name
         self.octave = octave
         self.semitones = (
-                12 * self.octave +
-                self.SEMITONE_MAPPER[self.simple_name] +
-                self.MODIFIER_MAPPER[self.modifier]
+            12 * self.octave +
+            self.SEMITONE_MAPPER[self.simple_name] +
+            self.MODIFIER_MAPPER[self.modifier]
         )
 
     def parse_name(self, name: str) -> tuple[str, str]:
@@ -183,7 +184,7 @@ class ChordName:
     EXTENSION_SEMITONE_MAPPER = {
         mod + ext: semis + mod_semis
         for ext, semis in EXTENSION_SEMITONE_MAPPER.items()
-        for  mod, mod_semis in Note.MODIFIER_MAPPER.items()
+        for mod, mod_semis in Note.MODIFIER_MAPPER.items()
     }
     FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
     SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
@@ -436,6 +437,7 @@ def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPositi
             out.append(test_pos)
     return out
 
+
 class Guitar:
     STANDARD_TUNING: dict[str, 'Note'] = {
         'E': Note('E', 2),
@@ -470,10 +472,10 @@ class Guitar:
             }
 
 
-def _rotate_list(l: list[Any], n: int) -> list[Any]:
-    if n >= len(l):
+def _rotate_list(list_: list[Any], n: int) -> list[Any]:
+    if n >= len(list_):
         raise ValueError
-    return l[n:] + l[:n]
+    return list_[n:] + list_[:n]
 
 
 def best_match(s: str, choices: list[str]) -> str:
