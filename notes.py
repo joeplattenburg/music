@@ -1,7 +1,7 @@
 #! /usr/bin/python
 from copy import deepcopy
 from functools import total_ordering
-from itertools import permutations, product, combinations
+from itertools import permutations, product, combinations_with_replacement
 import json
 from typing import Hashable, Optional, Any, Literal
 
@@ -282,7 +282,7 @@ class ChordName:
             note_sets = []
             available_strings = max_notes - len(self.note_names + self.extension_names)
             for repeat in range(available_strings + 1):
-                new_note_sets = [self.note_names + list(add) for add in combinations(self.note_names, r=repeat)]
+                new_note_sets = [self.note_names + list(add) for add in combinations_with_replacement(self.note_names, r=repeat)]
                 note_sets += new_note_sets
             for note_set in note_sets:
                 mod_self = deepcopy(self)
@@ -375,7 +375,7 @@ class GuitarPosition:
         if n_notes <= 4:
             return True
         # Can always play a 5th note with thumb on bottom string
-        if n_notes == 5 and self.positions_dict.get(self.guitar.string_names[0], 0) > 0:
+        if n_notes == 5 and self.positions_dict.get(self.guitar.string_names[0], 0) == self.lowest_fret:
             return True
         # Otherwise, cannot be on more than 4 frets (at least some notes must be barred)
         if n_frets > 4:
