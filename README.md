@@ -130,13 +130,15 @@ conda activate music
 - [x] Add upper extensions
 - [x] Add playability heuristics
 - [x] Better ranking
+- [x] Automated testing
 - [x] Allow repeated notes
 - [x] Option to remove redundant positions
-- [ ] Clean up app url
+- [X] Clean up app url
+- [ ] Optimize compute
+- [ ] Rename module (`music`?)
 - [ ] Show voicings on staff
-- [ ] Better GUI
-  - [ ] Sort on different metrics
-  - [ ] Better input for specifying tuning
-- [x] Automated testing
+- [ ] Sort on different metrics
+- [ ] Better input for specifying tuning
+- [ ] Add audio
 - [ ] Deploy on AWS
-- [ ] Request logging?
+- [ ] Request logging
