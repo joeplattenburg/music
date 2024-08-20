@@ -407,7 +407,11 @@ class GuitarPosition:
         """
         rows = []
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
-        for string in reversed(self.guitar.string_names):
+        if self.barre:
+            barre_strings = [i for i, val in enumerate(self.positions_dict.values()) if val == self.lowest_fret]
+            highest_barre_index = len(self.guitar.string_names) - min(barre_strings) - 1
+            lowest_barre_index = len(self.guitar.string_names) - max(barre_strings) - 1
+        for i, string in enumerate(reversed(self.guitar.string_names)):
             left_padding = ' ' * (widest_name - len(str(string)))
             frets = ['---'] * self.fret_span
             fret = self.positions_dict.get(string, -1)
@@ -416,6 +420,9 @@ class GuitarPosition:
                 ring_status = ' '
             else:
                 ring_status = 'o' if fret == 0 else 'x'
+            if self.barre:
+                if lowest_barre_index < i < highest_barre_index:
+                    frets[0] = '-|-'
             row = f'{left_padding}{string} {ring_status}|{"|".join(frets)}|'
             rows.append(row)
         if self.lowest_fret > 1:

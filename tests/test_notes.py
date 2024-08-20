@@ -201,6 +201,22 @@ def test_print_more_complex() -> None:
     assert actual == expected
 
 
+def test_print_barre() -> None:
+    position = notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3})
+    assert position.barre
+    expected = [
+        "e  |-@-|---|---|",
+        "B  |-|-|---|---|",
+        "G  |-|-|-@-|---|",
+        "D  |-|-|---|-@-|",
+        "A  |-|-|---|-@-|",
+        "E  |-@-|---|---|",
+        "  2fr",
+    ]
+    actual = position.printable()
+    assert actual == expected
+
+
 @pytest.mark.parametrize(
     'string',
     [
