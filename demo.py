@@ -1,4 +1,5 @@
 import argparse
+import time
 
 import notes
 
@@ -37,6 +38,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+    t1 = time.time()
     guitar = notes.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
     if args.notes:
         note_list = [notes.Note.from_string(note) for note in args.notes.split(',')]
@@ -60,10 +62,12 @@ if __name__ == "__main__":
     if args.allow_repeats:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
+    t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
-        f'for a guitar tuned to {tuning_display}.'
+        f'for a guitar tuned to {tuning_display}.\n'
+        f'(Computed in {(t2 - t1):.2f} seconds)'
     )
     if args.top_n:
         print(f'Here are the top {args.top_n}:')

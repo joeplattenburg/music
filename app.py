@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 
 from flask import Flask, render_template, request, url_for, flash, redirect
 from markupsafe import escape
@@ -52,14 +53,16 @@ def display_notes(notes_string: str, top_n: str, tuning: str) -> str:
         notes.Guitar() if tuning_ == 'standard' else
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
+    t1 = time.time()
     positions_all = chord.guitar_positions(guitar=guitar)
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
+    elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'display.html',
         chord=chord, tuning=tuning_, positions=positions_printable,
-        total_n=len(positions_all), playable_n=len(positions_playable)
+        total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
 
@@ -75,7 +78,7 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -
         notes.Guitar() if tuning_ == 'standard' else
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
-
+    t1 = time.time()
     chords = notes.ChordName(chord_name_).get_all_chords(
         lower=guitar.lowest, upper=guitar.highest,
         allow_repeats=allow_repeats_, max_notes=len(guitar.tuning)
@@ -88,10 +91,11 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
+    elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'display.html',
         chord=chord_name_, tuning=tuning_, positions=positions_printable,
-        total_n=len(positions_all), playable_n=len(positions_playable)
+        total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
 
