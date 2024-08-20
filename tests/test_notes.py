@@ -202,6 +202,7 @@ def test_print_more_complex() -> None:
 
 
 def test_print_barre() -> None:
+    # G
     position = notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3})
     assert position.barre
     expected = [
@@ -212,6 +213,20 @@ def test_print_barre() -> None:
         "A  |-|-|---|-@-|",
         "E  |-@-|---|---|",
         "  2fr",
+    ]
+    actual = position.printable()
+    assert actual == expected
+    # G7
+    position = notes.GuitarPosition({'A': 10, 'D': 12, 'G': 10, 'B': 12, 'e': 10})
+    assert position.barre
+    expected = [
+        "e  |-@-|---|---|",
+        "B  |-|-|---|-@-|",
+        "G  |-|-|---|---|",
+        "D  |-|-|---|-@-|",
+        "A  |-@-|---|---|",
+        "E x|---|---|---|",
+        "  9fr",
     ]
     actual = position.printable()
     assert actual == expected
