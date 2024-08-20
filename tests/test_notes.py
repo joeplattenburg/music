@@ -451,3 +451,18 @@ def test_best_match() -> None:
     assert notes.best_match(s, choices) == 'hello'
     with pytest.raises(ValueError):
         notes.best_match(s, [choices[1], choices[3]])
+
+
+def test_is_playable() -> None:
+    assert notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3}).playable
+    assert notes.GuitarPosition({'D': 0, 'G': 2, 'B': 3, 'e': 2}).playable
+    assert not notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 1}).playable
+    assert notes.GuitarPosition({'E': 3, 'A': 2, 'D': 0, 'G': 0, 'B': 0, 'e': 3}).playable
+    assert notes.GuitarPosition({'E': 3, 'A': 2, 'D': 0, 'G': 0, 'B': 3, 'e': 3}).playable
+    assert not notes.GuitarPosition({'E': 3, 'A': 2, 'D': 0, 'G': 4, 'B': 3, 'e': 3}).playable
+
+
+def test_is_barre() -> None:
+    assert notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3}).barre
+    assert not notes.GuitarPosition({'D': 0, 'G': 2, 'B': 3, 'e': 2}).barre
+    assert not notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 1}).barre
