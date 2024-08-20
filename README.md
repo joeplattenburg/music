@@ -137,6 +137,6 @@ conda activate music
 - [ ] Better GUI
   - [ ] Sort on different metrics
   - [ ] Better input for specifying tuning
-- [x] Automated testing
+- [ ] Automated testing
 - [ ] Deploy on AWS
 - [ ] Request logging?

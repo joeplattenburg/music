@@ -116,7 +116,6 @@ class Chord:
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
 
-
     def guitar_positions(self, guitar: 'Guitar' = None) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a list of lists

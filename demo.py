@@ -1,5 +1,4 @@
 import argparse
-import time
 
 import notes
 
@@ -46,16 +45,13 @@ if __name__ == "__main__":
         positions_all = chord.guitar_positions(guitar=guitar)
     elif args.name:
         print(f'You input the chord: {args.name}')
-        t1 = time.time()
         chords = notes.ChordName(args.name).get_all_chords(
             lower=guitar.lowest, upper=guitar.highest,
             allow_repeats=args.allow_repeats, max_notes=len(guitar.tuning)
         )
-        t2 = time.time()
         positions_all = []
         for chord in chords:
             positions_all += chord.guitar_positions(guitar=guitar)
-        t3 = time.time()
     else:
         raise ValueError('Either `notes` or `name` is required')
     positions_playable = list(filter(lambda x: x.playable, positions_all))
@@ -64,11 +60,6 @@ if __name__ == "__main__":
     if args.allow_repeats:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
-    t4 = time.time()
-    print('Times:')
-    print(f'Get chords ({len(chords)}): {(t2 - t1):.3f} seconds')
-    print(f'Get positions ({len(positions_all)}): {(t3 - t2):.3f} seconds')
-    print(f'Filter positions ({len(positions)}): {(t4 - t3):.3f} seconds')
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
