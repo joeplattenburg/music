@@ -73,7 +73,7 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -
     if top_n_ < 0:
         top_n_ = None
     tuning_ = escape(tuning).split('=')[1]
-    allow_repeats_ = escape(allow_repeats).split('=')[1] == 'true'
+    allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
     guitar = (
         notes.Guitar() if tuning_ == 'standard' else
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -87,7 +87,7 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -
     for chord in chords:
         positions_all += chord.guitar_positions(guitar=guitar)
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
-    if allow_repeats == 'true':
+    if allow_repeats_:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
