@@ -1,5 +1,6 @@
 import argparse
 from multiprocessing import Pool
+import os
 import time
 
 import notes
@@ -59,7 +60,7 @@ if __name__ == "__main__":
             lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
         )
-        with Pool() as p:
+        with Pool(os.cpu_count()) as p:
             temp = p.map(_map_helper, chords)
         positions_playable = [x for xs in temp for x in xs]
         positions_all = sum(c.num_total_guitar_positions or 0 for c in chords)
