@@ -110,7 +110,7 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     )
     chord = notes.Chord([notes.Note(*string).add_semitones(capo) for string in strings])
     expected = {i: 0 for i in range(len(strings))}
-    actual = chord.guitar_positions(guitar=guitar)[0].positions_dict
+    actual = chord.guitar_positions(guitar=guitar, include_unplayable=True)[0].positions_dict
     assert actual == expected
 
 
