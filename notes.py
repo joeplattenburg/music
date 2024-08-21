@@ -118,7 +118,7 @@ class Chord:
         self.num_total_guitar_positions = None
         self.num_playable_guitar_positions = None
 
-    def guitar_positions(self, guitar: 'Guitar' = None, include_unplayable: bool=False) -> list['GuitarPosition']:
+    def guitar_positions(self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
         # of all the positions each note can be played on each string
@@ -142,7 +142,8 @@ class Chord:
             guitar_position = GuitarPosition(positions_dict, guitar=guitar)
             assert guitar_position.valid  # This should be true from above
             if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
-                playable_positions.append(guitar_position)
+                if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
+                    playable_positions.append(guitar_position)
         self.num_playable_guitar_positions = len(playable_positions)
         return sorted(playable_positions, key=lambda x: x.fret_span)
 
