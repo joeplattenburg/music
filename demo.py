@@ -1,7 +1,13 @@
 import argparse
+from multiprocessing import Pool
 import time
 
 import notes
+
+
+def _map_helper(chord_: notes.Chord):
+    return chord_.guitar_positions(include_unplayable=False)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -47,16 +53,17 @@ if __name__ == "__main__":
         positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
         positions_all = chord.num_total_guitar_positions
     elif args.name:
+
         print(f'You input the chord: {args.name}')
         chords = notes.ChordName(args.name).get_all_chords(
             lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
         )
-        positions_playable = []
-        positions_all = 0
-        for chord in chords:
-            positions_playable += chord.guitar_positions(guitar=guitar, include_unplayable=False)
-            positions_all += chord.num_total_guitar_positions
+        with Pool() as p:
+            temp = p.map(_map_helper, chords)
+        positions_playable = [x for xs in temp for x in xs]
+        positions_all = sum(c.num_total_guitar_positions or 0 for c in chords)
+
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
