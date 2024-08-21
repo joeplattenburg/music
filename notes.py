@@ -1,7 +1,7 @@
 #! /usr/bin/python
 from copy import deepcopy
 from functools import total_ordering
-from itertools import permutations, product, combinations_with_replacement
+from itertools import product, combinations_with_replacement
 import json
 from typing import Hashable, Optional, Any, Literal
 
@@ -118,25 +118,27 @@ class Chord:
 
     def guitar_positions(self, guitar: 'Guitar' = None) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
-        # This is a list of lists
-        # The outer list has the length of the number of notes in the chord
-        # Each note has the length of the number of strings of the guitar,
-        # corresponding to the fret positions that note can be played on that string
-        all_positions = [
-            list(note.guitar_positions(guitar=guitar, valid_only=False).positions_dict.values())
+        # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
+        # of all the positions each note can be played on each string
+        all_fret_positions = {
+            str(note): note.guitar_positions(guitar=guitar, valid_only=False).positions_dict
+            for note in self.notes
+        }
+        # Get just the valid positions
+        valid_strings = [
+            list(note.guitar_positions(guitar=guitar, valid_only=True).positions_dict.keys())
             for note in self.notes
         ]
-        # This gives all the permutations (n_strings P n_notes) of where the notes can be played on the strings
-        valid_combinations = permutations(range(len(guitar.tuning)), len(self.notes))
+        valid_combinations = [comb for comb in product(*valid_strings) if len(set(comb)) == len(self.notes)]
         valid_positions = []
         for comb in valid_combinations:
             positions_dict = {
-                guitar.string_names[string]: all_positions[note][string]
-                for note, string in enumerate(comb)
+                string: all_fret_positions[str(note)][string]
+                for note, string in zip(self.notes, comb)
             }
             guitar_position = GuitarPosition(positions_dict, guitar=guitar)
-            if guitar_position.valid:
-                valid_positions.append(guitar_position)
+            assert guitar_position.valid  # This should be true from above
+            valid_positions.append(guitar_position)
         return sorted(valid_positions, key=lambda x: x.fret_span)
 
     @staticmethod
