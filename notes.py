@@ -353,8 +353,8 @@ class GuitarPosition:
         ]
         # Can play a 5th note with thumb on bottom string
         self.use_thumb = (
-                (len(self.fretted_strings) == 5) and
-                (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
+            (len(self.fretted_strings) == 5) and
+            (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
         )
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
