@@ -41,26 +41,28 @@ if __name__ == "__main__":
         note_list = [notes.Note.from_string(note) for note in args.notes.split(',')]
         chord = notes.Chord(note_list)
         print(f'You input the chord: {chord}')
-        positions_all = chord.guitar_positions(guitar=guitar)
+        positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
+        positions_all = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
         chords = notes.ChordName(args.name).get_all_chords(
             lower=guitar.lowest, upper=guitar.highest,
             allow_repeats=args.allow_repeats, max_notes=len(guitar.tuning)
         )
-        positions_all = []
+        positions_playable = []
+        positions_all = 0
         for chord in chords:
-            positions_all += chord.guitar_positions(guitar=guitar)
+            positions_playable += chord.guitar_positions(guitar=guitar, include_unplayable=False)
+            positions_all += chord.num_total_guitar_positions
     else:
         raise ValueError('Either `notes` or `name` is required')
-    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if args.allow_repeats:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
-        f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
+        f'There are {len(positions_playable)} playable guitar positions (out of {positions_all} possible) '
         f'for a guitar tuned to {tuning_display}.\n'
         f'(Computed in {(t2 - t1):.2f} seconds)'
     )

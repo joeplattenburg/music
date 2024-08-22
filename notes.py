@@ -115,8 +115,10 @@ class Note:
 class Chord:
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
+        self.num_total_guitar_positions = None
+        self.num_playable_guitar_positions = None
 
-    def guitar_positions(self, guitar: 'Guitar' = None) -> list['GuitarPosition']:
+    def guitar_positions(self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
         # of all the positions each note can be played on each string
@@ -130,7 +132,8 @@ class Chord:
             for note in self.notes
         ]
         valid_combinations = [comb for comb in product(*valid_strings) if len(set(comb)) == len(self.notes)]
-        valid_positions = []
+        self.num_total_guitar_positions = len(valid_combinations)
+        playable_positions = []
         for comb in valid_combinations:
             positions_dict = {
                 string: all_fret_positions[str(note)][string]
@@ -138,8 +141,11 @@ class Chord:
             }
             guitar_position = GuitarPosition(positions_dict, guitar=guitar)
             assert guitar_position.valid  # This should be true from above
-            valid_positions.append(guitar_position)
-        return sorted(valid_positions, key=lambda x: x.fret_span)
+            if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
+                if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
+                    playable_positions.append(guitar_position)
+        self.num_playable_guitar_positions = len(playable_positions)
+        return sorted(playable_positions, key=lambda x: x.fret_span)
 
     @staticmethod
     def from_string(string: str) -> 'Chord':

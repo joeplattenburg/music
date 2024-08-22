@@ -61,18 +61,15 @@ def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) 
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
-    positions_all = chord.guitar_positions(guitar=guitar)
-    if allow_thumb_:
-        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
-    else:
-        positions_playable = list(filter(lambda x: (x.playable and not x.redundant and not x.use_thumb), positions_all))
+    positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False, allow_thumb=allow_thumb_)
+    positions_all = chord.num_total_guitar_positions
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'display.html',
         chord=chord, tuning=tuning_, positions=positions_printable,
-        total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
+        total_n=positions_all, playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
 
@@ -94,13 +91,11 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str, a
         lower=guitar.lowest, upper=guitar.highest,
         allow_repeats=allow_repeats_, max_notes=len(guitar.tuning)
     )
-    positions_all = []
+    positions_playable = []
+    positions_all = 0
     for chord in chords:
-        positions_all += chord.guitar_positions(guitar=guitar)
-    if allow_thumb_:
-        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
-    else:
-        positions_playable = list(filter(lambda x: (x.playable and not x.redundant and not x.use_thumb), positions_all))
+        positions_playable += chord.guitar_positions(guitar=guitar, include_unplayable=False, allow_thumb=allow_thumb_)
+        positions_all += chord.num_total_guitar_positions
     if allow_repeats_:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
@@ -109,7 +104,7 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str, a
     return render_template(
         'display.html',
         chord=chord_name_, tuning=tuning_, positions=positions_printable,
-        total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
+        total_n=positions_all, playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
 
