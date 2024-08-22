@@ -21,9 +21,6 @@ if __name__ == "__main__":
         '--allow_repeats', '-r', action='store_true', help='Allow chord tones to appear more than once'
     )
     parser.add_argument(
-        '--allow_redundant', '-R', action='store_true', help='Allow redundant positions (fully above fret 12)'
-    )
-    parser.add_argument(
         '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
     )
     parser.add_argument(
@@ -56,9 +53,7 @@ if __name__ == "__main__":
             positions_all += chord.guitar_positions(guitar=guitar)
     else:
         raise ValueError('Either `notes` or `name` is required')
-    positions_playable = list(filter(lambda x: x.playable, positions_all))
-    if not args.allow_redundant:
-        positions_playable = list(filter(lambda x: not x.redundant, positions_playable))
+    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if args.allow_repeats:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
