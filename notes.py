@@ -382,16 +382,11 @@ class GuitarPosition:
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
 
     def _max_interior_gap(self) -> int:
-        if len(self.positions_dict) == 0:
+        if len(self.fretted_strings) == 0:
             return 0
-        lowest_fretted_string = list(self.positions_dict.keys())[0]
-        highest_fretted_string = list(self.positions_dict.keys())[-1]
         gap = 0
         max_gap = 0
-        for i in range(
-                self.guitar.string_names.index(lowest_fretted_string),
-                self.guitar.string_names.index(highest_fretted_string)
-        ):
+        for i in range(self.fretted_strings[0], self.fretted_strings[-1]):
             if self.positions_dict.get(self.guitar.string_names[i], 0) == 0:
                 gap += 1
             else:
