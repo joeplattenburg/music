@@ -20,11 +20,14 @@ def input():
         notes_string = request.form['notes']
         chord_name = request.form['chord_name']
         allow_repeats = request.form.get('allow_repeats') or 'false'
+        allow_thumb = request.form.get('allow_thumb') or 'false'
         if notes_string:
             return redirect(url_for(
                 'display_notes',
                 notes_string=notes_string,
-                top_n='top_n=' + top_n, tuning='tuning=' + tuning
+                top_n='top_n=' + top_n,
+                tuning='tuning=' + tuning,
+                allow_thumb='allow_thumb=' + allow_thumb,
             ))
         elif chord_name:
             try:
@@ -32,7 +35,10 @@ def input():
                 return redirect(url_for(
                     'display_name',
                     chord_name=chord_name.replace('/', '_'),
-                    top_n='top_n=' + top_n, allow_repeats='allow_repeats=' + allow_repeats, tuning='tuning=' + tuning
+                    top_n='top_n=' + top_n,
+                    tuning='tuning=' + tuning,
+                    allow_repeats='allow_repeats=' + allow_repeats,
+                    allow_thumb='allow_thumb=' + allow_thumb,
                 ))
             except ValueError:
                 flash('Invalid chord name!')
@@ -41,12 +47,13 @@ def input():
     return render_template('input.html')
 
 
-@app.route("/notes/<notes_string>/<top_n>/<tuning>/")
-def display_notes(notes_string: str, top_n: str, tuning: str) -> str:
+@app.route("/notes/<notes_string>/<top_n>/<tuning>/<allow_thumb>")
+def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) -> str:
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
     tuning_ = escape(tuning).split('=')[1]
+    allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [notes.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = notes.Chord(notes_list)
     guitar = (
@@ -55,7 +62,10 @@ def display_notes(notes_string: str, top_n: str, tuning: str) -> str:
     )
     t1 = time.time()
     positions_all = chord.guitar_positions(guitar=guitar)
-    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+    if allow_thumb_:
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+    else:
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant and not x.use_thumb), positions_all))
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
@@ -66,14 +76,15 @@ def display_notes(notes_string: str, top_n: str, tuning: str) -> str:
     )
 
 
-@app.route("/chord_name/<chord_name>/<top_n>/<tuning>/<allow_repeats>/")
-def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -> str:
+@app.route("/chord_name/<chord_name>/<top_n>/<tuning>/<allow_repeats>/<allow_thumb>")
+def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str, allow_thumb: str) -> str:
     chord_name_ = escape(chord_name).replace('_', '/')
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
     tuning_ = escape(tuning).split('=')[1]
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
+    allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     guitar = (
         notes.Guitar() if tuning_ == 'standard' else
         notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -86,7 +97,10 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str) -
     positions_all = []
     for chord in chords:
         positions_all += chord.guitar_positions(guitar=guitar)
-    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+    if allow_thumb_:
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+    else:
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant and not x.use_thumb), positions_all))
     if allow_repeats_:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
