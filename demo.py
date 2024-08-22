@@ -7,7 +7,7 @@ import notes
 
 
 def _map_helper(chord_: notes.Chord):
-    return chord_.guitar_positions(include_unplayable=False)
+    return chord_.guitar_positions(include_unplayable=True)
 
 
 if __name__ == "__main__":
@@ -62,9 +62,8 @@ if __name__ == "__main__":
         )
         with Pool(os.cpu_count()) as p:
             temp = p.map(_map_helper, chords)
-        positions_playable = [x for xs in temp for x in xs]
-        positions_all = sum(c.num_total_guitar_positions or 0 for c in chords)
-
+        positions_all = [x for xs in temp for x in xs]
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
@@ -73,7 +72,7 @@ if __name__ == "__main__":
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
-        f'There are {len(positions_playable)} playable guitar positions (out of {positions_all} possible) '
+        f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
         f'for a guitar tuned to {tuning_display}.\n'
         f'(Computed in {(t2 - t1):.2f} seconds)'
     )
