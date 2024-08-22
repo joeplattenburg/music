@@ -351,6 +351,11 @@ class GuitarPosition:
             i for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) == self.lowest_fret
         ]
+        # Can play a 5th note with thumb on bottom string
+        self.use_thumb = (
+                (len(self.fretted_strings) == 5) and
+                (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
+        )
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
         # Barre chord needs
@@ -400,13 +405,12 @@ class GuitarPosition:
         # Too wide
         if self.fret_span > 5:
             return False
-        n_notes = len([val for val in self.positions_dict.values() if val > 0])
+        n_notes = len(self.fretted_strings)
         n_frets = len(set(self.positions_dict.values()))
         # Can always play 4 fretted notes
         if n_notes <= 4:
             return True
-        # Can always play a 5th note with thumb on bottom string
-        if n_notes == 5 and self.positions_dict.get(self.guitar.string_names[0], 0) == self.lowest_fret:
+        if self.use_thumb:
             return True
         # Otherwise, cannot be on more than 4 frets (at least some notes must be barred)
         if n_frets > 4:
@@ -439,11 +443,12 @@ class GuitarPosition:
         rows = []
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
         for i, string in reversed(list(enumerate(self.guitar.string_names))):
+            fret_marker = '-T-' if string == self.guitar.string_names[0] and self.use_thumb else '-@-'
             left_padding = ' ' * (widest_name - len(str(string)))
             frets = ['---'] * self.fret_span
             fret = self.positions_dict.get(string, -1)
             if fret > 0:
-                frets[fret - self.lowest_fret] = '-@-'
+                frets[fret - self.lowest_fret] = fret_marker
                 ring_status = ' '
             else:
                 ring_status = 'o' if fret == 0 else 'x'

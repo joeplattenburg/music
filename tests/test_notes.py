@@ -241,7 +241,7 @@ def test_no_open_strings_along_barre() -> None:
         "G  |---|---|---|---|-@-|",
         "D  |---|---|-@-|---|---|",
         "A x|---|---|---|---|---|",
-        "E  |-@-|---|---|---|---|",
+        "E  |-T-|---|---|---|---|",
         "    3fr",
     ]
     assert position.printable() == expected
@@ -253,7 +253,7 @@ def test_no_open_strings_along_barre() -> None:
         "G  |---|---|---|---|-@-|",
         "D  |---|---|-@-|---|---|",
         "A o|---|---|---|---|---|",
-        "E  |-@-|---|---|---|---|",
+        "E  |-T-|---|---|---|---|",
         "    3fr",
     ]
     assert position.printable() == expected
