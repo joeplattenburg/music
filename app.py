@@ -96,7 +96,7 @@ def display_name(chord_name: str, top_n: str, tuning: str, allow_repeats: str, a
     for chord in chords:
         positions_playable += chord.guitar_positions(guitar=guitar, include_unplayable=False, allow_thumb=allow_thumb_)
         positions_all += chord.num_total_guitar_positions
-    if allow_repeats == 'true':
+    if allow_repeats_:
         positions_playable = notes.filter_subset_guitar_positions(positions_playable)
     positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
