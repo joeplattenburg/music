@@ -523,3 +523,20 @@ def test_is_barre() -> None:
     assert notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3}).barre
     assert not notes.GuitarPosition({'D': 0, 'G': 2, 'B': 3, 'e': 2}).barre
     assert not notes.GuitarPosition({'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 1}).barre
+
+
+def test_thumb_position_not_barre() -> None:
+    position = notes.GuitarPosition({
+        'E': 3, 'A': 5, 'D': 3, 'G': 4, 'B': 6
+    })
+    assert position.use_thumb
+    expected = [
+        "e x|---|---|---|---|",
+        "B  |---|---|---|-@-|",
+        "G  |---|-@-|---|---|",
+        "D  |-@-|---|---|---|",
+        "A  |---|---|-@-|---|",
+        "E  |-T-|---|---|---|",
+        "    3fr",
+    ]
+    assert position.printable() == expected
