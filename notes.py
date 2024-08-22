@@ -452,9 +452,9 @@ class GuitarPosition:
                     frets[0] = '-|-'
             row = f'{left_padding}{string} {ring_status}|{"|".join(frets)}|'
             rows.append(row)
-        if self.lowest_fret > 1:
+        if self.lowest_fret > 0:
             left_padding = ' ' * widest_name
-            rows.append(f'{left_padding} {self.lowest_fret - 1}fr')
+            rows.append(f'{left_padding}   {self.lowest_fret}fr')
         return rows
 
 

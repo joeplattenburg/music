@@ -175,7 +175,7 @@ def test_print() -> None:
         "D  |-@-|",
         "A  |-@-|",
         "E x|---|",
-        "  1fr",
+        "    2fr",
     ]
     actual = position.printable()
     assert actual == expected
@@ -195,7 +195,7 @@ def test_print_more_complex() -> None:
         " d  |-@-|---|---|",
         " A  |-@-|---|---|",
         " D x|---|---|---|",
-        "   1fr",
+        "     2fr",
     ]
     actual = position.printable()
     assert actual == expected
@@ -212,7 +212,7 @@ def test_print_barre() -> None:
         "D  |-|-|---|-@-|",
         "A  |-|-|---|-@-|",
         "E  |-@-|---|---|",
-        "  2fr",
+        "    3fr",
     ]
     actual = position.printable()
     assert actual == expected
@@ -226,7 +226,7 @@ def test_print_barre() -> None:
         "D  |-|-|---|-@-|",
         "A  |-@-|---|---|",
         "E x|---|---|---|",
-        "  9fr",
+        "    10fr",
     ]
     actual = position.printable()
     assert actual == expected
@@ -242,7 +242,7 @@ def test_no_open_strings_along_barre() -> None:
         "D  |---|---|-@-|---|---|",
         "A x|---|---|---|---|---|",
         "E  |-@-|---|---|---|---|",
-        "  2fr",
+        "    3fr",
     ]
     assert position.printable() == expected
     position = notes.GuitarPosition({"E": 3, "A": 0, "D": 5, "G": 7, "B": 3, "e": 7})
@@ -254,7 +254,7 @@ def test_no_open_strings_along_barre() -> None:
         "D  |---|---|-@-|---|---|",
         "A o|---|---|---|---|---|",
         "E  |-@-|---|---|---|---|",
-        "  2fr",
+        "    3fr",
     ]
     assert position.printable() == expected
 
