@@ -372,6 +372,7 @@ class GuitarPosition:
             # no open strings
             len(self.open_strings) == 0 and
             len(lowest_fret_strings) > 1 and
+            not self.use_thumb and
             # No open or muted strings inside the barre position
             not any(
                 min(lowest_fret_strings) < string < max(lowest_fret_strings)
