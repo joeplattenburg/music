@@ -232,6 +232,32 @@ def test_print_barre() -> None:
     assert actual == expected
 
 
+def test_no_open_strings_along_barre() -> None:
+    position = notes.GuitarPosition({"E": 3, "D": 5, "G": 7, "B": 3, "e": 7})
+    assert not position.barre
+    expected = [
+        "e  |---|---|---|---|-@-|",
+        "B  |-@-|---|---|---|---|",
+        "G  |---|---|---|---|-@-|",
+        "D  |---|---|-@-|---|---|",
+        "A x|---|---|---|---|---|",
+        "E  |-@-|---|---|---|---|",
+        "  2fr",
+    ]
+    assert position.printable() == expected
+    position = notes.GuitarPosition({"E": 3, "A": 0, "D": 5, "G": 7, "B": 3, "e": 7})
+    assert not position.barre
+    expected = [
+        "e  |---|---|---|---|-@-|",
+        "B  |-@-|---|---|---|---|",
+        "G  |---|---|---|---|-@-|",
+        "D  |---|---|-@-|---|---|",
+        "A o|---|---|---|---|---|",
+        "E  |-@-|---|---|---|---|",
+        "  2fr",
+    ]
+    assert position.printable() == expected
+
 @pytest.mark.parametrize(
     'string',
     [

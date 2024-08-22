@@ -334,9 +334,23 @@ class GuitarPosition:
             for string in self.guitar.string_names
             if string in positions
         }
-        self.open_strings = [string for string, position in self.positions_dict.items() if position == 0]
-        self.muted_strings = [string for string in self.guitar.string_names if string not in self.positions_dict]
-        self.fretted_strings = [string for string, position in self.positions_dict.items() if position > 0]
+        # Indices of open, muted, and fretted strings
+        self.open_strings = [
+            i for i, string in enumerate(self.guitar.string_names)
+            if self.positions_dict.get(string, -1) == 0
+        ]
+        self.muted_strings = [
+            i for i, string in enumerate(self.guitar.string_names)
+            if self.positions_dict.get(string, -1) == -1
+        ]
+        self.fretted_strings = [
+            i for i, string in enumerate(self.guitar.string_names)
+            if self.positions_dict.get(string, -1) > 0
+        ]
+        lowest_fret_strings = [
+            i for i, string in enumerate(self.guitar.string_names)
+            if self.positions_dict.get(string, -1) == self.lowest_fret
+        ]
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable()
         # Barre chord needs
@@ -346,8 +360,18 @@ class GuitarPosition:
             len(self.fretted_strings) > 4 and
             # no open strings
             len(self.open_strings) == 0 and
-            sum(fret == self.lowest_fret for fret in self.positions_dict.values()) > 1
+            len(lowest_fret_strings) > 1 and
+            # No open or muted strings inside the barre position
+            not any(
+                min(lowest_fret_strings) < string < max(lowest_fret_strings)
+                for string in self.muted_strings + self.open_strings
+            )
         )
+        if self.barre:
+            # All strings along the barre position
+            self.barred_strings_inds = list(range(min(lowest_fret_strings), max(lowest_fret_strings) + 1))
+        else:
+            self.barred_strings_inds = []
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
@@ -414,14 +438,7 @@ class GuitarPosition:
         """
         rows = []
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
-        if self.barre:
-            barre_strings = [
-                i for i, string in enumerate(reversed(self.guitar.string_names))
-                if self.positions_dict.get(string, -1) == self.lowest_fret
-            ]
-            lowest_barre_index = min(barre_strings)
-            highest_barre_index = max(barre_strings)
-        for i, string in enumerate(reversed(self.guitar.string_names)):
+        for i, string in reversed(list(enumerate(self.guitar.string_names))):
             left_padding = ' ' * (widest_name - len(str(string)))
             frets = ['---'] * self.fret_span
             fret = self.positions_dict.get(string, -1)
@@ -431,7 +448,7 @@ class GuitarPosition:
             else:
                 ring_status = 'o' if fret == 0 else 'x'
             if self.barre:
-                if lowest_barre_index < i < highest_barre_index:
+                if min(self.barred_strings_inds) < i < max(self.barred_strings_inds):
                     frets[0] = '-|-'
             row = f'{left_padding}{string} {ring_status}|{"|".join(frets)}|'
             rows.append(row)
