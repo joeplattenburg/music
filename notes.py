@@ -551,7 +551,7 @@ def note_set(note_list: list[Note]) -> set[Note]:
 
 
 def constrained_powerset(
-        note_list: list[Note], max_len: int = 0, required_notes: set[Note] = None
+        note_list: list[Note], max_len: int = 0, required_notes: set[Note] = None, allow_repeats: bool = False
 ) -> list[list[Note]]:
     """
     Given a list a notes, return the powerset (list of lists of notes) such that:
@@ -560,6 +560,7 @@ def constrained_powerset(
     """
     max_len = max_len or len(note_list)
     required_notes = required_notes or note_set(note_list)
-    powerset = chain.from_iterable(combinations(note_list, r) for r in range(max_len + 1))
+    func = combinations_with_replacement if allow_repeats else combinations
+    powerset = chain.from_iterable(func(note_list, r) for r in range(max_len + 1))
     subet = [s for s in powerset if note_set(s) >= required_notes]
     return subet
