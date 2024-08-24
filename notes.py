@@ -328,6 +328,13 @@ class ChordName:
             ]
         return chord_list
 
+    def get_all_guitar_chords(self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False) -> list['Chord']:
+        guitar = guitar or Guitar()
+        return self.get_all_chords(
+            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.string_names),
+            allow_repeats=allow_repeats
+        )
+
 
 class GuitarPosition:
     def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
