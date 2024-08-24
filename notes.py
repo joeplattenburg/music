@@ -1,7 +1,7 @@
 #! /usr/bin/python
 from copy import deepcopy
 from functools import total_ordering
-from itertools import product, combinations_with_replacement
+from itertools import product, combinations_with_replacement, combinations, chain
 import json
 from typing import Hashable, Optional, Any, Literal
 
@@ -111,6 +111,9 @@ class Note:
     def __sub__(self, other) -> int:
         return self.semitones - other.semitones
 
+    def __hash__(self):
+        return self.semitones
+
 
 class Chord:
     def __init__(self, notes: list[Note]):
@@ -159,6 +162,9 @@ class Chord:
             (len(self.notes) == len(other.notes)) and
             all(s == o for s, o in zip(self.notes, other.notes))
         )
+
+    def __hash__(self):
+        return hash(tuple(note.semitones for note in self.notes))
 
 
 class ChordName:
@@ -538,3 +544,22 @@ def best_match(s: str, choices: list[str]) -> str:
         return max(matches, key=len)
     except ValueError:
         raise ValueError(f'Invalid Input: {s} did not match any of {choices}!')
+
+
+def note_set(note_list: list[Note]) -> set[Note]:
+    return set(Note(note.name, 0) for note in note_list)
+
+
+def constrained_powerset(
+        note_list: list[Note], max_len: int = 0, required_notes: set[Note] = None
+) -> list[list[Note]]:
+    """
+    Given a list a notes, return the powerset (list of lists of notes) such that:
+    - the sets are <= max_len
+    - the sets contain at least required_notes (same name, even if different octave)
+    """
+    max_len = max_len or len(note_list)
+    required_notes = required_notes or note_set(note_list)
+    powerset = chain.from_iterable(combinations(note_list, r) for r in range(max_len + 1))
+    subet = [s for s in powerset if note_set(s) >= required_notes]
+    return subet

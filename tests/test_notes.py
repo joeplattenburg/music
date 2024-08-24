@@ -540,3 +540,78 @@ def test_thumb_position_not_barre() -> None:
         "    3fr",
     ]
     assert position.printable() == expected
+
+
+def test_constrained_powerset_same_len() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+        notes.Note('E', 1),
+        notes.Note('G', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G1']],
+        [notes.Note.from_string(s) for s in ['C0', 'G0', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E1', 'G1']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1', 'G1']],
+        [notes.Note.from_string(s) for s in ['G0', 'C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['C1', 'E1', 'G1']],
+    ]
+    actual = sorted(
+        [sorted(s) for s in notes.constrained_powerset(note_list, max_len=3)],
+    )
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_different_len() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('C', 1),
+        notes.Note('E', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1', 'E1']],
+    ]
+    actual = sorted(
+        [sorted(s) for s in notes.constrained_powerset(note_list, max_len=3)],
+    )
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_different_required_notes() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+    ]
+    temp = notes.constrained_powerset(
+        note_list,
+        max_len=3,
+        required_notes=notes.note_set([notes.Note('C', 0), notes.Note('E', 0)])
+    )
+    actual = [sorted(s) for s in temp]
+    print(actual)
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
