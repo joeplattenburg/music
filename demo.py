@@ -1,4 +1,5 @@
 import argparse
+from functools import partial
 from multiprocessing import Pool
 import os
 import time
@@ -6,8 +7,8 @@ import time
 import notes
 
 
-def _map_helper(chord_: notes.Chord):
-    return chord_.guitar_positions(include_unplayable=True)
+def _map_helper(chord_: notes.Chord, guitar: notes.Guitar):
+    return chord_.guitar_positions(guitar=guitar, include_unplayable=True)
 
 
 if __name__ == "__main__":
@@ -61,7 +62,7 @@ if __name__ == "__main__":
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
         )
         with Pool(os.cpu_count()) as p:
-            temp = p.map(_map_helper, chords)
+            temp = p.map(partial(_map_helper, guitar=guitar), chords)
         positions_all = [x for xs in temp for x in xs]
         positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     else:

@@ -286,6 +286,7 @@ class ChordName:
         """
         max_notes = max_notes or len(self.note_names) + len(self.extension_names)
         max_octaves = (upper - lower) // 12 + 1
+        root_notes = [lower.nearest_above(self.root).add_semitones(12 * octave) for octave in range(max_octaves)]
         required_notes = set(Note(name, 0) for name in self.note_names[1:])
         possible_notes = [
             lower.nearest_above(note).add_semitones(12 * octave)
@@ -303,28 +304,26 @@ class ChordName:
             possible_extensions, max_len=len(self.extension_names), allow_repeats=False
         )
         chord_list = []
-        for root_octave in range(max_octaves):
-            root_note = lower.nearest_above(self.root).add_semitones(12 * root_octave)
-            for ext in extensions:
-                upper_ = min(ext) if ext else upper
-                if allow_identical:
-                    note_list = list(filter(lambda x: root_note <= x <= upper_, possible_notes))
-                elif allow_repeats:
-                    note_list = list(filter(lambda x: root_note < x <= upper_, possible_notes))
-                else:
-                    note_list = list(filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes))
-                available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
-                mid_notes_list = constrained_powerset(
-                    note_list,
-                    required_notes=required_notes,
-                    max_len=available_notes,
-                    allow_repeats=allow_repeats,
-                    allow_identical=allow_identical
-                )
-                chord_list += [
-                    Chord([root_note, *mid_notes, *ext])
-                    for mid_notes in mid_notes_list
-                ]
+        for root_note, ext in product(root_notes, extensions):
+            upper_ = min(ext) if ext else upper
+            if allow_identical:
+                note_list = filter(lambda x: root_note <= x <= upper_, possible_notes)
+            elif allow_repeats:
+                note_list = filter(lambda x: root_note < x <= upper_, possible_notes)
+            else:
+                note_list = filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes)
+            available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
+            mid_notes_list = constrained_powerset(
+                list(note_list),
+                required_notes=required_notes,
+                max_len=available_notes,
+                allow_repeats=allow_repeats,
+                allow_identical=allow_identical
+            )
+            chord_list += [
+                Chord([root_note, *mid_notes, *ext])
+                for mid_notes in mid_notes_list
+            ]
         return chord_list
 
 
