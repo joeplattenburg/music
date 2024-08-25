@@ -18,7 +18,10 @@ if __name__ == "__main__":
         '--top_n', '-n', type=int, default=None, help='How many positions to return'
     )
     parser.add_argument(
-        '--allow_repeats', '-r', action='store_true', help='Allow chord tones to appear more than once'
+        '--allow_repeats', '-r', action='store_true', help='Allow chord tones to appear more than once (different octaves)'
+    )
+    parser.add_argument(
+        '--allow_identical', '-i', action='store_true', help='Allow chord tones to appear more than once in the same octave'
     )
     parser.add_argument(
         '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
@@ -46,8 +49,8 @@ if __name__ == "__main__":
     elif args.name:
         print(f'You input the chord: {args.name}')
         chords = notes.ChordName(args.name).get_all_chords(
-            lower=guitar.lowest, upper=guitar.highest,
-            allow_repeats=args.allow_repeats, max_notes=len(guitar.tuning)
+            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+            allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
         )
         positions_playable = []
         positions_all = 0

@@ -396,7 +396,7 @@ def test_get_all_chords() -> None:
 def test_get_all_chords_with_repeats() -> None:
     actual = notes.ChordName('C').get_all_chords(
         lower=notes.Note('C', 0), upper=notes.Note('E', 1),
-        allow_repeats=True, max_notes=4
+        allow_repeats=True, allow_identical=True, max_notes=4
     )
     expected = [
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0)]]),
@@ -670,7 +670,7 @@ def test_constrained_powerset_dont_allow_repeats() -> None:
 
 
 @pytest.mark.parametrize('max_notes', [3, 4, 5, 6])
-def test_get_all_chords_2(max_notes: int) -> None:
+def test_get_all_chords_again(max_notes: int) -> None:
     c = notes.ChordName('C')
     expected = [
         notes.Chord.from_string('C0,E0,G0'),
@@ -679,11 +679,11 @@ def test_get_all_chords_2(max_notes: int) -> None:
         notes.Chord.from_string('C0,E1,G1'),
         notes.Chord.from_string('C1,E1,G1'),
     ]
-    actual = c.get_all_chords_refactor(upper=notes.Note('G', 1), max_notes=max_notes, allow_repeats=False)
+    actual = c.get_all_chords(upper=notes.Note('G', 1), max_notes=max_notes, allow_repeats=False)
     assert set(actual) == set(expected)
 
 
-def test_get_all_chords_2_allow_repeats() -> None:
+def test_get_all_chords_allow_repeats() -> None:
     c = notes.ChordName('C')
     expected = [
         notes.Chord.from_string('C0,E0,G0'),
@@ -700,11 +700,11 @@ def test_get_all_chords_2_allow_repeats() -> None:
         notes.Chord.from_string('C0,E1,G0,G1'),
         notes.Chord.from_string('C0,E0,G0,G1'),
     ]
-    actual = c.get_all_chords_refactor(upper=notes.Note('G', 1), max_notes=4, allow_repeats=True)
+    actual = c.get_all_chords(upper=notes.Note('G', 1), max_notes=4, allow_repeats=True)
     assert set(actual) == set(expected)
 
 
-def test_get_all_chords_2_allow_identical() -> None:
+def test_get_all_chords_allow_identical() -> None:
     c = notes.ChordName('C')
     expected = [
         notes.Chord.from_string('C0,E0,G0'),
@@ -738,20 +738,20 @@ def test_get_all_chords_2_allow_identical() -> None:
         notes.Chord.from_string('C0,G0,E1,E1'),
         notes.Chord.from_string('C1,E1,G1,G1'),
     ]
-    actual = c.get_all_chords_refactor(
+    actual = c.get_all_chords(
         upper=notes.Note('G', 1), max_notes=4,
         allow_repeats=True, allow_identical=True
     )
     assert set(actual) == set(expected)
 
 
-def test_get_all_chords_2_allow_identical() -> None:
+def test_get_all_chords_extension() -> None:
     c = notes.ChordName('Cmaj79')
     expected = [
         notes.Chord.from_string('C0,E0,G0,B0,D1'),
         notes.Chord.from_string('C0,E0,G0,B0,C1,D1'),
     ]
-    actual = c.get_all_chords_refactor(
+    actual = c.get_all_chords(
         upper=notes.Note('C', 2), max_notes=6,
         allow_repeats=True, allow_identical=False
     )

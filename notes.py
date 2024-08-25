@@ -273,64 +273,20 @@ class ChordName:
             notes.append(upper_chord.nearest_above(note_name).add_semitones(semitones_to_add))
         return Chord(notes)
 
+
     def get_all_chords(
-            self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
-            allow_repeats: bool = False, max_notes: Optional[int] = None
-    ) -> list['Chord']:
-        """
-        For a chord name, return all `Chord`s that can fit between `lower` and `upper`;
-        If `allow_repeats`, chord notes (but not extensions) can be repeated
-        E.g., a G (G, B, D) could also be (G, B, D, G, D)
-        """
-
-        def _is_valid(notes: list[Note]) -> bool:
-            return (
-                # All notes must fit between upper and lower
-                all(lower <= note <= upper for note in notes) and
-                # Root should be the lowest note (this should never be false based on `get_chord` definition)
-                all(notes[0] <= other for other in notes[1:])
-            )
-        max_octaves = (upper - lower) // 12
-        chord_list = []
-        if allow_repeats:
-            note_sets = []
-            available_strings = max_notes - len(self.note_names + self.extension_names)
-            for repeat in range(available_strings + 1):
-                new_note_sets = [self.note_names + list(add) for add in combinations_with_replacement(self.note_names, r=repeat)]
-                note_sets += new_note_sets
-            for note_set in note_sets:
-                mod_self = deepcopy(self)
-                mod_self.note_names = note_set
-                possible_raises = [
-                    dict(zip(range(len(mod_self.note_names) + len(mod_self.extension_names)), combination))
-                    for combination in
-                    product(range(max_octaves + 1), repeat=len(mod_self.note_names) + len(mod_self.extension_names))
-                ]
-                for raise_octave in possible_raises:
-                    test_chord = mod_self.get_chord(lower=lower, raise_octave=raise_octave)
-                    if _is_valid(test_chord.notes):
-                        chord_list.append(test_chord)
-        else:
-            # This is a list of dicts containing all the possible raise_octave combinations that might work
-            # There are actually a lot of invalid ones but those get handled by _is_valid
-            possible_raises = [
-                dict(zip(range(len(self.note_names) + len(self.extension_names)), combination))
-                for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
-            ]
-            for raise_octave in possible_raises:
-                test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
-                if _is_valid(test_chord.notes):
-                    chord_list.append(test_chord)
-        # remove duplicates
-        chord_list = [Chord.from_string(s) for s in set(str(chord) for chord in chord_list)]
-        return chord_list
-
-    def get_all_chords_refactor(
             self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
             max_notes: Optional[int] = None,
             allow_repeats: bool = False,
             allow_identical: bool = False,
     ) -> list['Chord']:
+        """
+        For a chord name, return all `Chord`s that can fit between `lower` and `upper`;
+        If `allow_repeats`, chord notes (but not extensions) can be repeated
+        (and if allow_identical, repeats can be in the same octave)
+        E.g., a G (G, B, D) could also be (G, B, D, G, D)
+        """
+        max_notes = max_notes or len(self.note_names) + len(self.extension_names)
         max_octaves = (upper - lower) // 12 + 1
         required_notes = set(Note(name, 0) for name in self.note_names[1:])
         possible_notes = [
