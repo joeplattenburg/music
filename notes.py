@@ -1,5 +1,4 @@
 #! /usr/bin/python
-from copy import deepcopy
 from functools import total_ordering
 from itertools import product, combinations_with_replacement, combinations, chain
 import json
@@ -272,7 +271,6 @@ class ChordName:
             semitones_to_add = raise_octave.get(note_ind, 0) * 12
             notes.append(upper_chord.nearest_above(note_name).add_semitones(semitones_to_add))
         return Chord(notes)
-
 
     def get_all_chords(
             self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
