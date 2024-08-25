@@ -1,7 +1,6 @@
 #! /usr/bin/python
-from copy import deepcopy
 from functools import total_ordering
-from itertools import product, combinations_with_replacement
+from itertools import product, combinations_with_replacement, combinations, chain
 import json
 from typing import Hashable, Optional, Any, Literal
 
@@ -111,6 +110,9 @@ class Note:
     def __sub__(self, other) -> int:
         return self.semitones - other.semitones
 
+    def __hash__(self):
+        return self.semitones
+
 
 class Chord:
     def __init__(self, notes: list[Note]):
@@ -159,6 +161,9 @@ class Chord:
             (len(self.notes) == len(other.notes)) and
             all(s == o for s, o in zip(self.notes, other.notes))
         )
+
+    def __hash__(self):
+        return hash(tuple(note.semitones for note in self.notes))
 
 
 class ChordName:
@@ -269,54 +274,57 @@ class ChordName:
 
     def get_all_chords(
             self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
-            allow_repeats: bool = False, max_notes: Optional[int] = None
+            max_notes: Optional[int] = None,
+            allow_repeats: bool = False,
+            allow_identical: bool = False,
     ) -> list['Chord']:
         """
         For a chord name, return all `Chord`s that can fit between `lower` and `upper`;
         If `allow_repeats`, chord notes (but not extensions) can be repeated
+        (and if allow_identical, repeats can be in the same octave)
         E.g., a G (G, B, D) could also be (G, B, D, G, D)
         """
-
-        def _is_valid(notes: list[Note]) -> bool:
-            return (
-                # All notes must fit between upper and lower
-                all(lower <= note <= upper for note in notes) and
-                # Root should be the lowest note (this should never be false based on `get_chord` definition)
-                all(notes[0] <= other for other in notes[1:])
-            )
-        max_octaves = (upper - lower) // 12
+        max_notes = max_notes or len(self.note_names) + len(self.extension_names)
+        max_octaves = (upper - lower) // 12 + 1
+        required_notes = set(Note(name, 0) for name in self.note_names[1:])
+        possible_notes = [
+            lower.nearest_above(note).add_semitones(12 * octave)
+            for octave in range(max_octaves)
+            for note in self.note_names
+            if lower.nearest_above(note).add_semitones(12 * octave) <= upper
+        ]
+        possible_extensions = [
+            lower.nearest_above(ext).add_semitones(12 * octave)
+            for octave in range(1, max_octaves)
+            for ext in self.extension_names
+            if lower.nearest_above(ext).add_semitones(12 * octave) <= upper
+        ]
+        extensions = constrained_powerset(
+            possible_extensions, max_len=len(self.extension_names), allow_repeats=False
+        )
         chord_list = []
-        if allow_repeats:
-            note_sets = []
-            available_strings = max_notes - len(self.note_names + self.extension_names)
-            for repeat in range(available_strings + 1):
-                new_note_sets = [self.note_names + list(add) for add in combinations_with_replacement(self.note_names, r=repeat)]
-                note_sets += new_note_sets
-            for note_set in note_sets:
-                mod_self = deepcopy(self)
-                mod_self.note_names = note_set
-                possible_raises = [
-                    dict(zip(range(len(mod_self.note_names) + len(mod_self.extension_names)), combination))
-                    for combination in
-                    product(range(max_octaves + 1), repeat=len(mod_self.note_names) + len(mod_self.extension_names))
+        for root_octave in range(max_octaves):
+            root_note = lower.nearest_above(self.root).add_semitones(12 * root_octave)
+            for ext in extensions:
+                upper_ = min(ext) if ext else upper
+                if allow_identical:
+                    note_list = list(filter(lambda x: root_note <= x <= upper_, possible_notes))
+                elif allow_repeats:
+                    note_list = list(filter(lambda x: root_note < x <= upper_, possible_notes))
+                else:
+                    note_list = list(filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes))
+                available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
+                mid_notes_list = constrained_powerset(
+                    note_list,
+                    required_notes=required_notes,
+                    max_len=available_notes,
+                    allow_repeats=allow_repeats,
+                    allow_identical=allow_identical
+                )
+                chord_list += [
+                    Chord([root_note, *mid_notes, *ext])
+                    for mid_notes in mid_notes_list
                 ]
-                for raise_octave in possible_raises:
-                    test_chord = mod_self.get_chord(lower=lower, raise_octave=raise_octave)
-                    if _is_valid(test_chord.notes):
-                        chord_list.append(test_chord)
-        else:
-            # This is a list of dicts containing all the possible raise_octave combinations that might work
-            # There are actually a lot of invalid ones but those get handled by _is_valid
-            possible_raises = [
-                dict(zip(range(len(self.note_names) + len(self.extension_names)), combination))
-                for combination in product(range(max_octaves + 1), repeat=len(self.note_names) + len(self.extension_names))
-            ]
-            for raise_octave in possible_raises:
-                test_chord = self.get_chord(lower=lower, raise_octave=raise_octave)
-                if _is_valid(test_chord.notes):
-                    chord_list.append(test_chord)
-        # remove duplicates
-        chord_list = [Chord.from_string(s) for s in set(str(chord) for chord in chord_list)]
         return chord_list
 
 
@@ -538,3 +546,32 @@ def best_match(s: str, choices: list[str]) -> str:
         return max(matches, key=len)
     except ValueError:
         raise ValueError(f'Invalid Input: {s} did not match any of {choices}!')
+
+
+def note_set(note_list: list[Note]) -> set[Note]:
+    return set(Note(note.name, 0) for note in note_list)
+
+
+def constrained_powerset(
+        note_list: list[Note],
+        max_len: int = 0,
+        required_notes: set[Note] = None,
+        allow_repeats: bool = True,
+        allow_identical: bool = False
+) -> list[list[Note]]:
+    """
+    Given a list a notes, return the powerset (list of lists of notes) such that:
+    - the sets are <= max_len
+    - the sets contain at least required_notes (same name, even if different octave)
+    if allow_repeats, the same note name can appear multiple times (different octave)
+    if allow_identical, it can appear multiple times (same octave)
+    """
+    max_len = max_len or len(note_list)
+    required_notes = required_notes or note_set(note_list)
+    func = combinations_with_replacement if allow_identical else combinations
+    powerset = chain.from_iterable(func(note_list, r) for r in range(max_len + 1))
+    if allow_repeats:
+        subset = [s for s in powerset if note_set(s) >= required_notes]
+    else:
+        subset = [s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)]
+    return subset

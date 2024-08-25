@@ -396,7 +396,7 @@ def test_get_all_chords() -> None:
 def test_get_all_chords_with_repeats() -> None:
     actual = notes.ChordName('C').get_all_chords(
         lower=notes.Note('C', 0), upper=notes.Note('E', 1),
-        allow_repeats=True, max_notes=4
+        allow_repeats=True, allow_identical=True, max_notes=4
     )
     expected = [
         notes.Chord([notes.Note(*note) for note in [('C', 0), ('E', 0), ('G', 0)]]),
@@ -540,3 +540,219 @@ def test_thumb_position_not_barre() -> None:
         "    3fr",
     ]
     assert position.printable() == expected
+
+
+def test_constrained_powerset_same_len() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+        notes.Note('E', 1),
+        notes.Note('G', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G1']],
+        [notes.Note.from_string(s) for s in ['C0', 'G0', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E1', 'G1']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1', 'G1']],
+        [notes.Note.from_string(s) for s in ['G0', 'C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['C1', 'E1', 'G1']],
+    ]
+    actual = sorted(
+        [sorted(s) for s in notes.constrained_powerset(note_list, max_len=3)],
+    )
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_different_len() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('C', 1),
+        notes.Note('E', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'E1']],
+        [notes.Note.from_string(s) for s in ['C0', 'C1', 'E1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1', 'E1']],
+    ]
+    actual = sorted(
+        [sorted(s) for s in notes.constrained_powerset(note_list, max_len=3)],
+    )
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_different_required_notes() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+    ]
+    temp = notes.constrained_powerset(
+        note_list, max_len=3,
+        required_notes=notes.note_set([notes.Note('C', 0), notes.Note('E', 0)])
+    )
+    actual = [sorted(s) for s in temp]
+    print(actual)
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_allow_identical() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'E0']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['E0', 'E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+    ]
+    temp = notes.constrained_powerset(
+        note_list, max_len=3,
+        required_notes=notes.note_set([notes.Note('C', 0), notes.Note('E', 0)]),
+        allow_identical=True
+    )
+    actual = [sorted(s) for s in temp]
+    print(actual)
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+def test_constrained_powerset_dont_allow_repeats() -> None:
+    note_list = [
+        notes.Note('C', 0),
+        notes.Note('E', 0),
+        notes.Note('G', 0),
+        notes.Note('C', 1),
+    ]
+    expected = [
+        [notes.Note.from_string(s) for s in ['C0', 'E0']],
+        [notes.Note.from_string(s) for s in ['E0', 'C1']],
+        [notes.Note.from_string(s) for s in ['C0', 'E0', 'G0']],
+        [notes.Note.from_string(s) for s in ['E0', 'G0', 'C1']],
+    ]
+    temp = notes.constrained_powerset(
+        note_list, max_len=3,
+        required_notes=notes.note_set([notes.Note('C', 0), notes.Note('E', 0)]),
+        allow_repeats=False
+    )
+    actual = [sorted(s) for s in temp]
+    print(actual)
+    assert len(actual) == len(expected)
+    assert set(''.join(str(x)) for x in actual) == set(''.join(str(x)) for x in expected)
+
+
+@pytest.mark.parametrize('max_notes', [3, 4, 5, 6])
+def test_get_all_chords_again(max_notes: int) -> None:
+    c = notes.ChordName('C')
+    expected = [
+        notes.Chord.from_string('C0,E0,G0'),
+        notes.Chord.from_string('C0,E0,G1'),
+        notes.Chord.from_string('C0,E1,G0'),
+        notes.Chord.from_string('C0,E1,G1'),
+        notes.Chord.from_string('C1,E1,G1'),
+    ]
+    actual = c.get_all_chords(upper=notes.Note('G', 1), max_notes=max_notes, allow_repeats=False)
+    assert set(actual) == set(expected)
+
+
+def test_get_all_chords_allow_repeats() -> None:
+    c = notes.ChordName('C')
+    expected = [
+        notes.Chord.from_string('C0,E0,G0'),
+        notes.Chord.from_string('C0,E0,G1'),
+        notes.Chord.from_string('C0,E1,G0'),
+        notes.Chord.from_string('C0,E1,G1'),
+        notes.Chord.from_string('C1,E1,G1'),
+        notes.Chord.from_string('C0,E0,G0,C1'),
+        notes.Chord.from_string('C0,E0,G1,C1'),
+        notes.Chord.from_string('C0,E1,G0,C1'),
+        notes.Chord.from_string('C0,E1,G1,C1'),
+        notes.Chord.from_string('C0,E0,G0,E1'),
+        notes.Chord.from_string('C0,E0,G1,E1'),
+        notes.Chord.from_string('C0,E1,G0,G1'),
+        notes.Chord.from_string('C0,E0,G0,G1'),
+    ]
+    actual = c.get_all_chords(upper=notes.Note('G', 1), max_notes=4, allow_repeats=True)
+    assert set(actual) == set(expected)
+
+
+def test_get_all_chords_allow_identical() -> None:
+    c = notes.ChordName('C')
+    expected = [
+        notes.Chord.from_string('C0,E0,G0'),
+        notes.Chord.from_string('C0,E0,G1'),
+        notes.Chord.from_string('C0,E1,G0'),
+        notes.Chord.from_string('C0,E1,G1'),
+        notes.Chord.from_string('C1,E1,G1'),
+
+        notes.Chord.from_string('C0,E0,G0,C1'),
+        notes.Chord.from_string('C0,E0,G1,C1'),
+        notes.Chord.from_string('C0,E1,G0,C1'),
+        notes.Chord.from_string('C0,E1,G1,C1'),
+        notes.Chord.from_string('C0,E0,G0,E1'),
+        notes.Chord.from_string('C0,E0,G1,E1'),
+        notes.Chord.from_string('C0,E1,G0,G1'),
+        notes.Chord.from_string('C0,E0,G0,G1'),
+
+        notes.Chord.from_string('C0,E0,G0,C0'),
+        notes.Chord.from_string('C0,E0,G1,C0'),
+        notes.Chord.from_string('C0,E1,G0,C0'),
+        notes.Chord.from_string('C0,E1,G1,C0'),
+        notes.Chord.from_string('C0,E0,G0,E0'),
+        notes.Chord.from_string('C0,E0,G1,E0'),
+        notes.Chord.from_string('C0,E1,G0,G0'),
+        notes.Chord.from_string('C0,E0,G0,G0'),
+        notes.Chord.from_string('C0,E1,G1,G1'),
+        notes.Chord.from_string('C1,C1,E1,G1'),
+        notes.Chord.from_string('C0,E0,G1,G1'),
+        notes.Chord.from_string('C1,E1,E1,G1'),
+        notes.Chord.from_string('C0,E1,E1,G1'),
+        notes.Chord.from_string('C0,G0,E1,E1'),
+        notes.Chord.from_string('C1,E1,G1,G1'),
+    ]
+    actual = c.get_all_chords(
+        upper=notes.Note('G', 1), max_notes=4,
+        allow_repeats=True, allow_identical=True
+    )
+    assert set(actual) == set(expected)
+
+
+def test_get_all_chords_extension() -> None:
+    c = notes.ChordName('Cmaj79')
+    expected = [
+        notes.Chord.from_string('C0,E0,G0,B0,D1'),
+        notes.Chord.from_string('C0,E0,G0,B0,C1,D1'),
+    ]
+    actual = c.get_all_chords(
+        upper=notes.Note('C', 2), max_notes=6,
+        allow_repeats=True, allow_identical=False
+    )
+    assert set(actual) == set(expected)
