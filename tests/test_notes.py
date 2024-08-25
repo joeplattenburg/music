@@ -743,3 +743,16 @@ def test_get_all_chords_2_allow_identical() -> None:
         allow_repeats=True, allow_identical=True
     )
     assert set(actual) == set(expected)
+
+
+def test_get_all_chords_2_allow_identical() -> None:
+    c = notes.ChordName('Cmaj79')
+    expected = [
+        notes.Chord.from_string('C0,E0,G0,B0,D1'),
+        notes.Chord.from_string('C0,E0,G0,B0,C1,D1'),
+    ]
+    actual = c.get_all_chords_refactor(
+        upper=notes.Note('C', 2), max_notes=6,
+        allow_repeats=True, allow_identical=False
+    )
+    assert set(actual) == set(expected)
