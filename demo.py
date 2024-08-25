@@ -41,7 +41,6 @@ if __name__ == "__main__":
         '--parallel', '-p', action='store_true', help='Use parallel processing for calculations'
     )
 
-
     args = parser.parse_args()
     t1 = time.time()
     guitar = notes.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)

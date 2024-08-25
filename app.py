@@ -93,10 +93,11 @@ def display_name(
     )
     t1 = time.time()
     positions_all = notes.get_all_guitar_positions_for_chord_name(
-        chord_name = notes.ChordName(chord_name_),
+        chord_name=notes.ChordName(chord_name_),
         guitar=guitar,
         allow_repeats=allow_repeats_,
         allow_identical=allow_identical_,
+        allow_thumb=allow_thumb_,
         parallel=True,
     )
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))

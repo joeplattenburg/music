@@ -583,21 +583,22 @@ def get_all_guitar_positions_for_chord_name(
         guitar: 'Guitar',
         allow_repeats: bool,
         allow_identical: bool,
+        allow_thumb: bool = True,
         parallel: bool = False,
 ) -> list['GuitarPosition']:
-        chords = chord_name.get_all_chords(
-            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
-            allow_repeats=allow_repeats, allow_identical=allow_identical,
-        )
-        if parallel:
-            with Pool(os.cpu_count()) as p:
-                nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
-            positions = [pos for poss in nested for pos in poss]
-        else:
-            positions = []
-            for chord in chords:
-                positions += chord.guitar_positions(guitar=guitar, include_unplayable=True)
-        return positions
+    chords = chord_name.get_all_chords(
+        lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+        allow_repeats=allow_repeats, allow_identical=allow_identical,
+    )
+    if parallel:
+        with Pool(os.cpu_count()) as p:
+            nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
+        positions = [pos for poss in nested for pos in poss]
+    else:
+        positions = []
+        for chord in chords:
+            positions += chord.guitar_positions(guitar=guitar, include_unplayable=True, allow_thumb=allow_thumb)
+    return positions
 
 
 def _parallel_helper(chord: 'Chord', guitar: 'Guitar'):
