@@ -49,7 +49,7 @@ if __name__ == "__main__":
         chord = music.Chord(note_list)
         print(f'You input the chord: {chord}')
         positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
-        positions_all = chord.num_total_guitar_positions
+        positions_all_count = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
         chord_name = music.ChordName(args.name)
@@ -59,6 +59,7 @@ if __name__ == "__main__":
             parallel=args.parallel,
         )
         positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+        positions_all_count = len(positions_all)
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
@@ -67,7 +68,7 @@ if __name__ == "__main__":
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
-        f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
+        f'There are {len(positions_playable)} playable guitar positions (out of {positions_all_count} possible) '
         f'for a guitar tuned to {tuning_display}.\n'
         f'(Computed in {(t2 - t1):.2f} seconds)'
     )

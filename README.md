@@ -2,13 +2,17 @@
 
 Helpers for music.
 
-## `notes` Module
+## `music` Module
 
 Classes include:
 - `Note`: define a music note, e.g.: `Note(name='C#', octave=3)`; methods:
-  - `guitar_positions`: returns all positions the note can be played
+  - `guitar_positions`: returns all positions the note can be played for a `Guitar`
+  - also includes some helpers like `nearest_above` and `nearest_below`
+  - notes can be added (semitones) and compared to other notes
 - `Chord`: constructed from a `list[Note]`; methods:
-  - `guitar_positions`: returns all positions the chord can be played
+  - `guitar_positions`: returns all positions the chord can be played for a `Guitar`
+- `ChordName`: constructed from a string (e.g., `ChordName('C7b9/E')`); methods:
+  - `get_all_chords` returns all possible voicings for a chord that fit between a `lower` and `upper` `Note`
 - `Guitar`: define a guitar by its tuning and number of frets (can include a capo)
 - `GuitarPosition`: the set of fret positions to be played for each string
 
@@ -24,10 +28,11 @@ In `notes` mode, you must specify the notes (including octave) that you want as 
 $ python demo.py --notes C3,G3,E4,Bb4 -n 3
 You input the chord: C3,G3,E4,Bb4
 There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
+(Computed in 0.00 seconds)
 Here are the top 3:
 {'E': 8, 'A': 10, 'G': 9, 'B': 11}
-{'E': 8, 'A': 10, 'B': 11, 'e': 0}
-{'E': 8, 'G': 0, 'B': 11, 'e': 0}
+{'E': 8, 'D': 5, 'B': 5, 'e': 6}
+{'A': 3, 'D': 5, 'B': 5, 'e': 6}
 ```
 
 ### `name` Mode
@@ -35,13 +40,14 @@ Here are the top 3:
 In `name` mode, you can just pass a chord name (e.g., `Cmaj7#11/E`)
 
 ```commandline
-$ python demo.py --name Cmaj7/E   
+ $ python demo.py --name Cmaj7#11/E -n 3
 You input the chord: Cmaj7#11/E
-There are 48 playable guitar positions (out of 986 possible) for a guitar tuned to standard.
+There are 25 playable guitar positions (out of 986 possible) for a guitar tuned to standard.
+(Computed in 0.01 seconds)
 Here are the top 3:
 {'E': 0, 'A': 10, 'D': 10, 'G': 11, 'B': 0}
-{'E': 0, 'A': 3, 'G': 0, 'B': 0, 'e': 2}
 {'E': 0, 'A': 2, 'G': 0, 'B': 1, 'e': 2}
+{'E': 0, 'A': 3, 'G': 0, 'B': 0, 'e': 2}
 ```
 
 ### Other features
@@ -52,6 +58,7 @@ You can use the `--graphical` (`-g`) flag for ASCII art:
 $ python demo.py --notes C3,G3,E4,Bb4 --top_n 3 --graphical
 You input the chord: C3,G3,E4,Bb4
 There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
+(Computed in 0.00 seconds)
 Here are the top 3:
 
 e x|---|---|---|---|
@@ -60,23 +67,23 @@ G  |---|-@-|---|---|
 D x|---|---|---|---|
 A  |---|---|-@-|---|
 E  |-@-|---|---|---|
-  7fr
+    8fr
 
-e o|---|---|---|---|
-B  |---|---|---|-@-|
+e  |---|-@-|---|---|
+B  |-@-|---|---|---|
 G x|---|---|---|---|
-D x|---|---|---|---|
-A  |---|---|-@-|---|
-E  |-@-|---|---|---|
-  7fr
-
-e o|---|---|---|---|
-B  |---|---|---|-@-|
-G o|---|---|---|---|
-D x|---|---|---|---|
+D  |-@-|---|---|---|
 A x|---|---|---|---|
-E  |-@-|---|---|---|
-  7fr
+E  |---|---|---|-@-|
+    5fr
+
+e  |---|---|---|-@-|
+B  |---|---|-@-|---|
+G x|---|---|---|---|
+D  |---|---|-@-|---|
+A  |-@-|---|---|---|
+E x|---|---|---|---|
+    3fr
 ```
 
 You can specify different tunings, numbers of frets, and a capo location:
@@ -89,6 +96,7 @@ $ python demo.py -g \
     --capo 1
 You input the chord: C3,G3,E4,Bb4
 There are 6 playable guitar positions (out of 54 possible) for a guitar tuned to custom ({'D': Eb2, 'A': Bb2, 'd': Eb3, 'F#': G3, 'a': Bb3, 'dd': Eb4}):.
+(Computed in 0.00 seconds)
 Here are the top 2:
 
 dd  |-@-|---|---|
@@ -97,15 +105,15 @@ F#  |---|---|-@-|
  d x|---|---|---|
  A  |---|---|-@-|
  D  |---|---|-@-|
-   6fr
+     7fr
 
-dd  |---|-@-|---|---|
- a  |-@-|---|---|---|
-F# x|---|---|---|---|
+dd x|---|---|---|---|
+ a  |---|---|---|-@-|
+F#  |-@-|---|---|---|
  d x|---|---|---|---|
- A  |---|---|---|-@-|
- D  |---|---|---|-@-|
-   5fr
+ A  |-@-|---|---|---|
+ D  |-@-|---|---|---|
+     9fr
 ```
 
 ## Web App
@@ -134,8 +142,8 @@ conda activate music
 - [x] Allow repeated notes
 - [x] Option to remove redundant positions
 - [X] Clean up app url
-- [ ] Optimize compute
-- [ ] Rename module (`music`?)
+- [x] Optimize compute
+- [x] Rename module (`music`?)
 - [ ] Show voicings on staff
 - [ ] Sort on different metrics
 - [ ] Better input for specifying tuning
