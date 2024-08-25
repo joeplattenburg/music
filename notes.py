@@ -55,9 +55,9 @@ class Note:
     def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> 'GuitarPosition':
         guitar = guitar or Guitar()
         positions = {
-            string: self.semitones - note.semitones
+            string: self - note
             for string, note in guitar.tuning.items()
-            if (valid_only and self >= note and (self.semitones - note.semitones) <= guitar.frets)
+            if (valid_only and self >= note and (self - note) <= guitar.frets)
             or not valid_only
         }
         return GuitarPosition(positions, guitar=guitar)
@@ -86,13 +86,13 @@ class Note:
         return self.semitones % 12 == other.semitones % 12
 
     def nearest_above(self, note: str, allow_equal: bool = True) -> 'Note':
-        interval = (Note(note, 0).semitones - self.semitones) % 12
+        interval = (Note(note, 0) - self) % 12
         if not allow_equal and interval == 0:
             interval = 12
         return self.add_semitones(interval)
 
     def nearest_below(self, note: str, allow_equal: bool = True) -> 'Note':
-        interval = (self.semitones - Note(note, 0).semitones) % 12
+        interval = (self - Note(note, 0)) % 12
         if not allow_equal and interval == 0:
             interval = 12
         return self.add_semitones(-interval)
@@ -122,7 +122,9 @@ class Chord:
         self.num_total_guitar_positions = None
         self.num_playable_guitar_positions = None
 
-    def guitar_positions(self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True) -> list['GuitarPosition']:
+    def guitar_positions(
+            self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True
+    ) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
         # of all the positions each note can be played on each string
@@ -173,8 +175,9 @@ class ChordName:
     QUALITY_SEMITONE_MAPPER = {
         '': [0, 4, 7],
         'maj': [0, 4, 7],
-        'm': [0, 3, 7],
+        'M': [0, 4, 7],
         'min': [0, 3, 7],
+        'm': [0, 3, 7],
         'dim': [0, 3, 6],
         'aug': [0, 4, 8],
         'sus2': [0, 2, 7],
@@ -328,11 +331,13 @@ class ChordName:
             ]
         return chord_list
 
-    def get_all_guitar_chords(self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False) -> list['Chord']:
+    def get_all_guitar_chords(
+            self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False, allow_identical: bool = False
+    ) -> list['Chord']:
         guitar = guitar or Guitar()
         return self.get_all_chords(
             lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.string_names),
-            allow_repeats=allow_repeats
+            allow_repeats=allow_repeats, allow_identical=allow_identical
         )
 
 
