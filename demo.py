@@ -1,14 +1,7 @@
 import argparse
-from functools import partial
-from multiprocessing import Pool
-import os
 import time
 
 import notes
-
-
-def _map_helper(chord_: notes.Chord, guitar: notes.Guitar):
-    return chord_.guitar_positions(guitar=guitar, include_unplayable=True)
 
 
 if __name__ == "__main__":
@@ -44,6 +37,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--frets', type=int, default=22, help='How many frets on the guitar'
     )
+    parser.add_argument(
+        '--parallel', '-p', action='store_true', help='Use parallel processing for calculations'
+    )
+
 
     args = parser.parse_args()
     t1 = time.time()
@@ -55,15 +52,13 @@ if __name__ == "__main__":
         positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
         positions_all = chord.num_total_guitar_positions
     elif args.name:
-
         print(f'You input the chord: {args.name}')
-        chords = notes.ChordName(args.name).get_all_chords(
-            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+        chord_name = notes.ChordName(args.name)
+        positions_all = notes.get_all_guitar_positions_for_chord_name(
+            chord_name=chord_name, guitar=guitar,
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
+            parallel=args.parallel,
         )
-        with Pool(os.cpu_count()) as p:
-            temp = p.map(partial(_map_helper, guitar=guitar), chords)
-        positions_all = [x for xs in temp for x in xs]
         positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     else:
         raise ValueError('Either `notes` or `name` is required')

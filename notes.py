@@ -1,7 +1,9 @@
 #! /usr/bin/python
-from functools import total_ordering
+from functools import total_ordering, partial
 from itertools import product, combinations_with_replacement, combinations, chain
 import json
+from multiprocessing import Pool
+import os
 from typing import Hashable, Optional, Any, Literal
 
 
@@ -574,3 +576,29 @@ def constrained_powerset(
     else:
         subset = [s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)]
     return subset
+
+
+def get_all_guitar_positions_for_chord_name(
+        chord_name: 'ChordName',
+        guitar: 'Guitar',
+        allow_repeats: bool,
+        allow_identical: bool,
+        parallel: bool = False,
+) -> list['GuitarPosition']:
+        chords = chord_name.get_all_chords(
+            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+            allow_repeats=allow_repeats, allow_identical=allow_identical,
+        )
+        if parallel:
+            with Pool(os.cpu_count()) as p:
+                nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
+            positions = [pos for poss in nested for pos in poss]
+        else:
+            positions = []
+            for chord in chords:
+                positions += chord.guitar_positions(guitar=guitar, include_unplayable=True)
+        return positions
+
+
+def _parallel_helper(chord: 'Chord', guitar: 'Guitar'):
+    return chord.guitar_positions(guitar=guitar, include_unplayable=True)
