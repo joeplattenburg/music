@@ -325,6 +325,41 @@ class ChordName:
         chord_list = [Chord.from_string(s) for s in set(str(chord) for chord in chord_list)]
         return chord_list
 
+    def get_all_chords_refactor(
+            self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
+            max_notes: Optional[int] = None,
+            allow_repeats: bool = False,
+            allow_identical: bool = False,
+    ) -> list['Chord']:
+        max_octaves = (upper - lower) // 12 + 1
+        required_notes = set(Note(name, 0) for name in self.note_names[1:])
+        chord_list = []
+        possible_notes = [
+            lower.nearest_above(note).add_semitones(12 * octave)
+            for octave in range(max_octaves)
+            for note in self.note_names
+        ]
+        for root_octave in range(max_octaves):
+            root_note = lower.nearest_above(self.root).add_semitones(12 * root_octave)
+            if allow_identical:
+                note_list = list(filter(lambda x: root_note <= x <= upper, possible_notes))
+            elif allow_repeats:
+                note_list = list(filter(lambda x: root_note < x <= upper, possible_notes))
+            else:
+                note_list = list(filter(lambda x: (root_note < x <= upper) and not x.same_name(root_note), possible_notes))
+            available_notes = max_notes - 1  # root note
+            mid_notes_list = constrained_powerset(
+                note_list, required_notes=required_notes,
+                max_len=available_notes,
+                allow_repeats=allow_repeats,
+                allow_identical=allow_identical
+            )
+            chord_list += [
+                Chord([root_note, *mid_notes])
+                for mid_notes in mid_notes_list
+            ]
+        return chord_list
+
 
 class GuitarPosition:
     def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
@@ -551,16 +586,25 @@ def note_set(note_list: list[Note]) -> set[Note]:
 
 
 def constrained_powerset(
-        note_list: list[Note], max_len: int = 0, required_notes: set[Note] = None, allow_repeats: bool = False
+        note_list: list[Note],
+        max_len: int = 0,
+        required_notes: set[Note] = None,
+        allow_repeats: bool = True,
+        allow_identical: bool = False
 ) -> list[list[Note]]:
     """
     Given a list a notes, return the powerset (list of lists of notes) such that:
     - the sets are <= max_len
     - the sets contain at least required_notes (same name, even if different octave)
+    if allow_repeats, the same note name can appear multiple times (different octave)
+    if allow_identical, it can appear multiple times (same octave)
     """
     max_len = max_len or len(note_list)
     required_notes = required_notes or note_set(note_list)
-    func = combinations_with_replacement if allow_repeats else combinations
+    func = combinations_with_replacement if allow_identical else combinations
     powerset = chain.from_iterable(func(note_list, r) for r in range(max_len + 1))
-    subet = [s for s in powerset if note_set(s) >= required_notes]
-    return subet
+    if allow_repeats:
+        subset = [s for s in powerset if note_set(s) >= required_notes]
+    else:
+        subset = [s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)]
+    return subset
