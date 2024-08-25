@@ -3,6 +3,7 @@ import time
 
 import notes
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Given a chord, show the corresponding guitar positions',
@@ -36,6 +37,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--frets', type=int, default=22, help='How many frets on the guitar'
     )
+    parser.add_argument(
+        '--parallel', '-p', action='store_true', help='Use parallel processing for calculations'
+    )
 
     args = parser.parse_args()
     t1 = time.time()
@@ -48,15 +52,13 @@ if __name__ == "__main__":
         positions_all = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
-        chords = notes.ChordName(args.name).get_all_chords(
-            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+        chord_name = notes.ChordName(args.name)
+        positions_all = notes.get_all_guitar_positions_for_chord_name(
+            chord_name=chord_name, guitar=guitar,
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
+            parallel=args.parallel,
         )
-        positions_playable = []
-        positions_all = 0
-        for chord in chords:
-            positions_playable += chord.guitar_positions(guitar=guitar, include_unplayable=False)
-            positions_all += chord.num_total_guitar_positions
+        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
-        f'There are {len(positions_playable)} playable guitar positions (out of {positions_all} possible) '
+        f'There are {len(positions_playable)} playable guitar positions (out of {len(positions_all)} possible) '
         f'for a guitar tuned to {tuning_display}.\n'
         f'(Computed in {(t2 - t1):.2f} seconds)'
     )

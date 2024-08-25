@@ -1,7 +1,9 @@
 #! /usr/bin/python
-from functools import total_ordering
+from functools import total_ordering, partial
 from itertools import product, combinations_with_replacement, combinations, chain
 import json
+from multiprocessing import Pool
+import os
 from typing import Hashable, Optional, Any, Literal
 
 
@@ -286,6 +288,7 @@ class ChordName:
         """
         max_notes = max_notes or len(self.note_names) + len(self.extension_names)
         max_octaves = (upper - lower) // 12 + 1
+        root_notes = [lower.nearest_above(self.root).add_semitones(12 * octave) for octave in range(max_octaves)]
         required_notes = set(Note(name, 0) for name in self.note_names[1:])
         possible_notes = [
             lower.nearest_above(note).add_semitones(12 * octave)
@@ -303,28 +306,26 @@ class ChordName:
             possible_extensions, max_len=len(self.extension_names), allow_repeats=False
         )
         chord_list = []
-        for root_octave in range(max_octaves):
-            root_note = lower.nearest_above(self.root).add_semitones(12 * root_octave)
-            for ext in extensions:
-                upper_ = min(ext) if ext else upper
-                if allow_identical:
-                    note_list = list(filter(lambda x: root_note <= x <= upper_, possible_notes))
-                elif allow_repeats:
-                    note_list = list(filter(lambda x: root_note < x <= upper_, possible_notes))
-                else:
-                    note_list = list(filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes))
-                available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
-                mid_notes_list = constrained_powerset(
-                    note_list,
-                    required_notes=required_notes,
-                    max_len=available_notes,
-                    allow_repeats=allow_repeats,
-                    allow_identical=allow_identical
-                )
-                chord_list += [
-                    Chord([root_note, *mid_notes, *ext])
-                    for mid_notes in mid_notes_list
-                ]
+        for root_note, ext in product(root_notes, extensions):
+            upper_ = min(ext) if ext else upper
+            if allow_identical:
+                note_list = filter(lambda x: root_note <= x <= upper_, possible_notes)
+            elif allow_repeats:
+                note_list = filter(lambda x: root_note < x <= upper_, possible_notes)
+            else:
+                note_list = filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes)
+            available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
+            mid_notes_list = constrained_powerset(
+                list(note_list),
+                required_notes=required_notes,
+                max_len=available_notes,
+                allow_repeats=allow_repeats,
+                allow_identical=allow_identical
+            )
+            chord_list += [
+                Chord([root_note, *mid_notes, *ext])
+                for mid_notes in mid_notes_list
+            ]
         return chord_list
 
 
@@ -575,3 +576,30 @@ def constrained_powerset(
     else:
         subset = [s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)]
     return subset
+
+
+def get_all_guitar_positions_for_chord_name(
+        chord_name: 'ChordName',
+        guitar: 'Guitar',
+        allow_repeats: bool,
+        allow_identical: bool,
+        allow_thumb: bool = True,
+        parallel: bool = False,
+) -> list['GuitarPosition']:
+    chords = chord_name.get_all_chords(
+        lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
+        allow_repeats=allow_repeats, allow_identical=allow_identical,
+    )
+    if parallel:
+        with Pool(os.cpu_count()) as p:
+            nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
+        positions = [pos for poss in nested for pos in poss]
+    else:
+        positions = []
+        for chord in chords:
+            positions += chord.guitar_positions(guitar=guitar, include_unplayable=True, allow_thumb=allow_thumb)
+    return positions
+
+
+def _parallel_helper(chord: 'Chord', guitar: 'Guitar'):
+    return chord.guitar_positions(guitar=guitar, include_unplayable=True)
