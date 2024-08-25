@@ -17,6 +17,7 @@ def input():
         guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning']))
         tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
         top_n = request.form['top_n'] or '-1'
+        max_fret_span = request.form['max_fret_span'] or '4'
         notes_string = request.form['notes']
         chord_name = request.form['chord_name']
         allow_repeats = request.form.get('allow_repeats') or 'false'
@@ -27,6 +28,7 @@ def input():
                 'display_notes',
                 notes_string=notes_string,
                 top_n='top_n=' + top_n,
+                max_fret_span='max_fret_span=' + max_fret_span,
                 tuning='tuning=' + tuning,
                 allow_thumb='allow_thumb=' + allow_thumb,
             ))
@@ -37,6 +39,7 @@ def input():
                     'display_name',
                     chord_name=chord_name.replace('/', '_'),
                     top_n='top_n=' + top_n,
+                    max_fret_span='max_fret_span=' + max_fret_span,
                     tuning='tuning=' + tuning,
                     allow_repeats='allow_repeats=' + allow_repeats,
                     allow_identical='allow_identical=' + allow_identical,
@@ -49,11 +52,12 @@ def input():
     return render_template('input.html')
 
 
-@app.route("/notes/<notes_string>/<top_n>/<tuning>/<allow_thumb>")
-def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) -> str:
+@app.route("/notes/<notes_string>/<top_n>/<max_fret_span>/<tuning>/<allow_thumb>")
+def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str, allow_thumb: str) -> str:
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
+    max_fret_span_ = int(escape(max_fret_span).split('=')[1])
     tuning_ = escape(tuning).split('=')[1]
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
@@ -63,7 +67,9 @@ def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) 
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
-    positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False, allow_thumb=allow_thumb_)
+    positions_playable = chord.guitar_positions(
+        guitar=guitar, max_fret_span=max_fret_span_, include_unplayable=False, allow_thumb=allow_thumb_
+    )
     positions_all = chord.num_total_guitar_positions
     positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
@@ -75,14 +81,15 @@ def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) 
     )
 
 
-@app.route("/chord_name/<chord_name>/<top_n>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>")
+@app.route("/chord_name/<chord_name>/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>")
 def display_name(
-        chord_name: str, top_n: str, tuning: str, allow_repeats: str, allow_identical: str, allow_thumb: str
+        chord_name: str, top_n: str, max_fret_span: str, tuning: str, allow_repeats: str, allow_identical: str, allow_thumb: str
 ) -> str:
     chord_name_ = escape(chord_name).replace('_', '/')
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
+    max_fret_span_ = int(escape(max_fret_span).split('=')[1])
     tuning_ = escape(tuning).split('=')[1]
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
     allow_identical_: bool = escape(allow_identical).split('=')[1] == 'true'
@@ -95,6 +102,7 @@ def display_name(
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=music.ChordName(chord_name_),
         guitar=guitar,
+        max_fret_span=max_fret_span_,
         allow_repeats=allow_repeats_,
         allow_identical=allow_identical_,
         allow_thumb=allow_thumb_,

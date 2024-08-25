@@ -123,7 +123,11 @@ class Chord:
         self.num_playable_guitar_positions = None
 
     def guitar_positions(
-            self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True
+            self,
+            guitar: 'Guitar' = None,
+            max_fret_span: int = 4,
+            include_unplayable: bool = False,
+            allow_thumb: bool = True
     ) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
@@ -145,7 +149,7 @@ class Chord:
                 string: all_fret_positions[str(note)][string]
                 for note, string in zip(self.notes, comb)
             }
-            guitar_position = GuitarPosition(positions_dict, guitar=guitar)
+            guitar_position = GuitarPosition(positions_dict, guitar=guitar, max_fret_span=max_fret_span)
             assert guitar_position.valid  # This should be true from above
             if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
                 if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
@@ -342,7 +346,7 @@ class ChordName:
 
 
 class GuitarPosition:
-    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
+    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = 4):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
@@ -384,7 +388,7 @@ class GuitarPosition:
             (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
         )
         self.max_interior_gap = self._max_interior_gap()
-        self.playable = self.is_playable()
+        self.playable = self.is_playable(max_fret_span=max_fret_span)
         # Barre chord needs
         self.barre = (
             self.playable and
@@ -422,11 +426,11 @@ class GuitarPosition:
             max_gap = max(max_gap, gap)
         return max_gap
 
-    def is_playable(self) -> bool:
+    def is_playable(self, max_fret_span: int = 4) -> bool:
         if self.fret_span is None:
             return False
         # Too wide
-        if self.fret_span > 5:
+        if self.fret_span > max_fret_span:
             return False
         n_notes = len(self.fretted_strings)
         n_frets = len(set(self.positions_dict.values()))
@@ -595,6 +599,7 @@ def get_all_guitar_positions_for_chord_name(
         guitar: 'Guitar',
         allow_repeats: bool,
         allow_identical: bool,
+        max_fret_span: int = 4,
         allow_thumb: bool = True,
         parallel: bool = False,
 ) -> list['GuitarPosition']:
@@ -602,16 +607,24 @@ def get_all_guitar_positions_for_chord_name(
         lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
         allow_repeats=allow_repeats, allow_identical=allow_identical,
     )
+    kwargs = {
+        'guitar': guitar,
+        'allow_thumb': allow_thumb,
+        'max_fret_span': max_fret_span
+    }
     if parallel:
         with Pool(os.cpu_count()) as p:
-            nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
+            nested = p.map(partial(_parallel_helper, **kwargs), chords)
         positions = [pos for poss in nested for pos in poss]
     else:
         positions = []
         for chord in chords:
-            positions += chord.guitar_positions(guitar=guitar, include_unplayable=True, allow_thumb=allow_thumb)
+            positions += chord.guitar_positions(include_unplayable=True, **kwargs)
     return positions
 
 
-def _parallel_helper(chord: 'Chord', guitar: 'Guitar'):
-    return chord.guitar_positions(guitar=guitar, include_unplayable=True)
+def _parallel_helper(chord: 'Chord', guitar: 'Guitar', allow_thumb: bool, max_fret_span: int):
+    return chord.guitar_positions(
+        guitar=guitar, include_unplayable=True,
+        allow_thumb=allow_thumb, max_fret_span=max_fret_span
+    )

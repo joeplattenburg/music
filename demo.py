@@ -19,6 +19,9 @@ if __name__ == "__main__":
         '--top_n', '-n', type=int, default=None, help='How many positions to return'
     )
     parser.add_argument(
+        '--max_fret_span', '-f', type=int, default=4, help='Max fret span to consider playable'
+    )
+    parser.add_argument(
         '--allow_repeats', '-r', action='store_true', help='Allow chord tones to appear more than once (different octaves)'
     )
     parser.add_argument(
@@ -48,13 +51,15 @@ if __name__ == "__main__":
         note_list = [music.Note.from_string(note) for note in args.notes.split(',')]
         chord = music.Chord(note_list)
         print(f'You input the chord: {chord}')
-        positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
+        positions_playable = chord.guitar_positions(
+            guitar=guitar, include_unplayable=False, max_fret_span=args.max_fret_span
+        )
         positions_all_count = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
         chord_name = music.ChordName(args.name)
         positions_all = music.get_all_guitar_positions_for_chord_name(
-            chord_name=chord_name, guitar=guitar,
+            chord_name=chord_name, guitar=guitar, max_fret_span=args.max_fret_span,
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
             parallel=args.parallel,
         )
