@@ -1,7 +1,7 @@
 import argparse
 import time
 
-import notes
+import music
 
 
 if __name__ == "__main__":
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
     )
     parser.add_argument(
-        '--tuning', type=notes.Guitar.parse_tuning, default=None,
+        '--tuning', type=music.Guitar.parse_tuning, default=None,
         help='A json dict specifying a different guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
     )
     parser.add_argument(
@@ -43,17 +43,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     t1 = time.time()
-    guitar = notes.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
+    guitar = music.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
     if args.notes:
-        note_list = [notes.Note.from_string(note) for note in args.notes.split(',')]
-        chord = notes.Chord(note_list)
+        note_list = [music.Note.from_string(note) for note in args.notes.split(',')]
+        chord = music.Chord(note_list)
         print(f'You input the chord: {chord}')
         positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False)
         positions_all = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
-        chord_name = notes.ChordName(args.name)
-        positions_all = notes.get_all_guitar_positions_for_chord_name(
+        chord_name = music.ChordName(args.name)
+        positions_all = music.get_all_guitar_positions_for_chord_name(
             chord_name=chord_name, guitar=guitar,
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
             parallel=args.parallel,
@@ -62,8 +62,8 @@ if __name__ == "__main__":
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
-        positions_playable = notes.filter_subset_guitar_positions(positions_playable)
-    positions = notes.sort_guitar_positions(positions_playable)[:args.top_n]
+        positions_playable = music.filter_subset_guitar_positions(positions_playable)
+    positions = music.sort_guitar_positions(positions_playable)[:args.top_n]
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(

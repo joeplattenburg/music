@@ -5,7 +5,7 @@ import time
 from flask import Flask, render_template, request, url_for, flash, redirect
 from markupsafe import escape
 
-import notes
+import music
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
@@ -14,7 +14,7 @@ app.config['SECRET_KEY'] = os.urandom(24).hex()
 @app.route("/", methods=('GET', 'POST'))
 def input():
     if request.method == 'POST':
-        guitar = notes.Guitar(notes.Guitar.parse_tuning(request.form['tuning']))
+        guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning']))
         tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
         top_n = request.form['top_n'] or '-1'
         notes_string = request.form['notes']
@@ -32,7 +32,7 @@ def input():
             ))
         elif chord_name:
             try:
-                notes.ChordName(chord_name)
+                music.ChordName(chord_name)
                 return redirect(url_for(
                     'display_name',
                     chord_name=chord_name.replace('/', '_'),
@@ -56,16 +56,16 @@ def display_notes(notes_string: str, top_n: str, tuning: str, allow_thumb: str) 
         top_n_ = None
     tuning_ = escape(tuning).split('=')[1]
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
-    notes_list = [notes.Note.from_string(note) for note in escape(notes_string).split(',')]
-    chord = notes.Chord(notes_list)
+    notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
+    chord = music.Chord(notes_list)
     guitar = (
-        notes.Guitar() if tuning_ == 'standard' else
-        notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
+        music.Guitar() if tuning_ == 'standard' else
+        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
     positions_playable = chord.guitar_positions(guitar=guitar, include_unplayable=False, allow_thumb=allow_thumb_)
     positions_all = chord.num_total_guitar_positions
-    positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
+    positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
@@ -88,12 +88,12 @@ def display_name(
     allow_identical_: bool = escape(allow_identical).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     guitar = (
-        notes.Guitar() if tuning_ == 'standard' else
-        notes.Guitar(tuning=notes.Guitar.parse_tuning(tuning_.split(';')[1]))
+        music.Guitar() if tuning_ == 'standard' else
+        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
-    positions_all = notes.get_all_guitar_positions_for_chord_name(
-        chord_name=notes.ChordName(chord_name_),
+    positions_all = music.get_all_guitar_positions_for_chord_name(
+        chord_name=music.ChordName(chord_name_),
         guitar=guitar,
         allow_repeats=allow_repeats_,
         allow_identical=allow_identical_,
@@ -102,8 +102,8 @@ def display_name(
     )
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if allow_repeats_:
-        positions_playable = notes.filter_subset_guitar_positions(positions_playable)
-    positions = notes.sort_guitar_positions(positions_playable)[:top_n_]
+        positions_playable = music.filter_subset_guitar_positions(positions_playable)
+    positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
