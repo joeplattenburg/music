@@ -185,6 +185,10 @@ class ChordName:
         'maj7': [0, 4, 7, 11],
         'M7': [0, 4, 7, 11],
         '7': [0, 4, 7, 10],
+        'minmaj7': [0, 3, 7, 11],
+        'mM7': [0, 3, 7, 11],
+        'mmaj7': [0, 3, 7, 11],
+        'minM7': [0, 3, 7, 11],
         'min7': [0, 3, 7, 10],
         'm7': [0, 3, 7, 10],
         'm7b5': [0, 3, 6, 10],
@@ -558,7 +562,7 @@ def best_match(s: str, choices: list[str]) -> str:
     try:
         return max(matches, key=len)
     except ValueError:
-        raise ValueError(f'Invalid Input: {s} did not match any of {choices}!')
+        raise ValueError(f'Invalid Input: {s} did not match any of {choices}')
 
 
 def note_set(note_list: list[Note]) -> set[Note]:
