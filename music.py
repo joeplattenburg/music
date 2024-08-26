@@ -42,6 +42,7 @@ class Note:
             self.SEMITONE_MAPPER[self.simple_name] +
             self.MODIFIER_MAPPER[self.modifier]
         )
+        self.frequency = 440 * 2 ** ((self.semitones - 57) / 12)
 
     def parse_name(self, name: str) -> tuple[str, str]:
         assert len(name) <= 3
@@ -162,6 +163,27 @@ class Chord:
     @staticmethod
     def from_string(string: str) -> 'Chord':
         return Chord([Note.from_string(n) for n in string.split(',')])
+
+    def write_wav(self, path: str, duration: float = 1.0) -> None:
+        import numpy as np
+        import wave
+        sample_rate = 44_100
+        n = int(sample_rate * duration)
+        t = np.linspace(0.0, duration, num=n)
+        audio = np.zeros(n)
+        for note in self.notes:
+            audio += np.sin(2 * np.pi * note.frequency * t)
+        audio /= (2 * np.max(np.abs(audio)))
+        envelope = np.exp(-2 * t)
+        audio *= envelope
+        audio = np.array([audio, audio]).T
+        # Convert to (little-endian) 16 bit integers.
+        audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
+        with wave.open(path, "w") as f:
+            f.setnchannels(2)
+            f.setsampwidth(2)
+            f.setframerate(sample_rate)
+            f.writeframes(audio_norm.tobytes())
 
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)

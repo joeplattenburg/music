@@ -4,4 +4,6 @@ channels:
 dependencies:
   - python
   - flask
+  - numpy
+  - wave
   - pytest

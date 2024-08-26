@@ -761,3 +761,8 @@ def test_get_all_chords_extension() -> None:
 def test_parse_all_chord_names() -> None:
     for name in music.ChordName.ALL_CHORD_NAMES:
         music.ChordName(name)
+
+
+@pytest.mark.parametrize('name,frequency', [('A4', 440.), ('A3', 220.), ('C4', 261.626)])
+def test_frequency(name: str, frequency: float) -> None:
+    assert music.Note.from_string(name).frequency == pytest.approx(frequency, rel=1e-3)
