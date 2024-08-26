@@ -42,8 +42,8 @@ def input():
                     allow_identical='allow_identical=' + allow_identical,
                     allow_thumb='allow_thumb=' + allow_thumb,
                 ))
-            except ValueError:
-                flash('Invalid chord name!')
+            except ValueError as e:
+                flash(f'Invalid chord name! ({e})')
         else:
             flash('Either notes or name are required!')
     return render_template('input.html')

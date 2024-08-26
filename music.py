@@ -562,7 +562,7 @@ def best_match(s: str, choices: list[str]) -> str:
     try:
         return max(matches, key=len)
     except ValueError:
-        raise ValueError(f'Invalid Input: {s} did not match any of {choices}!')
+        raise ValueError(f'Invalid Input: {s} did not match any of {choices}')
 
 
 def note_set(note_list: list[Note]) -> set[Note]:
