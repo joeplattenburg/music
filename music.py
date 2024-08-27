@@ -6,6 +6,8 @@ from multiprocessing import Pool
 import os
 from typing import Hashable, Optional, Any, Literal
 
+DEFAULT_MAX_FRET_SPAN = 4
+
 
 @total_ordering
 class Note:
@@ -123,7 +125,11 @@ class Chord:
         self.num_playable_guitar_positions = None
 
     def guitar_positions(
-            self, guitar: 'Guitar' = None, include_unplayable: bool = False, allow_thumb: bool = True
+            self,
+            guitar: 'Guitar' = None,
+            max_fret_span: int = 4,
+            include_unplayable: bool = False,
+            allow_thumb: bool = True
     ) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
@@ -145,7 +151,7 @@ class Chord:
                 string: all_fret_positions[str(note)][string]
                 for note, string in zip(self.notes, comb)
             }
-            guitar_position = GuitarPosition(positions_dict, guitar=guitar)
+            guitar_position = GuitarPosition(positions_dict, guitar=guitar, max_fret_span=max_fret_span)
             assert guitar_position.valid  # This should be true from above
             if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
                 if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
@@ -202,11 +208,13 @@ class ChordName:
     EXTENSION_SEMITONE_MAPPER = {
         str((deg - 1) + 8): semitones + 12
         for deg, semitones in DEGREE_SEMITONE_MAPPER.items()
+        if deg in (2, 4, 6)
     }
     EXTENSION_SEMITONE_MAPPER = {
         mod + ext: semis + mod_semis
         for ext, semis in EXTENSION_SEMITONE_MAPPER.items()
         for mod, mod_semis in Note.MODIFIER_MAPPER.items()
+        if len(mod) <= 1
     }
     FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
     SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
@@ -214,6 +222,12 @@ class ChordName:
         **{k: 'b' for k in FLAT_KEYS},
         **{k: '#' for k in SHARP_KEYS},
     }
+    ALL_CHORD_NAMES = [
+        f'{note}{quality}{ext}'
+        for note, quality, ext in product(
+            KEY_BIAS.keys(), QUALITY_SEMITONE_MAPPER.keys(), EXTENSION_SEMITONE_MAPPER.keys()
+        )
+    ]
 
     def __init__(self, chord_name: str):
         self.chord_note, self.quality, self.extensions, self.root = self.parse_name(chord_name)
@@ -232,7 +246,7 @@ class ChordName:
             self.note_names.insert(0, self.root)
         self.extension_names = []
         for ext in self.extensions:
-            bias = ext[0] if len(ext) > 1 else 'b'
+            bias = ext[0] if ext[0] in ('#', 'b') else 'b'
             self.extension_names.append(
                 Note(self.chord_note, octave=1).add_semitones(
                     self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
@@ -240,7 +254,7 @@ class ChordName:
             )
 
     def parse_name(self, name: str) -> tuple[str, str, list[str], str]:
-        chord_note = best_match(name, Note.ALL_NOTES_NAMES)
+        chord_note = best_match(name, list(self.KEY_BIAS.keys()))
         if '/' in name:
             remainder, root = name.split('/')
         else:
@@ -346,7 +360,8 @@ class ChordName:
 
 
 class GuitarPosition:
-    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None):
+
+    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = DEFAULT_MAX_FRET_SPAN):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
@@ -388,7 +403,7 @@ class GuitarPosition:
             (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
         )
         self.max_interior_gap = self._max_interior_gap()
-        self.playable = self.is_playable()
+        self.playable = self.is_playable(max_fret_span=max_fret_span)
         # Barre chord needs
         self.barre = (
             self.playable and
@@ -426,11 +441,11 @@ class GuitarPosition:
             max_gap = max(max_gap, gap)
         return max_gap
 
-    def is_playable(self) -> bool:
+    def is_playable(self, max_fret_span: int = DEFAULT_MAX_FRET_SPAN) -> bool:
         if self.fret_span is None:
             return False
         # Too wide
-        if self.fret_span > 5:
+        if self.fret_span > max_fret_span:
             return False
         n_notes = len(self.fretted_strings)
         n_frets = len(set(self.positions_dict.values()))
@@ -523,8 +538,9 @@ class Guitar:
         'B': Note('B', 3),
         'e': Note('E', 4),
     }
+    DEFAULT_FRETS = 22
 
-    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = 22, capo: int = 0):
+    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
         self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
@@ -599,6 +615,7 @@ def get_all_guitar_positions_for_chord_name(
         guitar: 'Guitar',
         allow_repeats: bool,
         allow_identical: bool,
+        max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
         allow_thumb: bool = True,
         parallel: bool = False,
 ) -> list['GuitarPosition']:
@@ -606,16 +623,24 @@ def get_all_guitar_positions_for_chord_name(
         lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
         allow_repeats=allow_repeats, allow_identical=allow_identical,
     )
+    kwargs = {
+        'guitar': guitar,
+        'allow_thumb': allow_thumb,
+        'max_fret_span': max_fret_span
+    }
     if parallel:
         with Pool(os.cpu_count()) as p:
-            nested = p.map(partial(_parallel_helper, guitar=guitar), chords)
+            nested = p.map(partial(_parallel_helper, **kwargs), chords)
         positions = [pos for poss in nested for pos in poss]
     else:
         positions = []
         for chord in chords:
-            positions += chord.guitar_positions(guitar=guitar, include_unplayable=True, allow_thumb=allow_thumb)
+            positions += chord.guitar_positions(include_unplayable=True, **kwargs)
     return positions
 
 
-def _parallel_helper(chord: 'Chord', guitar: 'Guitar'):
-    return chord.guitar_positions(guitar=guitar, include_unplayable=True)
+def _parallel_helper(chord: 'Chord', guitar: 'Guitar', allow_thumb: bool, max_fret_span: int):
+    return chord.guitar_positions(
+        guitar=guitar, include_unplayable=True,
+        allow_thumb=allow_thumb, max_fret_span=max_fret_span
+    )
