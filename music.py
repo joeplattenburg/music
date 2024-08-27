@@ -204,11 +204,13 @@ class ChordName:
     EXTENSION_SEMITONE_MAPPER = {
         str((deg - 1) + 8): semitones + 12
         for deg, semitones in DEGREE_SEMITONE_MAPPER.items()
+        if deg in (2, 4, 6)
     }
     EXTENSION_SEMITONE_MAPPER = {
         mod + ext: semis + mod_semis
         for ext, semis in EXTENSION_SEMITONE_MAPPER.items()
         for mod, mod_semis in Note.MODIFIER_MAPPER.items()
+        if len(mod) <= 1
     }
     FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
     SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
@@ -216,6 +218,12 @@ class ChordName:
         **{k: 'b' for k in FLAT_KEYS},
         **{k: '#' for k in SHARP_KEYS},
     }
+    ALL_CHORD_NAMES = [
+        f'{note}{quality}{ext}'
+        for note, quality, ext in product(
+            KEY_BIAS.keys(), QUALITY_SEMITONE_MAPPER.keys(), EXTENSION_SEMITONE_MAPPER.keys()
+        )
+    ]
 
     def __init__(self, chord_name: str):
         self.chord_note, self.quality, self.extensions, self.root = self.parse_name(chord_name)
@@ -234,7 +242,7 @@ class ChordName:
             self.note_names.insert(0, self.root)
         self.extension_names = []
         for ext in self.extensions:
-            bias = ext[0] if len(ext) > 1 else 'b'
+            bias = ext[0] if ext[0] in ('#', 'b') else 'b'
             self.extension_names.append(
                 Note(self.chord_note, octave=1).add_semitones(
                     self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
@@ -242,7 +250,7 @@ class ChordName:
             )
 
     def parse_name(self, name: str) -> tuple[str, str, list[str], str]:
-        chord_note = best_match(name, Note.ALL_NOTES_NAMES)
+        chord_note = best_match(name, list(self.KEY_BIAS.keys()))
         if '/' in name:
             remainder, root = name.split('/')
         else:

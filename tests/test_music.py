@@ -756,3 +756,8 @@ def test_get_all_chords_extension() -> None:
         allow_repeats=True, allow_identical=False
     )
     assert set(actual) == set(expected)
+
+
+def test_parse_all_chord_names() -> None:
+    for name in music.ChordName.ALL_CHORD_NAMES:
+        music.ChordName(name)
