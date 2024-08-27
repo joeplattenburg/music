@@ -1,6 +1,9 @@
+import os
 import subprocess
 
 import pytest
+
+PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 
 
 @pytest.mark.parametrize(
@@ -13,7 +16,7 @@ import pytest
     ]
 )
 def test_demo_name(name: str, args: list[str]) -> None:
-    result = subprocess.run(['python', '../demo.py', '--name', name, *args], capture_output=True)
+    result = subprocess.run(['python', os.path.join(PROJ_DIR, 'demo.py'), '--name', name, *args], capture_output=True)
     assert result.returncode == 0
 
 
@@ -27,5 +30,5 @@ def test_demo_name(name: str, args: list[str]) -> None:
     ]
 )
 def test_demo_notes(name: str, args: list[str]) -> None:
-    result = subprocess.run(['python', '../demo.py', '--notes', name, *args], capture_output=True)
+    result = subprocess.run(['python', os.path.join(PROJ_DIR, 'demo.py'), '--notes', name, *args], capture_output=True)
     assert result.returncode == 0
