@@ -6,6 +6,8 @@ from multiprocessing import Pool
 import os
 from typing import Hashable, Optional, Any, Literal
 
+DEFAULT_MAX_FRET_SPAN = 4
+
 
 @total_ordering
 class Note:
@@ -346,7 +348,8 @@ class ChordName:
 
 
 class GuitarPosition:
-    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = 4):
+
+    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = DEFAULT_MAX_FRET_SPAN):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
@@ -426,7 +429,7 @@ class GuitarPosition:
             max_gap = max(max_gap, gap)
         return max_gap
 
-    def is_playable(self, max_fret_span: int = 4) -> bool:
+    def is_playable(self, max_fret_span: int = DEFAULT_MAX_FRET_SPAN) -> bool:
         if self.fret_span is None:
             return False
         # Too wide
@@ -523,8 +526,9 @@ class Guitar:
         'B': Note('B', 3),
         'e': Note('E', 4),
     }
+    DEFAULT_FRETS = 22
 
-    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = 22, capo: int = 0):
+    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
         self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
@@ -599,7 +603,7 @@ def get_all_guitar_positions_for_chord_name(
         guitar: 'Guitar',
         allow_repeats: bool,
         allow_identical: bool,
-        max_fret_span: int = 4,
+        max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
         allow_thumb: bool = True,
         parallel: bool = False,
 ) -> list['GuitarPosition']:

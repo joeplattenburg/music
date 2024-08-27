@@ -17,7 +17,7 @@ def input():
         guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning']))
         tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
         top_n = request.form['top_n'] or '-1'
-        max_fret_span = request.form['max_fret_span'] or '4'
+        max_fret_span = request.form['max_fret_span'] or str(music.DEFAULT_MAX_FRET_SPAN)
         notes_string = request.form['notes']
         chord_name = request.form['chord_name']
         allow_repeats = request.form.get('allow_repeats') or 'false'

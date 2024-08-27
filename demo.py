@@ -16,32 +16,40 @@ if __name__ == "__main__":
         help='A chord name, like Bbmaj7/D; will return all possible voicings'
     )
     parser.add_argument(
-        '--top_n', '-n', type=int, default=None, help='How many positions to return'
+        '--top_n', '-n', type=int, default=None,
+        help='How many positions to return'
     )
     parser.add_argument(
-        '--max_fret_span', '-f', type=int, default=4, help='Max fret span to consider playable'
+        '--max_fret_span', '-f', type=int, default=music.DEFAULT_MAX_FRET_SPAN,
+        help='Max fret span to consider playable'
     )
     parser.add_argument(
-        '--allow_repeats', '-r', action='store_true', help='Allow chord tones to appear more than once (different octaves)'
+        '--allow_repeats', '-r', action='store_true',
+        help='Allow chord tones to appear more than once (different octaves)'
     )
     parser.add_argument(
-        '--allow_identical', '-i', action='store_true', help='Allow chord tones to appear more than once in the same octave'
+        '--allow_identical', '-i', action='store_true',
+        help='Allow chord tones to appear more than once in the same octave'
     )
     parser.add_argument(
-        '--graphical', '-g', action='store_true', help='Show ASCII art for guitar positions'
+        '--graphical', '-g', action='store_true',
+        help='Show ASCII art for guitar positions'
     )
     parser.add_argument(
         '--tuning', type=music.Guitar.parse_tuning, default=None,
         help='A json dict specifying a different guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
     )
     parser.add_argument(
-        '--capo', type=int, default=0, help='An int specifying where to fret a capo'
+        '--capo', type=int, default=0,
+        help='An int specifying where to fret a capo'
     )
     parser.add_argument(
-        '--frets', type=int, default=22, help='How many frets on the guitar'
+        '--frets', type=int, default=music.Guitar.DEFAULT_FRETS,
+        help='How many frets on the guitar'
     )
     parser.add_argument(
-        '--parallel', '-p', action='store_true', help='Use parallel processing for calculations'
+        '--parallel', '-p', action='store_true',
+        help='Use parallel processing for calculations'
     )
 
     args = parser.parse_args()
