@@ -2,7 +2,9 @@
 
 {% block content %}
 
-<p>The chord you entered was: {{ chord }}</p>
+<p>The chord you entered was: {{ chord }}, which sounds like this:</p>
+<audio src="/static/temp.wav" controls></audio>
+<br>
 <p>There are {{ playable_n }} playable guitar positions (out of {{ total_n }} possible) for a guitar tuned to {{ tuning }}.<br>
 (Computed in {{ elapsed_time }} seconds)</p>
     {% if positions|length < playable_n %}

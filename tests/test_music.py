@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import music
@@ -761,3 +763,21 @@ def test_get_all_chords_extension() -> None:
 def test_parse_all_chord_names() -> None:
     for name in music.ChordName.ALL_CHORD_NAMES:
         music.ChordName(name)
+
+
+@pytest.mark.parametrize('name,frequency', [('A4', 440.), ('A3', 220.), ('C4', 261.626)])
+def test_frequency(name: str, frequency: float) -> None:
+    assert music.Note.from_string(name).frequency == pytest.approx(frequency, rel=1e-3)
+
+
+def test_write_wav(tmp_path) -> None:
+    d = tmp_path / "foo"
+    d.mkdir()
+    p = str(d / "audio.wav")
+    assert not os.path.exists(p)
+    music.Chord([
+        music.Note('C', 3),
+        music.Note('E', 3),
+        music.Note('G', 3),
+    ]).write_wav(p)
+    assert os.path.exists(p)
