@@ -64,6 +64,7 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
     chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), duration=3)
+    chord.write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -102,10 +103,9 @@ def display_name(
     )
     t1 = time.time()
     chord = music.ChordName(chord_name_)
-    (
-        chord.get_chord(lower=music.Note('C', 3))
-        .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), duration=3)
-    )
+    one_chord = chord.get_chord(lower=music.Note('C', 3))
+    one_chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), duration=3)
+    one_chord.write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
         guitar=guitar,
