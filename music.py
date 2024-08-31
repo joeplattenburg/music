@@ -164,18 +164,27 @@ class Chord:
     def from_string(string: str) -> 'Chord':
         return Chord([Note.from_string(n) for n in string.split(',')])
 
-    def write_wav(self, path: str, duration: float = 1.0) -> None:
+    def write_wav(self, path: str, duration: float = 1.0, delay: bool = True) -> None:
         import numpy as np
         import wave
         sample_rate = 44_100
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         audio = np.zeros(n)
-        for note in self.notes:
-            audio += np.sin(2 * np.pi * note.frequency * t)
+        delay_duration = duration / (2 * len(self.notes)) if delay else 0
+        for i, note in enumerate(self.notes):
+            signal = np.zeros(n)
+            for harmonic in range(1, 15):
+                w = 2 * np.pi * note.frequency * harmonic
+                phase = 0.05 * note.frequency * np.sin(0.5 * t)
+                signal += np.sin(w * t + phase) / 1.5 ** harmonic
+            signal /= (2 * np.max(np.abs(signal)))
+            delay_samples = int(sample_rate * delay_duration * i)
+            envelope = np.exp(-2 * (t - delay_duration * i))
+            envelope[:delay_samples] = 0
+            signal *= envelope
+            audio += signal
         audio /= (2 * np.max(np.abs(audio)))
-        envelope = np.exp(-2 * t)
-        audio *= envelope
         audio = np.array([audio, audio]).T
         # Convert to (little-endian) 16 bit integers.
         audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
