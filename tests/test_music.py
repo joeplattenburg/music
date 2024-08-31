@@ -800,4 +800,4 @@ def test_write_png(tmp_path) -> None:
     'note,line', [('C4', 0), ('C5', 7), ('E4', 2), ('Eb4', 2), ('E#4', 2)]
 )
 def test_staff_line(note: str, line: int) -> None:
-    assert music.Note.from_string(note).staff_line() == line
+    assert music.Note.from_string(note).staff_line == line
