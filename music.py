@@ -422,6 +422,46 @@ class ChordName:
         )
 
 
+class Staff:
+    def __init__(self, notes: list[Note]):
+        # ledger line 0 is middle C, one int index for each line or space
+        self.notes = sorted(notes)
+        self.lowest_line = min((min(notes).staff_line + 1) & ~1, 2) if notes else 2
+        self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
+
+
+    def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=figsize)
+        # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
+        xlim = [0, 10]
+        xrange = xlim[1] - xlim[0]
+        ylim = [2, 10]
+        yrange = ylim[1] - ylim[0]
+        note_pos = xlim[0] + 0.8 * xrange
+        note_rad = 1
+        # clef
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
+        ax.imshow(im, extent=(xlim[0] - 0.1 * xrange, xlim[0] + 0.6 * xrange, ylim[0] - 0.5 * yrange, ylim[1] + 0.375 * yrange))
+        # staff
+        for line in range(2, 12, 2):
+            ax.plot(xlim, [line] * 2, 'k-')
+        if self.lowest_line < 2:
+            for line in range(self.lowest_line, 2, 2):
+                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+        if self.highest_line > 10:
+            for line in range(12, self.highest_line + 2, 2):
+                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+        for note in self.notes:
+            ax.add_patch(plt.Circle(xy=(note_pos, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
+            ax.annotate(note.modifier, xy=(note_pos - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+        ax.set_aspect(0.9)
+        ax.axis('off')
+        fig.savefig(path)
+
+
 class GuitarPosition:
 
     def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = DEFAULT_MAX_FRET_SPAN):
