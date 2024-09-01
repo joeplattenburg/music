@@ -781,3 +781,23 @@ def test_write_wav(tmp_path) -> None:
         music.Note('G', 3),
     ]).write_wav(p)
     assert os.path.exists(p)
+
+
+def test_write_png(tmp_path) -> None:
+    d = tmp_path / "foo"
+    d.mkdir()
+    p = str(d / "audio.png")
+    assert not os.path.exists(p)
+    music.Chord([
+        music.Note('C', 3),
+        music.Note('E', 3),
+        music.Note('G', 3),
+    ]).write_png(p)
+    assert os.path.exists(p)
+
+
+@pytest.mark.parametrize(
+    'note,line', [('C4', 0), ('C5', 7), ('E4', 2), ('Eb4', 2), ('E#4', 2)]
+)
+def test_staff_line(note: str, line: int) -> None:
+    assert music.Note.from_string(note).staff_line == line
