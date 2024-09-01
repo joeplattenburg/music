@@ -423,9 +423,15 @@ class ChordName:
 
 
 class Staff:
-    def __init__(self, notes: list[Note]):
+    def __init__(self, notes: Optional[list[Note]] = None):
         # ledger line 0 is middle C, one int index for each line or space
-        self.notes = sorted(notes)
+        self.notes = sorted(notes) if notes else []
+        if notes:
+            self.gaps = [None]
+            for note, next_note in zip(self.notes[:-1], self.notes[1:]):
+                self.gaps.append(next_note.staff_line - note.staff_line)
+        else:
+            self.gaps = []
         self.lowest_line = min((min(notes).staff_line + 1) & ~1, 2) if notes else 2
         self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
 
@@ -436,11 +442,11 @@ class Staff:
         import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
-        xlim = [0, 10]
+        xlim = [0, 12]
         xrange = xlim[1] - xlim[0]
         ylim = [2, 10]
         yrange = ylim[1] - ylim[0]
-        note_pos = xlim[0] + 0.8 * xrange
+        note_pos = xlim[0] + 0.7 * xrange
         note_rad = 1
         # clef
         im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
@@ -454,9 +460,15 @@ class Staff:
         if self.highest_line > 10:
             for line in range(12, self.highest_line + 2, 2):
                 ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
-        for note in self.notes:
-            ax.add_patch(plt.Circle(xy=(note_pos, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
-            ax.annotate(note.modifier, xy=(note_pos - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+        shift = 0
+        for note, gap in zip(self.notes, self.gaps):
+            if shift == 0 and gap is not None and gap < 2:
+                shift = 1.75 * note_rad
+            else:
+                shift = 0
+            note_pos_ = note_pos + shift
+            ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
+            ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
         ax.set_aspect(0.9)
         ax.axis('off')
         fig.savefig(path)

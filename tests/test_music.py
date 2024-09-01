@@ -801,3 +801,16 @@ def test_write_png(tmp_path) -> None:
 )
 def test_staff_line(note: str, line: int) -> None:
     assert music.Note.from_string(note).staff_line == line
+
+
+@pytest.mark.parametrize(
+    'notes,gaps',
+    [
+        ([], []),
+        ([music.Note('C', 4)], [None]),
+        ([music.Note('C', 4), music.Note('C', 4)], [None, 0]),
+        ([music.Note('C', 4), music.Note('D', 4)], [None, 1]),
+    ]
+)
+def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
+    assert music.Staff(notes=notes).gaps == gaps
