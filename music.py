@@ -200,32 +200,6 @@ class Chord:
             f.setframerate(sample_rate)
             f.writeframes(audio_norm.tobytes())
 
-    def write_png(self, path: str) -> None:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(3.0, 1.5))
-        # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
-        ax.imshow(im, extent=(-1, 6, -2, 13))
-        # staff
-        for line in range(2, 12, 2):
-            ax.plot([0, 10], [line] * 2, 'k-')
-        for note in self.notes:
-            ax.add_patch(plt.Circle(xy=(8, note.staff_line), radius=0.9, facecolor="none", edgecolor='k'))
-            ax.annotate(note.modifier, xy=(5.5, note.staff_line - 0.5), fontsize=12, family='arial')
-        if min(self.notes).staff_line < 1:
-            lowest_line = (min(self.notes).staff_line + 1) & ~1
-            for line in range(lowest_line, 2, 2):
-                ax.plot([6, 10], [line] * 2, 'k-')
-        if max(self.notes).staff_line > 11:
-            highest_line = max(self.notes).staff_line & ~1
-            for line in range(12, highest_line + 2, 2):
-                ax.plot([6, 10], [line] * 2, 'k-')
-        ax.set_aspect(0.9)
-        ax.axis('off')
-        fig.savefig(os.path.join(PROJ_DIR, 'static', path))
-
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
