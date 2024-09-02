@@ -109,13 +109,10 @@ def display_name(
         chord.get_chord(lower=music.Note('C', 3))
         .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
     )
-    print(f'audio gen: {time.time() - t1:.3f}')
-    t = time.time()
     (
         music.Staff(notes=chord.get_chord(lower=music.Note('C', 4)).notes)
         .write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     )
-    print(f'image gen: {time.time() - t:.3f}')
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
         guitar=guitar,
