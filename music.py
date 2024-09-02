@@ -409,7 +409,6 @@ class Staff:
         self.lowest_line = min((min(notes).staff_line + 1) & ~1, 2) if notes else 2
         self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
 
-
     def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
         import matplotlib
         matplotlib.use('Agg')
