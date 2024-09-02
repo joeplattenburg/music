@@ -788,7 +788,7 @@ def test_write_png(tmp_path) -> None:
     d.mkdir()
     p = str(d / "audio.png")
     assert not os.path.exists(p)
-    music.Chord([
+    music.Staff(notes=[
         music.Note('C', 3),
         music.Note('E', 3),
         music.Note('G', 3),
@@ -801,3 +801,34 @@ def test_write_png(tmp_path) -> None:
 )
 def test_staff_line(note: str, line: int) -> None:
     assert music.Note.from_string(note).staff_line == line
+
+
+@pytest.mark.parametrize(
+    'notes,gaps',
+    [
+        ([], []),
+        ([music.Note('C', 4)], [None]),
+        ([music.Note('C', 4), music.Note('C', 4)], [None, 0]),
+        ([music.Note('C', 4), music.Note('D', 4)], [None, 1]),
+    ]
+)
+def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
+    assert music.Staff(notes=notes).gaps == gaps
+
+
+@pytest.mark.parametrize(
+    'notes,lowest_line,highest_line',
+    [
+        ([], 2, 10),
+        ([music.Note(*note) for note in [('C', 5), ('D', 5)]], 2, 10),
+        ([music.Note(*note) for note in [('D', 4)]], 2, 10),
+        ([music.Note(*note) for note in [('C', 4)]], 0, 10),
+        ([music.Note(*note) for note in [('G', 5)]], 2, 10),
+        ([music.Note(*note) for note in [('A', 5)]], 2, 12),
+        ([music.Note(*note) for note in [('C', 4), ('A', 5)]], 0, 12),
+    ]
+)
+def test_staff_extreme_lines(notes: list[music.Note], lowest_line: int, highest_line: int) -> None:
+    staff = music.Staff(notes=notes)
+    assert staff.lowest_line == lowest_line
+    assert staff.highest_line == highest_line

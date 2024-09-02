@@ -200,32 +200,6 @@ class Chord:
             f.setframerate(sample_rate)
             f.writeframes(audio_norm.tobytes())
 
-    def write_png(self, path: str) -> None:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(3.0, 1.5))
-        # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
-        ax.imshow(im, extent=(-1, 6, -2, 13))
-        # staff
-        for line in range(2, 12, 2):
-            ax.plot([0, 10], [line] * 2, 'k-')
-        for note in self.notes:
-            ax.add_patch(plt.Circle(xy=(8, note.staff_line), radius=0.9, facecolor="none", edgecolor='k'))
-            ax.annotate(note.modifier, xy=(5.5, note.staff_line - 0.5), fontsize=12, family='arial')
-        if min(self.notes).staff_line < 1:
-            lowest_line = (min(self.notes).staff_line + 1) & ~1
-            for line in range(lowest_line, 2, 2):
-                ax.plot([6, 10], [line] * 2, 'k-')
-        if max(self.notes).staff_line > 11:
-            highest_line = max(self.notes).staff_line & ~1
-            for line in range(12, highest_line + 2, 2):
-                ax.plot([6, 10], [line] * 2, 'k-')
-        ax.set_aspect(0.9)
-        ax.axis('off')
-        fig.savefig(os.path.join(PROJ_DIR, 'static', path))
-
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
@@ -420,6 +394,57 @@ class ChordName:
             lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.string_names),
             allow_repeats=allow_repeats, allow_identical=allow_identical
         )
+
+
+class Staff:
+    def __init__(self, notes: Optional[list[Note]] = None):
+        # ledger line 0 is middle C, one int index for each line or space
+        self.notes = sorted(notes) if notes else []
+        if notes:
+            self.gaps = [None]
+            for note, next_note in zip(self.notes[:-1], self.notes[1:]):
+                self.gaps.append(next_note.staff_line - note.staff_line)
+        else:
+            self.gaps = []
+        self.lowest_line = min((min(notes).staff_line + 1) & ~1, 2) if notes else 2
+        self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
+
+    def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=figsize)
+        # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
+        xlim = [0, 12]
+        xrange = xlim[1] - xlim[0]
+        ylim = [2, 10]
+        yrange = ylim[1] - ylim[0]
+        note_pos = xlim[0] + 0.7 * xrange
+        note_rad = 1
+        # clef
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
+        ax.imshow(im, extent=(xlim[0] - 0.1 * xrange, xlim[0] + 0.6 * xrange, ylim[0] - 0.5 * yrange, ylim[1] + 0.375 * yrange))
+        # staff
+        for line in range(2, 12, 2):
+            ax.plot(xlim, [line] * 2, 'k-')
+        if self.lowest_line < 2:
+            for line in range(self.lowest_line, 2, 2):
+                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+        if self.highest_line > 10:
+            for line in range(12, self.highest_line + 2, 2):
+                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+        shift = 0
+        for note, gap in zip(self.notes, self.gaps):
+            if shift == 0 and gap is not None and gap < 2:
+                shift = 1.75 * note_rad
+            else:
+                shift = 0
+            note_pos_ = note_pos + shift
+            ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
+            ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+        ax.set_aspect(0.9)
+        ax.axis('off')
+        fig.savefig(path)
 
 
 class GuitarPosition:
