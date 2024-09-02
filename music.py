@@ -175,6 +175,7 @@ class Chord:
         import wave
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
+        tau = duration * 0.2
         audio = np.zeros(n)
         delay_duration = duration / (2 * len(self.notes)) if delay else 0
         for i, note in enumerate(self.notes):
@@ -186,7 +187,7 @@ class Chord:
                 signal += np.sin(w * t + phase) / 1.5 ** harmonic
             signal /= (2 * np.max(np.abs(signal)))
             delay_samples = int(sample_rate * delay_duration * i)
-            envelope = np.exp(-2 * (t - delay_duration * i))
+            envelope = np.exp(-(t - delay_duration * i) / tau)
             envelope[:delay_samples] = 0
             signal *= envelope
             audio += signal

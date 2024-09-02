@@ -10,6 +10,8 @@ import music
 PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
+SAMPLE_RATE = 11_025
+NOTE_DURATION = 2.0
 
 
 @app.route("/", methods=('GET', 'POST'))
@@ -63,7 +65,7 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
-    chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), duration=3)
+    chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
     music.Staff(notes=chord.notes).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
@@ -105,7 +107,7 @@ def display_name(
     chord = music.ChordName(chord_name_)
     (
         chord.get_chord(lower=music.Note('C', 3))
-        .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), duration=3)
+        .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
     )
     (
         music.Staff(notes=chord.get_chord(lower=music.Note('C', 4)).notes)
