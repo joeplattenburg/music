@@ -5,6 +5,16 @@ import json
 from multiprocessing import Pool
 import os
 from typing import Hashable, Optional, Any, Literal
+import warnings
+
+try:
+    import numpy as np
+    import wave
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn('Additional dependencies for multimedia not installed.')
 
 DEFAULT_MAX_FRET_SPAN = 4
 PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -170,23 +180,22 @@ class Chord:
     def from_string(string: str) -> 'Chord':
         return Chord([Note.from_string(n) for n in string.split(',')])
 
-    def write_wav(self, path: str, duration: float = 1.0, delay: bool = True) -> None:
-        import numpy as np
-        import wave
-        sample_rate = 44_100
+    def write_wav(self, path: str, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> None:
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
+        tau = duration * 0.2
         audio = np.zeros(n)
         delay_duration = duration / (2 * len(self.notes)) if delay else 0
         for i, note in enumerate(self.notes):
             signal = np.zeros(n)
-            for harmonic in range(1, 15):
+            n_harmonics = min(10, int((sample_rate / 2) // note.frequency))
+            for harmonic in range(1, n_harmonics + 1):
                 w = 2 * np.pi * note.frequency * harmonic
                 phase = 0.05 * note.frequency * np.sin(0.5 * t)
                 signal += np.sin(w * t + phase) / 1.5 ** harmonic
             signal /= (2 * np.max(np.abs(signal)))
             delay_samples = int(sample_rate * delay_duration * i)
-            envelope = np.exp(-2 * (t - delay_duration * i))
+            envelope = np.exp(-(t - delay_duration * i) / tau)
             envelope[:delay_samples] = 0
             signal *= envelope
             audio += signal
@@ -410,9 +419,6 @@ class Staff:
         self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
 
     def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
         xlim = [0, 12]
