@@ -5,6 +5,16 @@ import json
 from multiprocessing import Pool
 import os
 from typing import Hashable, Optional, Any, Literal
+import warnings
+
+try:
+    import numpy as np
+    import wave
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+except ImportError:
+    warnings.warn('Additional dependencies for multimedia not installed.')
 
 DEFAULT_MAX_FRET_SPAN = 4
 PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -171,8 +181,6 @@ class Chord:
         return Chord([Note.from_string(n) for n in string.split(',')])
 
     def write_wav(self, path: str, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> None:
-        import numpy as np
-        import wave
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
@@ -411,9 +419,6 @@ class Staff:
         self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
 
     def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
         xlim = [0, 12]
