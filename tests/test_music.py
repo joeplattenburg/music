@@ -788,10 +788,12 @@ def test_write_png(tmp_path) -> None:
     d.mkdir()
     p = str(d / "audio.png")
     assert not os.path.exists(p)
-    music.Staff(notes=[
-        music.Note('C', 3),
-        music.Note('E', 3),
-        music.Note('G', 3),
+    music.Staff(chords=[
+        music.Chord([
+            music.Note('C', 3),
+            music.Note('E', 3),
+            music.Note('G', 3),
+        ])
     ]).write_png(p)
     assert os.path.exists(p)
 

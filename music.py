@@ -428,23 +428,28 @@ class Staff:
             ))
 
     def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
+        figsize = (len(self.chords) + 1, 3)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
-        xlim = [0, 6 * (len(self.chords) + 1)]
+        xlim = [0, 10 + 6 * len(self.chords) - 3]
         xrange = xlim[1] - xlim[0]
         ylim = [2, 10]
         yrange = ylim[1] - ylim[0]
-        note_positions = [xlim[0] + 6 * (n + 1) + 1 for n in range(len(self.chords))]
+        note_positions = [10 + 6 * n for n in range(len(self.chords))]
         note_rad = 1
         # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
-        ax.imshow(im, extent=(-1, 6, ylim[0] - 0.5 * yrange, ylim[1] + 0.375 * yrange))
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'treble_clef.png'))
+        ax.imshow(im, extent=(1, 5, -1, 12))
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'bass_clef.png'))
+        ax.imshow(im, extent=(1, 6, -9, -2))
         # staff
         for line in range(2, 12, 2):
             ax.plot(xlim, [line] * 2, 'k-')
+        for line in range(-2, -12, -2):
+            ax.plot(xlim, [line] * 2, 'k-')
         for chord, (lowest_line, highest_line), note_pos in zip(self.chords, self.ledger_lines, note_positions):
-            if lowest_line < 2:
-                for line in range(lowest_line, 2, 2):
+            if lowest_line < -10:
+                for line in range(-12, lowest_line, -2):
                     ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
             if highest_line > 10:
                 for line in range(12, highest_line + 2, 2):
@@ -458,6 +463,8 @@ class Staff:
                 note_pos_ = note_pos + shift
                 ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
                 ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+                if note.staff_line == 0:
+                    ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], 'k-')
         ax.set_aspect(0.9)
         ax.axis('off')
         fig.savefig(path)
