@@ -813,13 +813,12 @@ def test_staff_line(note: str, line: int) -> None:
     ]
 )
 def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
-    assert music.Staff(notes=notes).gaps == gaps
+    assert music.Chord(notes=notes).staff_line_gaps == gaps
 
 
 @pytest.mark.parametrize(
     'notes,lowest_line,highest_line',
     [
-        ([], 2, 10),
         ([music.Note(*note) for note in [('C', 5), ('D', 5)]], 2, 10),
         ([music.Note(*note) for note in [('D', 4)]], 2, 10),
         ([music.Note(*note) for note in [('C', 4)]], 0, 10),
@@ -829,6 +828,5 @@ def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
     ]
 )
 def test_staff_extreme_lines(notes: list[music.Note], lowest_line: int, highest_line: int) -> None:
-    staff = music.Staff(notes=notes)
-    assert staff.lowest_line == lowest_line
-    assert staff.highest_line == highest_line
+    staff = music.Staff(chords=[music.Chord(notes)])
+    assert staff.ledger_lines[0] == (lowest_line, highest_line)
