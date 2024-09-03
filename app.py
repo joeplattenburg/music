@@ -106,11 +106,11 @@ def display_name(
     t1 = time.time()
     chord = music.ChordName(chord_name_)
     (
-        chord.get_chord(lower=music.Note('C', 3))
+        chord.get_chord(lower=music.Note('E', 2))
         .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
     )
     (
-        music.Staff(notes=chord.get_chord(lower=music.Note('C', 4)).notes)
+        music.Staff(chords=[chord.get_chord(lower=music.Note('E', 2))])
         .write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     )
     positions_all = music.get_all_guitar_positions_for_chord_name(
