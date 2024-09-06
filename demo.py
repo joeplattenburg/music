@@ -71,12 +71,13 @@ if __name__ == "__main__":
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
             parallel=args.parallel,
         )
-        positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
+        positions_playable = list(filter(lambda x: (x[1].playable and not x[1].redundant), positions_all))
         positions_all_count = len(positions_all)
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
         positions_playable = music.filter_subset_guitar_positions(positions_playable)
+    chords_playable, positions_playable = list(zip(*positions_playable))
     positions = music.sort_guitar_positions(positions_playable)[:args.top_n]
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'

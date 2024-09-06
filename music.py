@@ -627,16 +627,16 @@ def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list
     ))
 
 
-def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPosition]:
+def filter_subset_guitar_positions(p: list[tuple[Chord, GuitarPosition]]) -> list[tuple[Chord, GuitarPosition]]:
     """
     Drop any positions that are subsets of another position,
     e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
     """
-    ps = sorted(p, key=lambda x: len(x.positions_dict), reverse=True)
-    out: list[GuitarPosition] = []
-    for test_pos in ps:
-        if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
-            out.append(test_pos)
+    ps = sorted(p, key=lambda x: len(x[1].positions_dict), reverse=True)
+    out = []
+    for chord, test_pos in ps:
+        if not any(test_pos.is_subset(selected_pos) for _, selected_pos in out):
+            out.append((chord, test_pos))
     return out
 
 
@@ -729,7 +729,7 @@ def get_all_guitar_positions_for_chord_name(
         max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
         allow_thumb: bool = True,
         parallel: bool = False,
-) -> list['GuitarPosition']:
+) -> list[tuple['Chord', 'GuitarPosition']]:
     chords = chord_name.get_all_chords(
         lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
         allow_repeats=allow_repeats, allow_identical=allow_identical,
@@ -742,12 +742,12 @@ def get_all_guitar_positions_for_chord_name(
     if parallel:
         with Pool(os.cpu_count()) as p:
             nested = p.map(partial(_parallel_helper, **kwargs), chords)
-        positions = [pos for poss in nested for pos in poss]
+        positions = dict(zip(chords, nested))
     else:
-        positions = []
+        positions = {}
         for chord in chords:
-            positions += chord.guitar_positions(include_unplayable=True, **kwargs)
-    return positions
+            positions[chord] = chord.guitar_positions(include_unplayable=True, **kwargs)
+    return [(k, vv) for k, v in positions.items() for vv in v]
 
 
 def _parallel_helper(chord: 'Chord', guitar: 'Guitar', allow_thumb: bool, max_fret_span: int):
