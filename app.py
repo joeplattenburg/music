@@ -66,7 +66,7 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
     chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
-    music.Staff(notes=chord.notes).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    music.Staff(chords=[chord]).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -81,7 +81,7 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'display.html',
-        chord=chord, tuning=tuning_, positions=positions_printable,
+        chord=chord, tuning=tuning_, positions=positions_printable, chords_n=1,
         total_n=positions_all, playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
@@ -122,13 +122,14 @@ def display_name(
     if allow_repeats_:
         positions_playable = music.filter_subset_guitar_positions(positions_playable)
     chords_playable, positions_playable = list(zip(*positions_playable))
+    chords_playable = sorted(list(set(chords_playable)))
     music.Staff(chords=chords_playable).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'display.html',
-        chord=chord_name_, tuning=tuning_, positions=positions_printable,
+        chord=chord_name_, tuning=tuning_, positions=positions_printable, chords_n=len(chords_playable),
         total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 

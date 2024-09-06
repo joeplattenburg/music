@@ -7,8 +7,9 @@
 <br>
 <audio src="/static/temp.wav" controls></audio>
 <br>
-<p>There are {{ playable_n }} playable guitar positions (out of {{ total_n }} possible) for a guitar tuned to {{ tuning }}.<br>
-(Computed in {{ elapsed_time }} seconds)</p>
+<p>There are {{ chords_n }} playable voicings and {{ playable_n }} guitar positions (out of {{ total_n }} possible)<br>
+    for a guitar tuned to {{ tuning }}.<br>
+    (Computed in {{ elapsed_time }} seconds)</p>
     {% if positions|length < playable_n %}
         <p>Here are the top {{ positions|length }}:</p>
     {% endif %}

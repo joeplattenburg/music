@@ -139,6 +139,7 @@ class Note:
         return self.semitones
 
 
+@total_ordering
 class Chord:
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
@@ -222,11 +223,17 @@ class Chord:
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
-    def __eq__(self, other: 'Chord'):
+    def __eq__(self, other: 'Chord') -> bool:
         return (
             (len(self.notes) == len(other.notes)) and
             all(s == o for s, o in zip(self.notes, other.notes))
         )
+
+    def __lt__(self, other) -> bool:
+        for s, o in zip(self.notes, other.notes):
+            if s != o:
+                return s < o
+        return len(self.notes) < len(other.notes)
 
     def __hash__(self):
         return hash(tuple(note.semitones for note in self.notes))
@@ -467,7 +474,8 @@ class Staff:
                     ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], 'k-')
         ax.set_aspect(0.9)
         ax.axis('off')
-        fig.savefig(path)
+        plt.tight_layout()
+        fig.savefig(path, bbox_inches='tight')
 
 
 class GuitarPosition:

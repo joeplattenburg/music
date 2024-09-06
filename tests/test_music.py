@@ -832,3 +832,10 @@ def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
 def test_staff_extreme_lines(notes: list[music.Note], lowest_line: int, highest_line: int) -> None:
     staff = music.Staff(chords=[music.Chord(notes)])
     assert staff.ledger_lines[0] == (lowest_line, highest_line)
+
+
+def test_chord_comparison() -> None:
+    assert music.Chord([music.Note('C', 0)]) == music.Chord([music.Note('C', 0)])
+    assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('D', 0)])
+    assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('C', 0), music.Note('D', 1)])
+    assert music.Chord([music.Note('C', 0), music.Note('D', 1)]) < music.Chord([music.Note('C', 0), music.Note('E', 1)])
