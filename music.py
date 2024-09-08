@@ -434,11 +434,11 @@ class Staff:
                 max(max(chord.notes).staff_line & ~1, 10)
             ))
 
-    def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
-        figsize = (len(self.chords) + 1, 3)
+    def write_png(self, path: str) -> None:
+        figsize = (len(self.chords) + 1, 1.75)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
-        xlim = [0, 10 + 6 * len(self.chords) - 3]
+        xlim = [0.5, 10 + 6 * len(self.chords) - 3]
         xrange = xlim[1] - xlim[0]
         ylim = [2, 10]
         yrange = ylim[1] - ylim[0]
@@ -456,7 +456,7 @@ class Staff:
             ax.plot(xlim, [line] * 2, 'k-')
         for chord, (lowest_line, highest_line), note_pos in zip(self.chords, self.ledger_lines, note_positions):
             if lowest_line < -10:
-                for line in range(-12, lowest_line, -2):
+                for line in range(lowest_line, 10, 2):
                     ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
             if highest_line > 10:
                 for line in range(12, highest_line + 2, 2):
@@ -475,7 +475,7 @@ class Staff:
         ax.set_aspect(0.9)
         ax.axis('off')
         plt.tight_layout()
-        fig.savefig(path, bbox_inches='tight')
+        fig.savefig(path, bbox_inches='tight', pad_inches=0)
 
 
 class GuitarPosition:

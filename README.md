@@ -144,9 +144,9 @@ conda activate music
 - [X] Clean up app url
 - [x] Optimize compute
 - [x] Rename module (`music`?)
-- [ ] Show voicings on staff
+- [x] Show voicings on staff
+- [x] Add audio
 - [ ] Sort on different metrics
 - [ ] Better input for specifying tuning
-- [ ] Add audio
 - [ ] Deploy on AWS
 - [ ] Request logging
