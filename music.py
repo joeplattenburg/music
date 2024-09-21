@@ -546,6 +546,7 @@ class GuitarPosition:
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
+        self.chord = self.guitar.chord(self.positions_dict)
 
     def _max_interior_gap(self) -> int:
         if len(self.fretted_strings) == 0:
@@ -635,16 +636,16 @@ def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list
     ))
 
 
-def filter_subset_guitar_positions(p: list[tuple[Chord, GuitarPosition]]) -> list[tuple[Chord, GuitarPosition]]:
+def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPosition]:
     """
     Drop any positions that are subsets of another position,
     e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
     """
-    ps = sorted(p, key=lambda x: len(x[1].positions_dict), reverse=True)
-    out = []
-    for chord, test_pos in ps:
-        if not any(test_pos.is_subset(selected_pos) for _, selected_pos in out):
-            out.append((chord, test_pos))
+    ps = sorted(p, key=lambda x: len(x.positions_dict), reverse=True)
+    out: list[GuitarPosition] = []
+    for test_pos in ps:
+        if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
+            out.append(test_pos)
     return out
 
 
@@ -681,6 +682,12 @@ class Guitar:
                 string: Note.from_string(note)
                 for string, note in json.loads(tuning.replace("'", '"')).items()
             }
+
+    def notes(self, position: dict[Hashable, int]) -> list[Note]:
+        return [self.tuning[string].add_semitones(fret) for string, fret in position.items()]
+
+    def chord(self, position: dict[Hashable, int]) -> Chord:
+        return Chord(self.notes(position))
 
 
 def _rotate_list(list_: list[Any], n: int) -> list[Any]:
@@ -737,7 +744,7 @@ def get_all_guitar_positions_for_chord_name(
         max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
         allow_thumb: bool = True,
         parallel: bool = False,
-) -> list[tuple['Chord', 'GuitarPosition']]:
+) -> list['GuitarPosition']:
     chords = chord_name.get_all_chords(
         lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
         allow_repeats=allow_repeats, allow_identical=allow_identical,
@@ -750,12 +757,12 @@ def get_all_guitar_positions_for_chord_name(
     if parallel:
         with Pool(os.cpu_count()) as p:
             nested = p.map(partial(_parallel_helper, **kwargs), chords)
-        positions = dict(zip(chords, nested))
+        positions = [pos for poss in nested for pos in poss]
     else:
-        positions = {}
+        positions = []
         for chord in chords:
-            positions[chord] = chord.guitar_positions(include_unplayable=True, **kwargs)
-    return [(k, vv) for k, v in positions.items() for vv in v]
+            positions += chord.guitar_positions(include_unplayable=True, **kwargs)
+    return positions
 
 
 def _parallel_helper(chord: 'Chord', guitar: 'Guitar', allow_thumb: bool, max_fret_span: int):

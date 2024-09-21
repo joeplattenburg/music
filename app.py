@@ -118,11 +118,10 @@ def display_name(
         allow_thumb=allow_thumb_,
         parallel=True,
     )
-    positions_playable = list(filter(lambda x: (x[1].playable and not x[1].redundant), positions_all))
+    positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if allow_repeats_:
         positions_playable = music.filter_subset_guitar_positions(positions_playable)
-    chords_playable, positions_playable = list(zip(*positions_playable))
-    chords_playable = sorted(list(set(chords_playable)))
+    chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     music.Staff(chords=chords_playable).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]

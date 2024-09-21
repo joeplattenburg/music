@@ -839,3 +839,11 @@ def test_chord_comparison() -> None:
     assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('D', 0)])
     assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('C', 0), music.Note('D', 1)])
     assert music.Chord([music.Note('C', 0), music.Note('D', 1)]) < music.Chord([music.Note('C', 0), music.Note('E', 1)])
+
+
+def test_guitar_notes() -> None:
+    guitar = music.Guitar()
+    expected_notes = [music.Note(*n) for n in [('G', 2), ('B', 2), ('D', 3)]]
+    expected_chord = music.Chord(expected_notes)
+    assert guitar.notes(position={'E': 3, 'A': 2, 'D': 0}) == expected_notes
+    assert guitar.chord(position={'E': 3, 'A': 2, 'D': 0}) == expected_chord
