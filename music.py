@@ -179,7 +179,9 @@ class Chord:
                 string: all_fret_positions[str(note)][string]
                 for note, string in zip(self.notes, comb)
             }
-            guitar_position = GuitarPosition(positions_dict, guitar=guitar, max_fret_span=max_fret_span)
+            guitar_position = GuitarPosition(
+                positions_dict, notes=self.notes, guitar=guitar, max_fret_span=max_fret_span
+            )
             assert guitar_position.valid  # This should be true from above
             if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
                 if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
@@ -478,7 +480,14 @@ class Staff:
 
 class GuitarPosition:
 
-    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = DEFAULT_MAX_FRET_SPAN):
+    def __init__(
+            self,
+            positions: dict[Hashable, int],
+            *,
+            notes: Optional[list['Note']] = None,
+            guitar: 'Guitar' = None,
+            max_fret_span: int = DEFAULT_MAX_FRET_SPAN
+    ):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
@@ -544,7 +553,10 @@ class GuitarPosition:
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
-        self.chord = self.guitar.chord(self.positions_dict)
+        if notes:
+            self.chord = Chord(notes)
+        else:
+            self.chord = self.guitar.chord(self.positions_dict)
 
     def _max_interior_gap(self) -> int:
         if len(self.fretted_strings) == 0:
