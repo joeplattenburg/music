@@ -856,3 +856,6 @@ def test_bias_in_voicings() -> None:
     for chord in chord_name.get_all_guitar_chords():
         names = set([n.name for n in chord.notes])
         assert names == {'D', 'F#', 'A', 'C#', 'G#'}
+        for pos in chord.guitar_positions():
+            assert pos.chord == chord
+            assert set(n.name for n in pos.chord.notes) == names
