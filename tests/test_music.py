@@ -847,3 +847,12 @@ def test_guitar_notes() -> None:
     expected_chord = music.Chord(expected_notes)
     assert guitar.notes(position={'E': 3, 'A': 2, 'D': 0}) == expected_notes
     assert guitar.chord(position={'E': 3, 'A': 2, 'D': 0}) == expected_chord
+
+
+def test_bias_in_voicings() -> None:
+    chord_name = music.ChordName('Dmaj7#11')
+    assert chord_name.note_names == ['D', 'F#', 'A', 'C#']
+    assert chord_name.extension_names == ['G#']
+    for chord in chord_name.get_all_guitar_chords():
+        names = set([n.name for n in chord.notes])
+        assert names == {'D', 'F#', 'A', 'C#', 'G#'}
