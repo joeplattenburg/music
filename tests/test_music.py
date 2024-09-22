@@ -788,10 +788,12 @@ def test_write_png(tmp_path) -> None:
     d.mkdir()
     p = str(d / "audio.png")
     assert not os.path.exists(p)
-    music.Staff(notes=[
-        music.Note('C', 3),
-        music.Note('E', 3),
-        music.Note('G', 3),
+    music.Staff(chords=[
+        music.Chord([
+            music.Note('C', 3),
+            music.Note('E', 3),
+            music.Note('G', 3),
+        ])
     ]).write_png(p)
     assert os.path.exists(p)
 
@@ -813,13 +815,12 @@ def test_staff_line(note: str, line: int) -> None:
     ]
 )
 def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
-    assert music.Staff(notes=notes).gaps == gaps
+    assert music.Chord(notes=notes).staff_line_gaps == gaps
 
 
 @pytest.mark.parametrize(
     'notes,lowest_line,highest_line',
     [
-        ([], 2, 10),
         ([music.Note(*note) for note in [('C', 5), ('D', 5)]], 2, 10),
         ([music.Note(*note) for note in [('D', 4)]], 2, 10),
         ([music.Note(*note) for note in [('C', 4)]], 0, 10),
@@ -829,6 +830,32 @@ def test_staff_line_gaps(notes: list[music.Note], gaps: list[int]) -> None:
     ]
 )
 def test_staff_extreme_lines(notes: list[music.Note], lowest_line: int, highest_line: int) -> None:
-    staff = music.Staff(notes=notes)
-    assert staff.lowest_line == lowest_line
-    assert staff.highest_line == highest_line
+    staff = music.Staff(chords=[music.Chord(notes)])
+    assert staff.ledger_lines[0] == (lowest_line, highest_line)
+
+
+def test_chord_comparison() -> None:
+    assert music.Chord([music.Note('C', 0)]) == music.Chord([music.Note('C', 0)])
+    assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('D', 0)])
+    assert music.Chord([music.Note('C', 0)]) < music.Chord([music.Note('C', 0), music.Note('D', 1)])
+    assert music.Chord([music.Note('C', 0), music.Note('D', 1)]) < music.Chord([music.Note('C', 0), music.Note('E', 1)])
+
+
+def test_guitar_notes() -> None:
+    guitar = music.Guitar()
+    expected_notes = [music.Note(*n) for n in [('G', 2), ('B', 2), ('D', 3)]]
+    expected_chord = music.Chord(expected_notes)
+    assert guitar.notes(position={'E': 3, 'A': 2, 'D': 0}) == expected_notes
+    assert guitar.chord(position={'E': 3, 'A': 2, 'D': 0}) == expected_chord
+
+
+def test_bias_in_voicings() -> None:
+    chord_name = music.ChordName('Dmaj7#11')
+    assert chord_name.note_names == ['D', 'F#', 'A', 'C#']
+    assert chord_name.extension_names == ['G#']
+    for chord in chord_name.get_all_guitar_chords():
+        names = set([n.name for n in chord.notes])
+        assert names == {'D', 'F#', 'A', 'C#', 'G#'}
+        for pos in chord.guitar_positions():
+            assert pos.chord == chord
+            assert set(n.name for n in pos.chord.notes) == names

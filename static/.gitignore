@@ -1,3 +1,4 @@
 *.wav
 *.png
-!clef.png
+!treble_clef.png
+!bass_clef.png

@@ -139,11 +139,18 @@ class Note:
         return self.semitones
 
 
+@total_ordering
 class Chord:
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
         self.num_total_guitar_positions = None
         self.num_playable_guitar_positions = None
+        if notes:
+            self.staff_line_gaps = [None]
+            for note, next_note in zip(self.notes[:-1], self.notes[1:]):
+                self.staff_line_gaps.append(next_note.staff_line - note.staff_line)
+        else:
+            self.staff_line_gaps = []
 
     def guitar_positions(
             self,
@@ -172,7 +179,9 @@ class Chord:
                 string: all_fret_positions[str(note)][string]
                 for note, string in zip(self.notes, comb)
             }
-            guitar_position = GuitarPosition(positions_dict, guitar=guitar, max_fret_span=max_fret_span)
+            guitar_position = GuitarPosition(
+                positions_dict, notes=self.notes, guitar=guitar, max_fret_span=max_fret_span
+            )
             assert guitar_position.valid  # This should be true from above
             if (guitar_position.playable and not guitar_position.redundant) or include_unplayable:
                 if allow_thumb or (not allow_thumb and not guitar_position.use_thumb):
@@ -216,11 +225,17 @@ class Chord:
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
-    def __eq__(self, other: 'Chord'):
+    def __eq__(self, other: 'Chord') -> bool:
         return (
             (len(self.notes) == len(other.notes)) and
             all(s == o for s, o in zip(self.notes, other.notes))
         )
+
+    def __lt__(self, other) -> bool:
+        for s, o in zip(self.notes, other.notes):
+            if s != o:
+                return s < o
+        return len(self.notes) < len(other.notes)
 
     def __hash__(self):
         return hash(tuple(note.semitones for note in self.notes))
@@ -411,56 +426,68 @@ class ChordName:
 
 
 class Staff:
-    def __init__(self, notes: Optional[list[Note]] = None):
+    def __init__(self, chords: Optional[list[Chord]] = None):
         # ledger line 0 is middle C, one int index for each line or space
-        self.notes = sorted(notes) if notes else []
-        if notes:
-            self.gaps = [None]
-            for note, next_note in zip(self.notes[:-1], self.notes[1:]):
-                self.gaps.append(next_note.staff_line - note.staff_line)
-        else:
-            self.gaps = []
-        self.lowest_line = min((min(notes).staff_line + 1) & ~1, 2) if notes else 2
-        self.highest_line = max(max(notes).staff_line & ~1, 10) if notes else 10
+        self.chords = chords or []
+        self.ledger_lines = []
+        for chord in chords:
+            self.ledger_lines.append((
+                min((min(chord.notes).staff_line + 1) & ~1, 2),
+                max(max(chord.notes).staff_line & ~1, 10)
+            ))
 
-    def write_png(self, path: str, figsize: tuple[float, float] = (3.0, 1.5)) -> None:
+    def write_png(self, path: str) -> None:
+        figsize = (len(self.chords) + 1, 1.75)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
-        xlim = [0, 12]
-        xrange = xlim[1] - xlim[0]
-        ylim = [2, 10]
-        yrange = ylim[1] - ylim[0]
-        note_pos = xlim[0] + 0.7 * xrange
+        xlim = [0.5, 10 + 6 * len(self.chords) - 3]
+        ylim = [2, 10]  # noqa: F841
+        note_positions = [10 + 6 * n for n in range(len(self.chords))]
         note_rad = 1
         # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'clef.png'))
-        ax.imshow(im, extent=(xlim[0] - 0.1 * xrange, xlim[0] + 0.6 * xrange, ylim[0] - 0.5 * yrange, ylim[1] + 0.375 * yrange))
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'treble_clef.png'))
+        ax.imshow(im, extent=(1, 5, -1, 12))
+        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'bass_clef.png'))
+        ax.imshow(im, extent=(1, 6, -9, -2))
         # staff
         for line in range(2, 12, 2):
             ax.plot(xlim, [line] * 2, 'k-')
-        if self.lowest_line < 2:
-            for line in range(self.lowest_line, 2, 2):
-                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
-        if self.highest_line > 10:
-            for line in range(12, self.highest_line + 2, 2):
-                ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
-        shift = 0
-        for note, gap in zip(self.notes, self.gaps):
-            if shift == 0 and gap is not None and gap < 2:
-                shift = 1.75 * note_rad
-            else:
-                shift = 0
-            note_pos_ = note_pos + shift
-            ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
-            ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+        for line in range(-2, -12, -2):
+            ax.plot(xlim, [line] * 2, 'k-')
+        for chord, (lowest_line, highest_line), note_pos in zip(self.chords, self.ledger_lines, note_positions):
+            if lowest_line < -10:
+                for line in range(lowest_line, 10, 2):
+                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+            if highest_line > 10:
+                for line in range(12, highest_line + 2, 2):
+                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+            shift = 0
+            for note, gap in zip(chord.notes, chord.staff_line_gaps):
+                if shift == 0 and gap is not None and gap < 2:
+                    shift = 1.75 * note_rad
+                else:
+                    shift = 0
+                note_pos_ = note_pos + shift
+                ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
+                ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+                if note.staff_line == 0:
+                    ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], 'k-')
         ax.set_aspect(0.9)
         ax.axis('off')
-        fig.savefig(path)
+        plt.tight_layout()
+        fig.savefig(path, bbox_inches='tight', pad_inches=0)
 
 
 class GuitarPosition:
 
-    def __init__(self, positions: dict[Hashable, int], guitar: 'Guitar' = None, max_fret_span: int = DEFAULT_MAX_FRET_SPAN):
+    def __init__(
+            self,
+            positions: dict[Hashable, int],
+            *,
+            notes: Optional[list['Note']] = None,
+            guitar: 'Guitar' = None,
+            max_fret_span: int = DEFAULT_MAX_FRET_SPAN
+    ):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
         if len(positions) == 0:
@@ -526,6 +553,10 @@ class GuitarPosition:
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
+        if notes:
+            self.chord = Chord(notes)
+        else:
+            self.chord = self.guitar.chord(self.positions_dict)
 
     def _max_interior_gap(self) -> int:
         if len(self.fretted_strings) == 0:
@@ -661,6 +692,12 @@ class Guitar:
                 string: Note.from_string(note)
                 for string, note in json.loads(tuning.replace("'", '"')).items()
             }
+
+    def notes(self, position: dict[Hashable, int]) -> list[Note]:
+        return [self.tuning[string].add_semitones(fret) for string, fret in position.items()]
+
+    def chord(self, position: dict[Hashable, int]) -> Chord:
+        return Chord(self.notes(position))
 
 
 def _rotate_list(list_: list[Any], n: int) -> list[Any]:

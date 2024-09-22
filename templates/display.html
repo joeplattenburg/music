@@ -2,15 +2,17 @@
 
 {% block content %}
 
+<p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
 <p>The chord you entered was: {{ chord }}</p>
-<img src="/static/temp.png"></img>
-<br>
 <audio src="/static/temp.wav" controls></audio>
 <br>
-<p>There are {{ playable_n }} playable guitar positions (out of {{ total_n }} possible) for a guitar tuned to {{ tuning }}.<br>
-(Computed in {{ elapsed_time }} seconds)</p>
+<img src="/static/temp.png"></img>
+<p>For a guitar tuned to {{ tuning }}, there are {{ chords_n }} unique voicings
+    and {{ playable_n }} playable guitar positions (out of {{ total_n }} possible).<br>
     {% if positions|length < playable_n %}
-        <p>Here are the top {{ positions|length }}:</p>
+        <p>Here are the top {{ positions|length }}, ranked by playability:</p>
+    {% else %}
+        <p>Here are all {{ playable_n }}, ranked by playability:</p>
     {% endif %}
 
 {% autoescape false %}
