@@ -78,7 +78,7 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
         guitar=guitar, max_fret_span=max_fret_span_, include_unplayable=False, allow_thumb=allow_thumb_
     )
     positions_all = chord.num_total_guitar_positions
-    positions = music.sort_guitar_positions(positions_playable)[:top_n_]
+    positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
@@ -131,11 +131,11 @@ def display_name(
     )
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if allow_repeats_:
-        positions_playable = music.filter_subset_guitar_positions(positions_playable)
+        positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
     music.Staff(chords=chords_print).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
-    positions = music.sort_guitar_positions(positions_playable)[:top_n_]
+    positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(

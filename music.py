@@ -739,30 +739,30 @@ class GuitarPosition:
             rows.append(f'{left_padding}   {self.lowest_fret}fr')
         return rows
 
+    @staticmethod
+    def sorted(p: list['GuitarPosition'], target_fret: int = 7) -> list['GuitarPosition']:
+        """Sort a list of GuitarPositions on fret span, then interior gaps, then near a target fret"""
+        return sorted(p, key=lambda x: (
+            # Sort first on fret span
+            x.fret_span,
+            # Then, fewest interior gaps
+            x.max_interior_gap,
+            # Then nearest to target fret
+            abs(x.lowest_fret - target_fret),
+        ))
 
-def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list[GuitarPosition]:
-    """Sort a list of GuitarPositions on fret span, then interior gaps, then near a target fret"""
-    return sorted(p, key=lambda x: (
-        # Sort first on fret span
-        x.fret_span,
-        # Then, fewest interior gaps
-        x.max_interior_gap,
-        # Then nearest to target fret
-        abs(x.lowest_fret - target_fret),
-    ))
-
-
-def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPosition]:
-    """
-    Drop any positions that are subsets of another position,
-    e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
-    """
-    ps = sorted(p, key=lambda x: len(x.positions_dict), reverse=True)
-    out: list[GuitarPosition] = []
-    for test_pos in ps:
-        if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
-            out.append(test_pos)
-    return out
+    @staticmethod
+    def filter_subsets(p: list['GuitarPosition']) -> list['GuitarPosition']:
+        """
+        Drop any positions that are subsets of another position,
+        e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
+        """
+        ps = sorted(p, key=lambda x: len(x.positions_dict), reverse=True)
+        out: list[GuitarPosition] = []
+        for test_pos in ps:
+            if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
+                out.append(test_pos)
+        return out
 
 
 class Guitar:

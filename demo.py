@@ -76,9 +76,9 @@ if __name__ == "__main__":
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
-        positions_playable = music.filter_subset_guitar_positions(positions_playable)
+        positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
-    positions = music.sort_guitar_positions(positions_playable)[:args.top_n]
+    positions = music.GuitarPosition.sorted(positions_playable)[:args.top_n]
     t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
