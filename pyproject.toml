@@ -3,7 +3,7 @@ name = "music"
 version = "1.0.0"
 description = "Helper tools for music"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "flask>=3.0.3",
     "matplotlib>=3.9.2",
