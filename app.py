@@ -115,9 +115,10 @@ def display_name(
     )
     t1 = time.time()
     chord = music.ChordName(chord_name_)
-    (
-        chord.get_chord(lower=music.Note('E', 2))
-        .write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
+    low_chord = chord.get_chord(lower=music.Note('E', 2))
+    low_chord.write_wav(
+        os.path.join(PROJ_DIR, 'static', 'temp.wav'),
+        sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
     )
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
@@ -132,7 +133,7 @@ def display_name(
     if allow_repeats_:
         positions_playable = music.filter_subset_guitar_positions(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
-    chords_print = chords_playable if all_voicings_ else chords_playable[:1]
+    chords_print = chords_playable if all_voicings_ else [low_chord]
     music.Staff(chords=chords_print).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
