@@ -439,9 +439,7 @@ class Staff:
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
         xlim = [0.5, 10 + 6 * len(self.chords) - 3]
-        xrange = xlim[1] - xlim[0]
-        ylim = [2, 10]
-        yrange = ylim[1] - ylim[0]
+        ylim = [2, 10]  # noqa: F841
         note_positions = [10 + 6 * n for n in range(len(self.chords))]
         note_rad = 1
         # clef
