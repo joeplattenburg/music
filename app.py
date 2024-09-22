@@ -26,6 +26,7 @@ def input():
         allow_repeats = request.form.get('allow_repeats') or 'false'
         allow_identical = request.form.get('allow_identical') or 'false'
         allow_thumb = request.form.get('allow_thumb') or 'false'
+        all_voicings = request.form.get('all_voicings') or 'false'
         if notes_string:
             return redirect(url_for(
                 'display_notes',
@@ -47,6 +48,7 @@ def input():
                     allow_repeats='allow_repeats=' + allow_repeats,
                     allow_identical='allow_identical=' + allow_identical,
                     allow_thumb='allow_thumb=' + allow_thumb,
+                    all_voicings='all_voicings=' + all_voicings,
                 ))
             except ValueError as e:
                 flash(f'Invalid chord name! ({e})')
@@ -86,9 +88,16 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     )
 
 
-@app.route("/chord_name/<chord_name>/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>")
+@app.route("/chord_name/<chord_name>/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>/<all_voicings>")
 def display_name(
-        chord_name: str, top_n: str, max_fret_span: str, tuning: str, allow_repeats: str, allow_identical: str, allow_thumb: str
+        chord_name: str,
+        top_n: str,
+        max_fret_span: str,
+        tuning: str,
+        allow_repeats: str,
+        allow_identical: str,
+        allow_thumb: str,
+        all_voicings: str
 ) -> str:
     chord_name_ = escape(chord_name).replace('_', '/')
     top_n_ = int(escape(top_n).split('=')[1])
@@ -99,6 +108,7 @@ def display_name(
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
     allow_identical_: bool = escape(allow_identical).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
+    all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -122,7 +132,8 @@ def display_name(
     if allow_repeats_:
         positions_playable = music.filter_subset_guitar_positions(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
-    music.Staff(chords=chords_playable).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    chords_print = chords_playable if all_voicings_ else chords_playable[:1]
+    music.Staff(chords=chords_print).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     positions = music.sort_guitar_positions(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'

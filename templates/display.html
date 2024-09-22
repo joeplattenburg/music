@@ -5,7 +5,7 @@
 <p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
 <p>The chord you entered was: {{ chord }}</p>
 <audio src="/static/temp.wav" controls></audio>
-<p>For a guitar tuned to {{ tuning }}, there are {{ chords_n }} playable voicings:</p>
+<p>For a guitar tuned to {{ tuning }}, there are {{ chords_n }} unique voicings:</p>
 <img src="/static/temp.png"></img>
 <p>and {{ playable_n }} playable guitar positions (out of {{ total_n }} possible).<br>
     {% if positions|length < playable_n %}
