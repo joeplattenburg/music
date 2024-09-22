@@ -22,6 +22,19 @@ PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
 
 @total_ordering
 class Note:
+    """
+    This class defines a music note by its name and octave, e.g. Note(name="G#", octave=3)
+    Notes can be compared, where equality is based on enharmonic equivalence (e.g. G# == Ab)
+
+    Attributes:
+        - simple_name: Literal['C', 'D', 'E', 'F', 'G', 'A', 'B']
+        - modifier: Literal['bb', 'b', '', '#', '##']
+        - name: str, the note's name (e.g. 'G#')
+        - octave: int, the number of octaves above C0
+        - semitones: int, the number of semitones above C0
+        - frequency: float, the frequency [Hz] of the note, using A4=440 convention
+        - staff_line: int, the number of lines/spaces above middle C (C4); e.g., E4 = 2 (1 space + 1 line)
+    """
 
     SEMITONE_MAPPER: dict[str, int] = {
         'C': 0,
@@ -61,6 +74,7 @@ class Note:
         )
 
     def parse_name(self, name: str) -> tuple[str, str]:
+        """Init a note from a string, e.g. 'C#4'"""
         assert len(name) <= 3
         simple_name = name[0].upper()
         assert simple_name in self.SEMITONE_MAPPER.keys()
@@ -72,6 +86,12 @@ class Note:
         return simple_name, modifier
 
     def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> 'GuitarPosition':
+        """
+        Return the set of all positions (string + fret) a note can be played on a guitar
+        :param guitar: Guitar, defines the guitar (standard tuning by default)
+        :param valid_only: bool, only include "valid" positions (above nut and below top fret)
+        :return: GuitarPosition (essentially a dict of {string: fret}
+        """
         guitar = guitar or Guitar()
         positions = {
             string: self - note
@@ -141,6 +161,20 @@ class Note:
 
 @total_ordering
 class Chord:
+    """
+    This class defines a music chord as a list of `Note`s.
+    Note, a `Chord` does not imply quality or extensions, e.g.; these notions exist in a `ChordName`.
+    A Chord is simply an ordered list of `Note`s agnostic to any of these notions.
+    Chords can be compared, where equality means the same number of notes and all notes are enharmonically equivalent.
+
+    Attributes:
+        - notes: list[Note], sorted by semitone
+        - num_total_guitar_positions: int, a mutable value that is populated after running the `guitar_positions` method
+        - num_playable_guitar_positions: int, a mutable value that is populated after running the `guitar_positions` method
+        - staff_line_gaps: list[int], same length as `notes`, where the first element is None,
+            and subsequent values (ith) are the diff between staff line of the ith and (i-1)th note
+    """
+
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
         self.num_total_guitar_positions = None
@@ -159,6 +193,14 @@ class Chord:
             include_unplayable: bool = False,
             allow_thumb: bool = True
     ) -> list['GuitarPosition']:
+        """
+        Return all guitar positions that can play a given `Chord`
+        :param guitar: Guitar, defining the tuning
+        :param max_fret_span: int, max space between lowest and highest fret to be considered "playable"
+        :param include_unplayable: bool
+        :param allow_thumb: bool
+        :return:
+        """
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
         # of all the positions each note can be played on each string
@@ -194,6 +236,15 @@ class Chord:
         return Chord([Note.from_string(n) for n in string.split(',')])
 
     def write_wav(self, path: str, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> None:
+        """
+        Write a wave file of the chord; the chord is arpeggiated over the first half of the `duration`,
+        and then rings for the second half
+        :param path: str, path to write to
+        :param sample_rate: int
+        :param duration: float, total duration [s] of audio
+        :param delay: bool, whether to apreggiate the chord
+        :return:
+        """
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
@@ -242,6 +293,22 @@ class Chord:
 
 
 class ChordName:
+    """
+    This class defines a chord name by "chord note", root note, quality, and extensions.
+    A `ChordName` is inited by a human readable string (e.g. Cmaj7#11/E), where the above elements are parsed out.
+    A `ChordName` contains all the note names defining the chord, but unlike a `Chord`,
+    it doesn't imply their order (except for the root) or octave
+
+    Attributes:
+        - chord_note: str
+        - quality: str
+        - extensions: list[str]
+        - root: str
+        - chord_name: str
+        - key_bias: Literal['b', '#']
+        - note_names: list[str]
+        - extension_nams: list[str]
+    """
 
     QUALITY_SEMITONE_MAPPER = {
         '': [0, 4, 7],
@@ -426,6 +493,16 @@ class ChordName:
 
 
 class Staff:
+    """
+    This class defines a (grand) music staff, which contains a sequence of zero or more chords.
+    This implies how many additional ledger lines are needed for each chord in the sequence.
+    At present, there is no notion of "time" or "meter", and all chords are whole notes with no bar lines.
+
+    Attributes:
+        - chords: list[Chord]
+        - ledger_lines: list[tuple[int, int]], for each chord, the number of additional ledger lines
+            above or below the grand staff that are needed
+    """
     def __init__(self, chords: Optional[list[Chord]] = None):
         # ledger line 0 is middle C, one int index for each line or space
         self.chords = chords or []
@@ -437,6 +514,7 @@ class Staff:
             ))
 
     def write_png(self, path: str) -> None:
+        """Write a png of the staff to a file"""
         figsize = (len(self.chords) + 1, 1.75)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
@@ -479,6 +557,30 @@ class Staff:
 
 
 class GuitarPosition:
+    """
+    This class defines a "guitar position", which is essentially a dict describing where strings should be fretted
+    for a given guitar to play one or more notes.
+    A guitar position can also be inited including a list of notes (these must match the positions) in order to
+    keep track of the `Chord` (and enharmonics) associated with the `GuitarPosition`.
+
+    Attributes:
+        - guitar: Guitar
+        - valid: bool, whether the position is theoretically playable
+        - lowest_fret: int, the lowest fret needed to finger the position
+        - fret_span: int, the span from lowest to highest fret (inclusive, e.g. span from 1 to 3 = 3)
+        - position_dict: dict[Hashable, int], specifying the fret for each string of the guitar
+        - open_strings: list[int], indices of strings that are open (relative to the string order of the Guitar)
+        - muted_strings: list[int], indices of strings that are muted
+        - fretted_strings: list[int], indices of strings that are fretted
+            (note, open_strings, muted_strings, and fretted_strings must partition the guitar strings)
+        - use_thumb: bool, whether thumb is needed to finger the position
+        - max_interior_gap: int, largest gap between fretted strings (exclusive), used for sorting
+        - playable: bool, whether the position is considered playable
+        - barre: bool, whether the chord needs to be played as a barre chord
+        - barred_strings_inds: the string indices that are barred
+        - redundant: whether the fingering is exactly one (or more) octaves transposed from an equivalent fingering
+        - chord: the `Chord` corresponding to the fingering
+    """
 
     def __init__(
             self,
@@ -553,10 +655,13 @@ class GuitarPosition:
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
+        chord = self.guitar.chord(self.positions_dict)
         if notes:
-            self.chord = Chord(notes)
+            enharmonic_chord = Chord(notes)
+            assert enharmonic_chord == chord
+            self.chord = enharmonic_chord
         else:
-            self.chord = self.guitar.chord(self.positions_dict)
+            self.chord = chord
 
     def _max_interior_gap(self) -> int:
         if len(self.fretted_strings) == 0:
@@ -636,6 +741,7 @@ class GuitarPosition:
 
 
 def sort_guitar_positions(p: list[GuitarPosition], target_fret: int = 7) -> list[GuitarPosition]:
+    """Sort a list of GuitarPositions on fret span, then interior gaps, then near a target fret"""
     return sorted(p, key=lambda x: (
         # Sort first on fret span
         x.fret_span,
@@ -660,6 +766,20 @@ def filter_subset_guitar_positions(p: list[GuitarPosition]) -> list[GuitarPositi
 
 
 class Guitar:
+    """
+    This class is used to represent a guitar.
+
+    Attributes:
+        - open_tuning: dict[Hashable, Note], the tuning of the guitar with no capo or fretted notes
+        - capo: int, fret position of capo (if any)
+        - tuning: dict[Hashable, Note], the tuning of the guitar (including capo)
+        - tuning_name: Literal['standard', 'custom']
+        - string_names: List[Hashable], the tuning keys
+        - frets: int, the number of playable frets (above the capo)
+        - lowest: Note, lowest playable note
+        - highest: Note, highest playable note
+    """
+
     STANDARD_TUNING: dict[str, 'Note'] = {
         'E': Note('E', 2),
         'A': Note('A', 2),

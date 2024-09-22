@@ -133,6 +133,11 @@ conda env create --file environment.yml
 conda activate music
 ```
 
+## Dependency Graph
+
+The classes in the `music` project have an inter-relationship as defined below. 
+A longer term goal will be to eliminate circular dependencies from the module.  
+
 ## TODO
 
 - [x] Add upper extensions
