@@ -17,16 +17,16 @@ NOTE_DURATION = 2.0
 @app.route("/", methods=('GET', 'POST'))
 def input():
     if request.method == 'POST':
-        guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning']))
+        guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning'].strip()))
         tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
-        top_n = request.form['top_n'] or '-1'
-        max_fret_span = request.form['max_fret_span'] or str(music.DEFAULT_MAX_FRET_SPAN)
-        notes_string = request.form['notes']
-        chord_name = request.form['chord_name']
-        allow_repeats = request.form.get('allow_repeats') or 'false'
-        allow_identical = request.form.get('allow_identical') or 'false'
-        allow_thumb = request.form.get('allow_thumb') or 'false'
-        all_voicings = request.form.get('all_voicings') or 'false'
+        top_n = request.form['top_n'].strip() or '-1'
+        max_fret_span = request.form['max_fret_span'].strip() or str(music.DEFAULT_MAX_FRET_SPAN)
+        notes_string = request.form['notes'].strip()
+        chord_name = request.form['chord_name'].strip()
+        allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
+        allow_identical = request.form.get('allow_identical', '').strip() or 'false'
+        allow_thumb = request.form.get('allow_thumb', '').strip() or 'false'
+        all_voicings = request.form.get('all_voicings', '').strip() or 'false'
         if notes_string:
             return redirect(url_for(
                 'display_notes',
