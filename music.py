@@ -98,23 +98,27 @@ class Note:
     def from_string(note: str) -> 'Note':
         return Note(note[:-1], int(note[-1]))
 
-    def add_semitones(self, semitones: int, bias: Literal['b', '#'] = 'b') -> 'Note':
+    def add_semitones(self, semitones: int, bias: Optional[Literal['b', '#']] = None) -> 'Note':
+        if bias is None:
+            bias = self.modifier[0] if self.modifier else 'b'
         return self.from_semitones(self.semitones + semitones, bias)
 
     def same_name(self, other: 'Note') -> bool:
         return self.semitones % 12 == other.semitones % 12
 
     def nearest_above(self, note: str, allow_equal: bool = True) -> 'Note':
+        bias = note[1] if len(note) > 1 else None
         interval = (Note(note, 0) - self) % 12
         if not allow_equal and interval == 0:
             interval = 12
-        return self.add_semitones(interval)
+        return self.add_semitones(interval, bias)
 
     def nearest_below(self, note: str, allow_equal: bool = True) -> 'Note':
+        bias = note[1] if len(note) > 1 else None
         interval = (self - Note(note, 0)) % 12
         if not allow_equal and interval == 0:
             interval = 12
-        return self.add_semitones(-interval)
+        return self.add_semitones(-interval, bias)
 
     def __repr__(self) -> str:
         return str(self.simple_name + self.modifier + str(self.octave))
@@ -278,8 +282,9 @@ class ChordName:
     def __init__(self, chord_name: str):
         self.chord_note, self.quality, self.extensions, self.root = self.parse_name(chord_name)
         self.chord_name = chord_name
+        self.key_bias = self.KEY_BIAS[self.chord_note]
         self.note_names: list[str] = [
-            Note(self.chord_note, octave=0).add_semitones(s, bias=self.KEY_BIAS[self.chord_note]).name
+            Note(self.chord_note, octave=0).add_semitones(s, bias=self.key_bias).name
             for s in self.QUALITY_SEMITONE_MAPPER[self.quality]
         ]
         root_index = None
@@ -292,7 +297,7 @@ class ChordName:
             self.note_names.insert(0, self.root)
         self.extension_names = []
         for ext in self.extensions:
-            bias = ext[0] if ext[0] in ('#', 'b') else 'b'
+            bias = ext[0] if ext[0] in ('#', 'b') else self.key_bias
             self.extension_names.append(
                 Note(self.chord_note, octave=1).add_semitones(
                     self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
