@@ -15,3 +15,8 @@ test = [
   "pytest",
   "flake8",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
