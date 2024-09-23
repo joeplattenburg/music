@@ -143,7 +143,7 @@ def test_sort_guitar_positions() -> None:
         music.GuitarPosition({"E": 5, "G": 5}),
         music.GuitarPosition({"E": 1, "A": 5}),
     ]
-    actual = music.sort_guitar_positions(positions)
+    actual = music.GuitarPosition.sorted(positions)
     assert actual == expected
 
 
@@ -437,7 +437,7 @@ def test_filter_subsets() -> None:
         music.GuitarPosition({'E': 3, 'A': 2, 'G': 1}),
         music.GuitarPosition({'E': 3, 'e': 1}),
     ]
-    actual = music.filter_subset_guitar_positions(positions)
+    actual = music.GuitarPosition.filter_subsets(positions)
     assert actual == expected
 
 
