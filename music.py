@@ -199,7 +199,7 @@ class Chord:
         :param max_fret_span: int, max space between lowest and highest fret to be considered "playable"
         :param include_unplayable: bool
         :param allow_thumb: bool
-        :return:
+        :return: list[GuitarPosition]
         """
         guitar = guitar or Guitar()
         # This is a dict of dicts, {note: {string: fret for string in guitar} for note in chord}
@@ -243,7 +243,6 @@ class Chord:
         :param sample_rate: int
         :param duration: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
-        :return:
         """
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
@@ -556,6 +555,61 @@ class Staff:
         fig.savefig(path, bbox_inches='tight', pad_inches=0)
 
 
+class Guitar:
+    """
+    This class is used to represent a guitar.
+
+    Attributes:
+        - open_tuning: dict[Hashable, Note], the tuning of the guitar with no capo or fretted notes
+        - capo: int, fret position of capo (if any)
+        - tuning: dict[Hashable, Note], the tuning of the guitar (including capo)
+        - tuning_name: Literal['standard', 'custom']
+        - string_names: List[Hashable], the tuning keys
+        - frets: int, the number of playable frets (above the capo)
+        - lowest: Note, lowest playable note
+        - highest: Note, highest playable note
+    """
+
+    STANDARD_TUNING: dict[str, 'Note'] = {
+        'E': Note('E', 2),
+        'A': Note('A', 2),
+        'D': Note('D', 3),
+        'G': Note('G', 3),
+        'B': Note('B', 3),
+        'e': Note('E', 4),
+    }
+    DEFAULT_FRETS = 22
+
+    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
+        self.open_tuning = tuning or self.STANDARD_TUNING
+        self.capo = capo
+        self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
+        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
+        self.string_names = list(self.tuning.keys())
+        self.frets = frets - capo
+        self.lowest = min(note for note in self.tuning.values())
+        self.highest = max(note for note in self.tuning.values()).add_semitones(self.frets)
+
+    def __repr__(self):
+        return str(self.tuning)
+
+    @staticmethod
+    def parse_tuning(tuning: Optional[str] = None) -> dict[str, 'Note']:
+        if not tuning:
+            return Guitar.STANDARD_TUNING
+        else:
+            return {
+                string: Note.from_string(note)
+                for string, note in json.loads(tuning.replace("'", '"')).items()
+            }
+
+    def notes(self, position: dict[Hashable, int]) -> list[Note]:
+        return [self.tuning[string].add_semitones(fret) for string, fret in position.items()]
+
+    def chord(self, position: dict[Hashable, int]) -> Chord:
+        return Chord(self.notes(position))
+
+
 class GuitarPosition:
     """
     This class defines a "guitar position", which is essentially a dict describing where strings should be fretted
@@ -763,61 +817,6 @@ class GuitarPosition:
             if not any(test_pos.is_subset(selected_pos) for selected_pos in out):
                 out.append(test_pos)
         return out
-
-
-class Guitar:
-    """
-    This class is used to represent a guitar.
-
-    Attributes:
-        - open_tuning: dict[Hashable, Note], the tuning of the guitar with no capo or fretted notes
-        - capo: int, fret position of capo (if any)
-        - tuning: dict[Hashable, Note], the tuning of the guitar (including capo)
-        - tuning_name: Literal['standard', 'custom']
-        - string_names: List[Hashable], the tuning keys
-        - frets: int, the number of playable frets (above the capo)
-        - lowest: Note, lowest playable note
-        - highest: Note, highest playable note
-    """
-
-    STANDARD_TUNING: dict[str, 'Note'] = {
-        'E': Note('E', 2),
-        'A': Note('A', 2),
-        'D': Note('D', 3),
-        'G': Note('G', 3),
-        'B': Note('B', 3),
-        'e': Note('E', 4),
-    }
-    DEFAULT_FRETS = 22
-
-    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
-        self.open_tuning = tuning or self.STANDARD_TUNING
-        self.capo = capo
-        self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
-        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
-        self.string_names = list(self.tuning.keys())
-        self.frets = frets - capo
-        self.lowest = min(note for note in self.tuning.values())
-        self.highest = max(note for note in self.tuning.values()).add_semitones(self.frets)
-
-    def __repr__(self):
-        return str(self.tuning)
-
-    @staticmethod
-    def parse_tuning(tuning: Optional[str] = None) -> dict[str, 'Note']:
-        if not tuning:
-            return Guitar.STANDARD_TUNING
-        else:
-            return {
-                string: Note.from_string(note)
-                for string, note in json.loads(tuning.replace("'", '"')).items()
-            }
-
-    def notes(self, position: dict[Hashable, int]) -> list[Note]:
-        return [self.tuning[string].add_semitones(fret) for string, fret in position.items()]
-
-    def chord(self, position: dict[Hashable, int]) -> Chord:
-        return Chord(self.notes(position))
 
 
 def _rotate_list(list_: list[Any], n: int) -> list[Any]:
