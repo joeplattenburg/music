@@ -383,11 +383,13 @@ version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "flask" },
-    { name = "matplotlib" },
-    { name = "numpy" },
 ]
 
 [package.optional-dependencies]
+media = [
+    { name = "matplotlib" },
+    { name = "numpy" },
+]
 test = [
     { name = "flake8" },
     { name = "pytest" },
@@ -397,8 +399,8 @@ test = [
 requires-dist = [
     { name = "flake8", marker = "extra == 'test'" },
     { name = "flask", specifier = ">=3.0.3" },
-    { name = "matplotlib", specifier = ">=3.9.2" },
-    { name = "numpy", specifier = "<2" },
+    { name = "matplotlib", marker = "extra == 'media'", specifier = ">=3.9.2" },
+    { name = "numpy", marker = "extra == 'media'", specifier = "<2" },
     { name = "pytest", marker = "extra == 'test'" },
 ]
 
