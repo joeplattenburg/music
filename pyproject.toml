@@ -3,7 +3,7 @@ name = "music"
 version = "1.0.0"
 description = "Helper tools for music"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "flask>=3.0.3",
 ]
