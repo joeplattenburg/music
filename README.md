@@ -130,8 +130,12 @@ To generate a compatible environment with required dependencies, you can use uv
 (see https://docs.astral.sh/uv/getting-started/installation/ for installation):
 
 ```commandline
-uv sync --frozen
+uv sync --frozen --extra media
 ```
+
+To deploy on Raspberry Pi, it is highly recommended to use `--extra-index-url https://www.piwheels.org/simple` 
+when syncing the environment, and to change the `.python-version` to match the system version 
+(since PiWheels typically only builds wheels for the sys python version that comes with a given Linux version).
 
 ## Dependency Graph
 
