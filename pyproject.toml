@@ -1,0 +1,24 @@
+[project]
+name = "music"
+version = "1.0.0"
+description = "Helper tools for music"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "flask>=3.0.3",
+]
+
+[project.optional-dependencies]
+media = [
+    "matplotlib>=3.9.2",
+    "numpy<2",
+]
+test = [
+  "pytest",
+  "flake8",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]

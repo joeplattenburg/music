@@ -120,18 +120,22 @@ F#  |-@-|---|---|---|
 
 This includes a Flask web app to run a server that will accept user requests and display the chord positions.
 
-Run the app with `python app.py`. The main landing page looks like this:
+Run the app with `uv run app.py`. The main landing page looks like this:
 
 ![web app](images/web_app_sample.png "Web App")
 
 ## Environment
 
-To generate a compatible environment with required dependencies, you can use conda:
+To generate a compatible environment with required dependencies, you can use uv 
+(see https://docs.astral.sh/uv/getting-started/installation/ for installation):
 
 ```commandline
-conda env create --file environment.yml
-conda activate music
+uv sync --frozen --extra media
 ```
+
+To deploy on Raspberry Pi, it is highly recommended to use `--extra-index-url https://www.piwheels.org/simple` 
+when syncing the environment, and to change the `.python-version` to match the system version 
+(since PiWheels typically only builds wheels for the sys python version that comes with a given Linux version).
 
 ## Dependency Graph
 
@@ -165,5 +169,6 @@ A longer term goal will be to eliminate circular dependencies from the module.
 - [x] Add audio
 - [ ] Sort on different metrics
 - [ ] Better input for specifying tuning
+- [ ] Remove circular dependencies
 - [ ] Deploy on AWS
 - [ ] Request logging

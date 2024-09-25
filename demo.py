@@ -3,7 +3,6 @@ import time
 
 import music
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Given a chord, show the corresponding guitar positions',
