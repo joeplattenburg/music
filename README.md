@@ -169,5 +169,6 @@ A longer term goal will be to eliminate circular dependencies from the module.
 - [x] Add audio
 - [ ] Sort on different metrics
 - [ ] Better input for specifying tuning
+- [ ] Remove circular dependencies
 - [ ] Deploy on AWS
 - [ ] Request logging
