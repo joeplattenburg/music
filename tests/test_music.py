@@ -479,14 +479,14 @@ def test_nearest_above(note: music.Note, other: str, allow_equal: bool, octave: 
         (music.Note('G', 3), 'D', True, 3),
     ]
 )
-def test_nearest_above(note: music.Note, other: str, allow_equal: bool, octave: int) -> None:
+def test_nearest_below(note: music.Note, other: str, allow_equal: bool, octave: int) -> None:
     expected = music.Note(other, octave)
     actual = note.nearest_below(other, allow_equal=allow_equal)
     assert actual == expected
 
 
 @pytest.mark.parametrize(
-    'l,n,expected',
+    'list_,n,expected',
     [
         ([1, 2, 3, 4], 0, [1, 2, 3, 4]),
         ([1, 2, 3, 4], 1, [2, 3, 4, 1]),
@@ -494,13 +494,13 @@ def test_nearest_above(note: music.Note, other: str, allow_equal: bool, octave: 
         ([1, 2, 3, 4], 5, None),
     ]
 )
-def test_rotate_list(l: list[int], n: int, expected: list[int]) -> None:
+def test_rotate_list(list_: list[int], n: int, expected: list[int]) -> None:
 
     if expected is None:
         with pytest.raises(ValueError):
-            music._rotate_list(l, n)
+            music._rotate_list(list_, n)
     else:
-        actual = music._rotate_list(l, n)
+        actual = music._rotate_list(list_, n)
         assert actual == expected
 
 
@@ -747,7 +747,7 @@ def test_get_all_chords_allow_identical() -> None:
     assert set(actual) == set(expected)
 
 
-def test_get_all_chords_extension() -> None:
+def test_get_all_chords_extension_again() -> None:
     c = music.ChordName('Cmaj79')
     expected = [
         music.Chord.from_string('C0,E0,G0,B0,D1'),
