@@ -17,8 +17,8 @@ jobs:
           python-version-file: ".python-version"
       - name: Install the project
         run: uv sync --all-extras
-      - name: Run tests
+      - name: Unit tests
         run: uv run pytest tests
-      - name: Lint with flake8
+      - name: Linting / formatting
         run: uv run ruff check
       - run: echo "This job's status is ${{ job.status }}."
