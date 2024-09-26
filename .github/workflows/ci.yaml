@@ -20,5 +20,5 @@ jobs:
       - name: Run tests
         run: uv run pytest tests
       - name: Lint with flake8
-        run: uv run flake8 ./*.py --ignore=E501,W503,W504 --count --statistics
+        run: uv run ruff check
       - run: echo "This job's status is ${{ job.status }}."
