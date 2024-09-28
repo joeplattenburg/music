@@ -859,3 +859,20 @@ def test_bias_in_voicings() -> None:
         for pos in chord.guitar_positions():
             assert pos.chord == chord
             assert set(n.name for n in pos.chord.notes) == names
+
+
+def test_semitone_distance() -> None:
+    c1 = music.Chord([
+        music.Note('C', 3),
+        music.Note('Eb', 3),
+        music.Note('F', 3),
+        music.Note('A', 3)
+    ])
+    c2 = music.Chord([
+        music.Note('C', 3),
+        music.Note('E', 3),
+        music.Note('G', 3),
+        music.Note('Bb', 3),
+    ])
+    assert c1.semitone_distance(c2) == 4
+    assert c2.semitone_distance(c1) == 4

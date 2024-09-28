@@ -1,6 +1,6 @@
 #! /usr/bin/python
 from functools import total_ordering, partial
-from itertools import product, combinations_with_replacement, combinations, chain
+from itertools import product, combinations_with_replacement, combinations, chain, permutations
 import json
 from multiprocessing import Pool
 import os
@@ -271,6 +271,19 @@ class Chord:
             f.setsampwidth(2)
             f.setframerate(sample_rate)
             f.writeframes(audio_norm.tobytes())
+
+    def semitone_distance(self, other: 'Chord') -> int:
+        """
+        It might not be that the case that each note resolves to its same-index counterpart in the other chord;
+        so we need to check all the pairings
+        """
+        assert len(self.notes) == len(other.notes), \
+            'Can only compute semitone distance between chords of equal cardinality'
+        return min(
+            sum(abs(self_n - other_n) for self_n, other_n in zip(self.notes, perm))
+            for perm in permutations(other.notes, len(other.notes))
+        )
+
 
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
