@@ -58,7 +58,23 @@ class Note:
     ]
     STAFF_LINE_OFFSET = dict(zip(SEMITONE_MAPPER.keys(), range(len(SEMITONE_MAPPER))))
 
-    def __init__(self, name: str, octave: int):
+    DURATION_MAPPER = {
+        'whole': 1.,
+        'dotted_half': 3 / 4,
+        'half': 1 / 2,
+        'half_triplet': 1 / 3,
+        'dotted_quarter': 3 / 8,
+        'quarter': 1 / 4,
+        'quarter_triplet': 1 / 6,
+        'dotted_eighth': 3 / 16,
+        'eighth': 1 / 8,
+        'eighth_triplet': 1 / 12,
+        'sixteenth': 1 / 16,
+        'sixteenth_triplet': 1 / 24,
+        'dotted_sixteenth': 3 / 32,
+    }
+
+    def __init__(self, name: str, octave: int, duration: str = 'whole'):
         self.simple_name, self.modifier = self.parse_name(name)
         self.name = name
         self.octave = octave
@@ -72,6 +88,8 @@ class Note:
             self.STAFF_LINE_OFFSET[self.simple_name] +
             len(self.SEMITONE_MAPPER) * (self.octave - 4)
         )
+        self.duration_name = duration
+        self.duration = self.DURATION_MAPPER[duration]
 
     def parse_name(self, name: str) -> tuple[str, str]:
         """Init a note from a string, e.g. 'C#4'"""
@@ -545,8 +563,38 @@ class Staff:
                 else:
                     shift = 0
                 note_pos_ = note_pos + shift
-                ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
-                ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+                # note head
+                ax.add_patch(plt.Circle(
+                    xy=(note_pos_, note.staff_line),
+                    radius=0.9 * note_rad,
+                    facecolor="none" if ('half' in note.duration_name or 'whole' in note.duration_name) else 'k',
+                    edgecolor='k'
+                ))
+                # note stem
+                if note.duration < 1:
+                    ax.plot([note_pos_ + 0.9 * note_rad] * 2, [note.staff_line, note.staff_line + 5], 'k-')
+                # dot
+                if note.duration_name.startswith('dotted'):
+                    ax.plot([note_pos_ + 1.75 * note_rad], [note.staff_line + 0.25], 'k.')
+                # flag
+                if 'eighth' in note.duration_name or 'sixteenth' in note.duration_name:
+                    ax.plot(
+                        [note_pos_ + mult * note_rad for mult in [.9, 1.5, 2.0, 1.5]],
+                        [note.staff_line + height for height in [5, 4, 3, 2]],
+                        'k-'
+                    )
+                if 'sixteenth' in note.duration_name:
+                    ax.plot(
+                        [note_pos_ + mult * note_rad for mult in [.9, 1.5, 2.0, 1.5]],
+                        [note.staff_line + height for height in [4, 3, 2, 1]],
+                        'k-'
+                    )
+                ax.annotate(
+                    note.modifier,
+                    xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6),
+                    fontsize=12,
+                    family='arial'
+                )
                 if note.staff_line == 0:
                     ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], 'k-')
         ax.set_aspect(0.9)
