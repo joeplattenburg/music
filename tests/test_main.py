@@ -23,7 +23,7 @@ def test_guitar_positions_name(name: str, args: list[str]) -> None:
 
 
 @pytest.mark.parametrize(
-    'name', ['G1,B1,D2,F2', 'G1,B3,D2,F#2']
+    'notes', ['G1,B1,D2,F2', 'G1,B3,D2,F#2']
 )
 @pytest.mark.parametrize(
     'args',
@@ -31,8 +31,22 @@ def test_guitar_positions_name(name: str, args: list[str]) -> None:
         [], ['-n 3'], ['-f 5'], ['-r'], ['-i'], ['-p'], ['-g']
     ]
 )
-def test_guitar_positions_notes(name: str, args: list[str]) -> None:
+def test_guitar_positions_notes(notes: str, args: list[str]) -> None:
     result = subprocess.run(
-        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--notes', name, *args],
+        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--notes', notes, *args],
+        capture_output=True)
+    assert result.returncode == 0
+
+
+@pytest.mark.parametrize(
+    'args',
+    [
+        ['--chords', 'Dm7', 'G7', 'CM7'],
+        ['--chords', 'Dm7', 'G7', 'CM7', '--lower', 'C2', '--upper', 'C4']
+    ]
+)
+def test_voice_leading(args: list[str]) -> None:
+    result = subprocess.run(
+        ['python', os.path.join(PROJ_DIR, 'main.py'), 'voice_leading', *args],
         capture_output=True)
     assert result.returncode == 0
