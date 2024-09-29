@@ -504,6 +504,86 @@ class ChordName:
         )
 
 
+class ChordProgression:
+    """
+    This class defines a chord progression (essentially a list of `ChordName`),
+    which allows for computing optimal voice leading
+
+    Attributes:
+        - chords: list[ChordName]
+    """
+    def __init__(self, chords: list[ChordName]):
+        self.chords = chords
+
+    def optimal_voice_leading(self, lower: Note, upper: Note, use_dijkstra: bool = True) -> list[Chord]:
+        voicings = [
+            chord.get_all_chords(lower=lower, upper=upper)
+            for chord in self.chords
+        ]
+        if use_dijkstra:
+            chord_progression_with_boundaries = [['start'], *voicings, ['end']]
+            terminal_ind = len(voicings) + 1
+            # Construct directed graph of possible voicing progressions
+            # Keys are either:
+            # - tuple[int, Chord] for chords
+            # - tuple[int, Literal['start', 'end']] for boundaries
+            graph = {}
+            for i, chord in enumerate(chord_progression_with_boundaries[:-1]):
+                next_chord = chord_progression_with_boundaries[i + 1]
+                rhs = list(zip([i + 1] * len(next_chord), next_chord))
+                for voicing in chord:
+                    graph[(i, voicing)] = rhs
+            graph[rhs[0]] = []
+            # Initialize weights as inf and initial condition
+            nodes_list = list(graph.keys())
+            costs = {node: float('inf') for node in nodes_list}
+            costs[(0, 'start')] = 0
+            predecesors = {}
+            unvisited = costs.copy()
+            while True:
+                unvisited = {node: costs[node] for node in unvisited.keys()}
+                current_node = min(unvisited, key=unvisited.get)
+                if current_node[0] == terminal_ind:
+                    break
+                unvisited.pop(current_node)
+                current_cost = costs[current_node]
+                neighbors = graph[current_node]
+                for neighbor in neighbors:
+                    current_neighbor_cost = costs[neighbor]
+                    if isinstance(current_node[1], Chord) and isinstance(neighbor[1], Chord):
+                        neighbor_cost = current_node[1].semitone_distance(neighbor[1]) + current_cost
+                    else:  # Boundaries are zero cost
+                        neighbor_cost = current_cost
+                    if neighbor_cost < current_neighbor_cost:
+                        costs[neighbor] = neighbor_cost
+                        predecesors[neighbor] = current_node
+            # Compute trajectory by backtracking
+            key = (terminal_ind, 'end')
+            trajectory: list[Chord] = []
+            while True:
+                key = predecesors[key]
+                if isinstance(key[1], Chord):
+                    trajectory.append(key[1])
+                else:
+                    break
+            trajectory = list(reversed(trajectory))
+            return trajectory
+        else:
+            motions = []
+            for prog_ in product(*voicings):
+                prog = list(prog_)
+                motion = sum([
+                    c.semitone_distance(prog[i + 1])
+                    for i, c in enumerate(prog[:-1])
+                ])
+                motions.append({
+                    'progression': prog,
+                    'motion': motion
+                })
+            motions = sorted(motions, key=lambda x: x['motion'])
+            return motions[0]['progression']
+
+
 class Staff:
     """
     This class defines a (grand) music staff, which contains a sequence of zero or more chords.
