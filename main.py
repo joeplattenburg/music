@@ -48,7 +48,7 @@ def voice_leading(args: argparse.Namespace):
         lower=music.Note.from_string(args.lower),
         upper=music.Note.from_string(args.upper),
     )
-    print(f'The optimal voicing for this progression is:')
+    print('The optimal voicing for this progression is:')
     for chord, voicing in zip(args.chords, result):
         print(f'{chord}: {voicing}')
 
