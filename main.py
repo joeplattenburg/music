@@ -5,7 +5,6 @@ import music
 
 
 def guitar_positions(args: argparse.Namespace):
-    t1 = time.time()
     guitar = music.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
     if args.notes:
         note_list = [music.Note.from_string(note) for note in args.notes.split(',')]
@@ -31,7 +30,6 @@ def guitar_positions(args: argparse.Namespace):
         positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     positions = music.GuitarPosition.sorted(positions_playable)[:args.top_n]
-    t2 = time.time()
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'There are {len(chords_playable)} playable voicings and {len(positions_playable)} guitar positions '
