@@ -284,7 +284,6 @@ class Chord:
             for perm in permutations(other.notes, len(other.notes))
         )
 
-
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
 
