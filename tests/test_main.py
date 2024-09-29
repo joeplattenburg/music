@@ -15,8 +15,10 @@ PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
         [], ['-n 3'], ['-f 5'], ['-r'], ['-i'], ['-p'], ['-g']
     ]
 )
-def test_demo_name(name: str, args: list[str]) -> None:
-    result = subprocess.run(['python', os.path.join(PROJ_DIR, 'demo.py'), '--name', name, *args], capture_output=True)
+def test_guitar_positions_name(name: str, args: list[str]) -> None:
+    result = subprocess.run(
+        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--name', name, *args],
+        capture_output=True)
     assert result.returncode == 0
 
 
@@ -29,6 +31,8 @@ def test_demo_name(name: str, args: list[str]) -> None:
         [], ['-n 3'], ['-f 5'], ['-r'], ['-i'], ['-p'], ['-g']
     ]
 )
-def test_demo_notes(name: str, args: list[str]) -> None:
-    result = subprocess.run(['python', os.path.join(PROJ_DIR, 'demo.py'), '--notes', name, *args], capture_output=True)
+def test_guitar_positions_notes(name: str, args: list[str]) -> None:
+    result = subprocess.run(
+        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--notes', name, *args],
+        capture_output=True)
     assert result.returncode == 0
