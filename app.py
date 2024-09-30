@@ -15,7 +15,12 @@ NOTE_DURATION = 2.0
 
 
 @app.route("/", methods=('GET', 'POST'))
-def input():
+def home():
+    return render_template('base.html')
+
+
+@app.route("/guitar_positions", methods=('GET', 'POST'))
+def guitar_positions():
     if request.method == 'POST':
         guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning'].strip()))
         tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
@@ -29,7 +34,7 @@ def input():
         all_voicings = request.form.get('all_voicings', '').strip() or 'false'
         if notes_string:
             return redirect(url_for(
-                'display_notes',
+                'guitar_positions_display_notes',
                 notes_string=notes_string,
                 top_n='top_n=' + top_n,
                 max_fret_span='max_fret_span=' + max_fret_span,
@@ -40,7 +45,7 @@ def input():
             try:
                 music.ChordName(chord_name)
                 return redirect(url_for(
-                    'display_name',
+                    'guitar_positions_display_name',
                     chord_name=chord_name.replace('/', '_'),
                     top_n='top_n=' + top_n,
                     max_fret_span='max_fret_span=' + max_fret_span,
@@ -54,11 +59,14 @@ def input():
                 flash(f'Invalid chord name! ({e})')
         else:
             flash('Either notes or name are required!')
-    return render_template('input.html')
+    return render_template('guitar_positions_input.html')
 
 
-@app.route("/notes/<notes_string>/<top_n>/<max_fret_span>/<tuning>/<allow_thumb>")
-def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str, allow_thumb: str) -> str:
+@app.route(
+    "/guitar_positions/notes/<notes_string>"
+    "/<top_n>/<max_fret_span>/<tuning>/<allow_thumb>"
+)
+def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str, allow_thumb: str) -> str:
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
@@ -82,14 +90,17 @@ def display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
-        'display.html',
+        'guitar_positions_display.html',
         chord=chord, tuning=tuning_, positions=positions_printable, chords_n=1,
         total_n=positions_all, playable_n=len(positions_playable), elapsed_time=elapsed_time
     )
 
 
-@app.route("/chord_name/<chord_name>/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>/<all_voicings>")
-def display_name(
+@app.route(
+    "/guitar_positions/chord_name/<chord_name>"
+    "/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>/<all_voicings>"
+)
+def guitar_positions_display_name(
         chord_name: str,
         top_n: str,
         max_fret_span: str,
@@ -139,9 +150,42 @@ def display_name(
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
-        'display.html',
+        'guitar_positions_display.html',
         chord=chord_name_, tuning=tuning_, positions=positions_printable, chords_n=len(chords_playable),
         total_n=len(positions_all), playable_n=len(positions_playable), elapsed_time=elapsed_time
+    )
+
+
+@app.route("/voice_leading", methods=('GET', 'POST'))
+def voice_leading():
+    if request.method == 'POST':
+        chords_string = request.form['chords'].strip()
+        lower = request.form['lower'].strip() or 'G2'
+        upper = request.form['upper'].strip() or 'G5'
+        return redirect(url_for(
+            'voice_leading_display',
+            chords_string=chords_string,
+            lower='lower=' + lower,
+            upper='upper=' + upper,
+        ))
+    return render_template('voice_leading_input.html')
+
+
+@app.route("/voice_leading/<chords_string>/<lower>/<upper>", methods=('GET', 'POST'))
+def voice_leading_display(chords_string: str, lower: str, upper: str):
+    t1 = time.time()
+    chord_progression = music.ChordProgression(
+        [music.ChordName(chord) for chord in escape(chords_string).split(',')]
+    )
+    lower_ = music.Note.from_string(escape(lower).split('=')[1])
+    upper_ = music.Note.from_string(escape(upper).split('=')[1])
+    opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
+    music.Staff(chords=opt_chords).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    elapsed_time = f'{(time.time() - t1):.2f}'
+    return render_template(
+        'voice_leading_display.html',
+        chords=chords_string,
+        elapsed_time=elapsed_time
     )
 
 

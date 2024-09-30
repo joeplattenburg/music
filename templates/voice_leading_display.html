@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
+<p>
+    The chord progression you entered was: {{ chords }}<br>
+    The optimal voicings are:
+</p>
+<img src="/static/temp.png"></img>
+
+{% endblock %}
