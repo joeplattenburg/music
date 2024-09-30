@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{% block title %} Voice Leading {% endblock %}</h2>
+    <p>
+        Computes the optimal voicing (between a lower and upper note) for a chord progression.<br>
+        Enter the chord progression as comma separated chord names.
+    </p>
+    <form method="post">
+        <label for="chords">Chord Progression</label>
+        <br>
+        <input type="text" name="chords" id="chords"
+               placeholder="Dm7,G7,Cmaj7"
+               value="{{ request.form['chords'] }}"></input>
+        <br>
+        <p><b>Optional Parameters</b></p>
+        <label for="lower">Lower Note</label>
+        <br>
+        <input type="text" name="lower" id="lower"
+               placeholder="G2"
+               value="{{ request.form['lower'] }}"></input>
+        <br>
+        <br>
+        <label for="upper">Upper Note</label>
+        <br>
+        <input type="text" name="upper" id="upper"
+               placeholder="G5"
+               value="{{ request.form['upper'] }}"></input>
+        <br>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}
+
+

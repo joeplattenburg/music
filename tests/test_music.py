@@ -859,3 +859,37 @@ def test_bias_in_voicings() -> None:
         for pos in chord.guitar_positions():
             assert pos.chord == chord
             assert set(n.name for n in pos.chord.notes) == names
+
+
+def test_semitone_distance() -> None:
+    c1 = music.Chord([
+        music.Note('C', 3),
+        music.Note('Eb', 3),
+        music.Note('F', 3),
+        music.Note('A', 3)
+    ])
+    c2 = music.Chord([
+        music.Note('C', 3),
+        music.Note('E', 3),
+        music.Note('G', 3),
+        music.Note('Bb', 3),
+    ])
+    assert c1.semitone_distance(c2) == 4
+    assert c2.semitone_distance(c1) == 4
+
+
+def test_voice_leading() -> None:
+    cp = music.ChordProgression([
+        music.ChordName(n) for n in ['Em7', 'A7', 'Dm7', 'G7', 'CM7']]
+    )
+    result1 = cp.optimal_voice_leading(
+        lower=music.Note('C', 2),
+        upper=music.Note('C', 4),
+        use_dijkstra=True
+    )
+    result2 = cp.optimal_voice_leading(
+        lower=music.Note('C', 2),
+        upper=music.Note('C', 4),
+        use_dijkstra=False
+    )
+    assert result1 == result2

@@ -1,7 +1,7 @@
 <!doctype html>
 
 <head>
-    <title>Guitar Position Calculator</title>
+    <title>Music Helpers</title>
     <style>
         .alert {
             padding: 20px;
@@ -13,9 +13,13 @@
     </style>
 </head>
 <body>
-    <h1>Guitar Position Calculator</h1>
-    <p>This app gives guitar fingerings for any chord</p>
-    <a href="{{ url_for('input') }}">Input</a>
+    <h1>Music Helpers</h1>
+    <p>This website provides tools for music:</p>
+    <ul>
+      <li><a href="{{ url_for('home') }}">Home</a></li>
+      <li><a href="{{ url_for('guitar_positions') }}">Guitar Positions</a></li>
+      <li><a href="{{ url_for('voice_leading') }}">Voice Leading</a></li>
+    </ul>
     <hr>
     <div class="content">
         {% for message in get_flashed_messages() %}
@@ -26,5 +30,3 @@
         {% endblock %}
     </div>
 </body>
-
-

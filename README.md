@@ -13,19 +13,27 @@ Classes include:
   - `guitar_positions`: returns all positions the chord can be played for a `Guitar`
 - `ChordName`: constructed from a string (e.g., `ChordName('C7b9/E')`); methods:
   - `get_all_chords` returns all possible voicings for a chord that fit between a `lower` and `upper` `Note`
+- `ChordProgression`: constructed from a `list[ChordName]`; methods
+  - `optimal_voice_leading`: compute optimals voicings for progression
+- `Staff`: constructed from a `list[Chord]`, used to generate a png image 
 - `Guitar`: define a guitar by its tuning and number of frets (can include a capo)
 - `GuitarPosition`: the set of fret positions to be played for each string
 
-## Demo
+## `main.py` Script
 
-There is a `demo.py` script that will generate guitar chord positions. See `--help` for more info on the args.
+There is a `main.py` script that demonstrates the functionality.
+See `--help` for more info on the args.
 
-### `notes` Mode
+### `guitar_position` Subcommand
+
+Compute the fingering positions for a chord.
+
+#### `notes` Mode
 
 In `notes` mode, you must specify the notes (including octave) that you want as a comma-separated string:
 
 ```commandline
-$ python demo.py --notes C3,G3,E4,Bb4 -n 3
+$ uv run demo.py --notes C3,G3,E4,Bb4 -n 3
 You input the chord: C3,G3,E4,Bb4
 There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
 (Computed in 0.00 seconds)
@@ -35,12 +43,12 @@ Here are the top 3:
 {'A': 3, 'D': 5, 'B': 5, 'e': 6}
 ```
 
-### `name` Mode
+#### `name` Mode
 
 In `name` mode, you can just pass a chord name (e.g., `Cmaj7#11/E`)
 
 ```commandline
- $ python demo.py --name Cmaj7#11/E -n 3
+ $ uv run demo.py --name Cmaj7#11/E -n 3
 You input the chord: Cmaj7#11/E
 There are 25 playable guitar positions (out of 986 possible) for a guitar tuned to standard.
 (Computed in 0.01 seconds)
@@ -50,12 +58,12 @@ Here are the top 3:
 {'E': 0, 'A': 3, 'G': 0, 'B': 0, 'e': 2}
 ```
 
-### Other features
+#### Other features
 
 You can use the `--graphical` (`-g`) flag for ASCII art:
 
 ```commandline
-$ python demo.py --notes C3,G3,E4,Bb4 --top_n 3 --graphical
+$ uv run demo.py --notes C3,G3,E4,Bb4 --top_n 3 --graphical
 You input the chord: C3,G3,E4,Bb4
 There are 9 playable guitar positions (out of 54 possible) for a guitar tuned to standard.
 (Computed in 0.00 seconds)
@@ -89,7 +97,7 @@ E x|---|---|---|---|
 You can specify different tunings, numbers of frets, and a capo location:
 
 ```commandline
-$ python demo.py -g \
+$ uv run demo.py -g \
     --notes C3,G3,E4,Bb4 \
     --top_n 2 \
     --tuning '{"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}' \
@@ -114,6 +122,20 @@ F#  |-@-|---|---|---|
  A  |-@-|---|---|---|
  D  |-@-|---|---|---|
      9fr
+```
+
+### `voice_leading` Subcommand
+
+Compute the optimal voicings for a chord progression.
+
+```commandline
+$ uv run main.py voice_leading --chords Dm7 G7 CM7
+You input the chord progresssion: ['Dm7', 'G7', 'CM7']
+The optimal voicing for this progression is:
+Dm7: D2,C3,F3,A3
+G7: G2,D3,F3,B3
+CM7: C3,E3,G3,B3
+(Computed in 0.03 seconds)
 ```
 
 ## Web App
