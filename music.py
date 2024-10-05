@@ -11,10 +11,11 @@ try:
     import numpy as np
     import wave
     import matplotlib
-    matplotlib.use('Agg')
+
+    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 except ImportError:
-    warnings.warn('Additional dependencies for multimedia not installed.')
+    warnings.warn("Additional dependencies for multimedia not installed.")
 
 DEFAULT_MAX_FRET_SPAN = 4
 PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -36,21 +37,13 @@ class Note:
         - staff_line: int, the number of lines/spaces above middle C (C4); e.g., E4 = 2 (1 space + 1 line)
     """
 
-    SEMITONE_MAPPER: dict[str, int] = {
-        'C': 0,
-        'D': 2,
-        'E': 4,
-        'F': 5,
-        'G': 7,
-        'A': 9,
-        'B': 11
-    }
+    SEMITONE_MAPPER: dict[str, int] = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
     MODIFIER_MAPPER: dict[str, int] = {
-        'bb': -2,
-        'b': -1,
-        '': 0,
-        '#': 1,
-        '##': 2,
+        "bb": -2,
+        "b": -1,
+        "": 0,
+        "#": 1,
+        "##": 2,
     }
 
     ALL_NOTES_NAMES: list[str] = [
@@ -63,15 +56,14 @@ class Note:
         self.name = name
         self.octave = octave
         self.semitones = (
-            12 * self.octave +
-            self.SEMITONE_MAPPER[self.simple_name] +
-            self.MODIFIER_MAPPER[self.modifier]
+            12 * self.octave
+            + self.SEMITONE_MAPPER[self.simple_name]
+            + self.MODIFIER_MAPPER[self.modifier]
         )
         self.frequency: float = 440 * 2 ** ((self.semitones - 57) / 12)
-        self.staff_line: int = (
-            self.STAFF_LINE_OFFSET[self.simple_name] +
-            len(self.SEMITONE_MAPPER) * (self.octave - 4)
-        )
+        self.staff_line: int = self.STAFF_LINE_OFFSET[self.simple_name] + len(
+            self.SEMITONE_MAPPER
+        ) * (self.octave - 4)
 
     def parse_name(self, name: str) -> tuple[str, str]:
         """Init a note from a string, e.g. 'C#4'"""
@@ -82,10 +74,12 @@ class Note:
             modifier = name[1:]
             assert modifier in self.MODIFIER_MAPPER.keys()
         else:
-            modifier = ''
+            modifier = ""
         return simple_name, modifier
 
-    def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> 'GuitarPosition':
+    def guitar_positions(
+        self, guitar: "Guitar" = None, valid_only: bool = True
+    ) -> "GuitarPosition":
         """
         Return the set of all positions (string + fret) a note can be played on a guitar
         :param guitar: Guitar, defines the guitar (standard tuning by default)
@@ -96,44 +90,43 @@ class Note:
         positions = {
             string: self - note
             for string, note in guitar.tuning.items()
-            if (valid_only and self >= note and (self - note) <= guitar.frets)
-            or not valid_only
+            if (valid_only and self >= note and (self - note) <= guitar.frets) or not valid_only
         }
         return GuitarPosition(positions, guitar=guitar)
 
     @staticmethod
-    def from_semitones(semitones: int, bias: Literal['b', '#'] = 'b') -> 'Note':
+    def from_semitones(semitones: int, bias: Literal["b", "#"] = "b") -> "Note":
         octave = semitones // 12
         remainder = semitones % 12
         if remainder not in Note.SEMITONE_MAPPER.values():
             modifier = bias
-            remainder = remainder + 1 if bias == 'b' else remainder - 1
+            remainder = remainder + 1 if bias == "b" else remainder - 1
         else:
-            modifier = ''
+            modifier = ""
         inverse_mapper = {v: k for k, v in Note.SEMITONE_MAPPER.items()}
         name = inverse_mapper[remainder] + modifier
         return Note(name=name, octave=octave)
 
     @staticmethod
-    def from_string(note: str) -> 'Note':
+    def from_string(note: str) -> "Note":
         return Note(note[:-1], int(note[-1]))
 
-    def add_semitones(self, semitones: int, bias: Optional[Literal['b', '#']] = None) -> 'Note':
+    def add_semitones(self, semitones: int, bias: Optional[Literal["b", "#"]] = None) -> "Note":
         if bias is None:
-            bias = self.modifier[0] if self.modifier else 'b'
+            bias = self.modifier[0] if self.modifier else "b"
         return self.from_semitones(self.semitones + semitones, bias)
 
-    def same_name(self, other: 'Note') -> bool:
+    def same_name(self, other: "Note") -> bool:
         return self.semitones % 12 == other.semitones % 12
 
-    def nearest_above(self, note: str, allow_equal: bool = True) -> 'Note':
+    def nearest_above(self, note: str, allow_equal: bool = True) -> "Note":
         bias = note[1] if len(note) > 1 else None
         interval = (Note(note, 0) - self) % 12
         if not allow_equal and interval == 0:
             interval = 12
         return self.add_semitones(interval, bias)
 
-    def nearest_below(self, note: str, allow_equal: bool = True) -> 'Note':
+    def nearest_below(self, note: str, allow_equal: bool = True) -> "Note":
         bias = note[1] if len(note) > 1 else None
         interval = (self - Note(note, 0)) % 12
         if not allow_equal and interval == 0:
@@ -143,13 +136,13 @@ class Note:
     def __repr__(self) -> str:
         return str(self.simple_name + self.modifier + str(self.octave))
 
-    def __eq__(self, other: 'Note') -> bool:
+    def __eq__(self, other: "Note") -> bool:
         return self.semitones == other.semitones
 
-    def __lt__(self, other: 'Note') -> bool:
+    def __lt__(self, other: "Note") -> bool:
         return self.semitones < other.semitones
 
-    def __add__(self, other) -> 'Note':
+    def __add__(self, other) -> "Note":
         return self.add_semitones(other.semitones)
 
     def __sub__(self, other) -> int:
@@ -187,12 +180,12 @@ class Chord:
             self.staff_line_gaps = []
 
     def guitar_positions(
-            self,
-            guitar: 'Guitar' = None,
-            max_fret_span: int = 4,
-            include_unplayable: bool = False,
-            allow_thumb: bool = True
-    ) -> list['GuitarPosition']:
+        self,
+        guitar: "Guitar" = None,
+        max_fret_span: int = 4,
+        include_unplayable: bool = False,
+        allow_thumb: bool = True,
+    ) -> list["GuitarPosition"]:
         """
         Return all guitar positions that can play a given `Chord`
         :param guitar: Guitar, defining the tuning
@@ -213,7 +206,9 @@ class Chord:
             list(note.guitar_positions(guitar=guitar, valid_only=True).positions_dict.keys())
             for note in self.notes
         ]
-        valid_combinations = [comb for comb in product(*valid_strings) if len(set(comb)) == len(self.notes)]
+        valid_combinations = [
+            comb for comb in product(*valid_strings) if len(set(comb)) == len(self.notes)
+        ]
         self.num_total_guitar_positions = len(valid_combinations)
         playable_positions = []
         for comb in valid_combinations:
@@ -232,10 +227,12 @@ class Chord:
         return sorted(playable_positions, key=lambda x: x.fret_span)
 
     @staticmethod
-    def from_string(string: str) -> 'Chord':
-        return Chord([Note.from_string(n) for n in string.split(',')])
+    def from_string(string: str) -> "Chord":
+        return Chord([Note.from_string(n) for n in string.split(",")])
 
-    def to_audio(self, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> 'Audio':
+    def to_audio(
+        self, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True
+    ) -> "Audio":
         """
         Convert a chord to an `Audio` waveform;
         the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
@@ -254,35 +251,35 @@ class Chord:
             for harmonic in range(1, n_harmonics + 1):
                 w = 2 * np.pi * note.frequency * harmonic
                 phase = 0.05 * note.frequency * np.sin(0.5 * t)
-                signal += np.sin(w * t + phase) / 1.5 ** harmonic
-            signal /= (2 * np.max(np.abs(signal)))
+                signal += np.sin(w * t + phase) / 1.5**harmonic
+            signal /= 2 * np.max(np.abs(signal))
             delay_samples = int(sample_rate * delay_duration * i)
             envelope = np.exp(-(t - delay_duration * i) / tau)
             envelope[:delay_samples] = 0
             signal *= envelope
             waveform += signal
-        waveform /= (2 * np.max(np.abs(waveform)))
+        waveform /= 2 * np.max(np.abs(waveform))
         return Audio(sample_rate=sample_rate, waveform=waveform)
 
-    def semitone_distance(self, other: 'Chord') -> int:
+    def semitone_distance(self, other: "Chord") -> int:
         """
         It might not be that the case that each note resolves to its same-index counterpart in the other chord;
         so we need to check all the pairings
         """
-        assert len(self.notes) == len(other.notes), \
-            'Can only compute semitone distance between chords of equal cardinality'
+        assert len(self.notes) == len(
+            other.notes
+        ), "Can only compute semitone distance between chords of equal cardinality"
         return min(
             sum(abs(self_n - other_n) for self_n, other_n in zip(self.notes, perm))
             for perm in permutations(other.notes, len(other.notes))
         )
 
     def __repr__(self):
-        return ','.join(str(n) for n in self.notes)
+        return ",".join(str(n) for n in self.notes)
 
-    def __eq__(self, other: 'Chord') -> bool:
-        return (
-            (len(self.notes) == len(other.notes)) and
-            all(s == o for s, o in zip(self.notes, other.notes))
+    def __eq__(self, other: "Chord") -> bool:
+        return (len(self.notes) == len(other.notes)) and all(
+            s == o for s, o in zip(self.notes, other.notes)
         )
 
     def __lt__(self, other) -> bool:
@@ -314,32 +311,30 @@ class ChordName:
     """
 
     QUALITY_SEMITONE_MAPPER = {
-        '': [0, 4, 7],
-        'maj': [0, 4, 7],
-        'M': [0, 4, 7],
-        'min': [0, 3, 7],
-        'm': [0, 3, 7],
-        'dim': [0, 3, 6],
-        'aug': [0, 4, 8],
-        'sus2': [0, 2, 7],
-        'sus4': [0, 5, 7],
-        'maj7': [0, 4, 7, 11],
-        'M7': [0, 4, 7, 11],
-        '7': [0, 4, 7, 10],
-        'minmaj7': [0, 3, 7, 11],
-        'mM7': [0, 3, 7, 11],
-        'mmaj7': [0, 3, 7, 11],
-        'minM7': [0, 3, 7, 11],
-        'min7': [0, 3, 7, 10],
-        'm7': [0, 3, 7, 10],
-        'm7b5': [0, 3, 6, 10],
-        'dim7': [0, 3, 6, 9],
-        'aug7': [0, 4, 8, 10],
-        '6': [0, 4, 7, 9],
+        "": [0, 4, 7],
+        "maj": [0, 4, 7],
+        "M": [0, 4, 7],
+        "min": [0, 3, 7],
+        "m": [0, 3, 7],
+        "dim": [0, 3, 6],
+        "aug": [0, 4, 8],
+        "sus2": [0, 2, 7],
+        "sus4": [0, 5, 7],
+        "maj7": [0, 4, 7, 11],
+        "M7": [0, 4, 7, 11],
+        "7": [0, 4, 7, 10],
+        "minmaj7": [0, 3, 7, 11],
+        "mM7": [0, 3, 7, 11],
+        "mmaj7": [0, 3, 7, 11],
+        "minM7": [0, 3, 7, 11],
+        "min7": [0, 3, 7, 10],
+        "m7": [0, 3, 7, 10],
+        "m7b5": [0, 3, 6, 10],
+        "dim7": [0, 3, 6, 9],
+        "aug7": [0, 4, 8, 10],
+        "6": [0, 4, 7, 9],
     }
-    DEGREE_SEMITONE_MAPPER = {
-        1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11
-    }
+    DEGREE_SEMITONE_MAPPER = {1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11}
     EXTENSION_SEMITONE_MAPPER = {
         str((deg - 1) + 8): semitones + 12
         for deg, semitones in DEGREE_SEMITONE_MAPPER.items()
@@ -351,14 +346,14 @@ class ChordName:
         for mod, mod_semis in Note.MODIFIER_MAPPER.items()
         if len(mod) <= 1
     }
-    FLAT_KEYS = ['C', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb', 'Bbb', 'Ebb', 'Abb', 'Dbb']
-    SHARP_KEYS = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#', 'F##']
+    FLAT_KEYS = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb", "Fb", "Bbb", "Ebb", "Abb", "Dbb"]
+    SHARP_KEYS = ["G", "D", "A", "E", "B", "F#", "C#", "G#", "D#", "A#", "E#", "B#", "F##"]
     KEY_BIAS = {
-        **{k: 'b' for k in FLAT_KEYS},
-        **{k: '#' for k in SHARP_KEYS},
+        **{k: "b" for k in FLAT_KEYS},
+        **{k: "#" for k in SHARP_KEYS},
     }
     ALL_CHORD_NAMES = [
-        f'{note}{quality}{ext}'
+        f"{note}{quality}{ext}"
         for note, quality, ext in product(
             KEY_BIAS.keys(), QUALITY_SEMITONE_MAPPER.keys(), EXTENSION_SEMITONE_MAPPER.keys()
         )
@@ -382,33 +377,33 @@ class ChordName:
             self.note_names.insert(0, self.root)
         self.extension_names = []
         for ext in self.extensions:
-            bias = ext[0] if ext[0] in ('#', 'b') else self.key_bias
+            bias = ext[0] if ext[0] in ("#", "b") else self.key_bias
             self.extension_names.append(
-                Note(self.chord_note, octave=1).add_semitones(
-                    self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias
-                ).name
+                Note(self.chord_note, octave=1)
+                .add_semitones(self.EXTENSION_SEMITONE_MAPPER[ext], bias=bias)
+                .name
             )
 
     def parse_name(self, name: str) -> tuple[str, str, list[str], str]:
         chord_note = best_match(name, list(self.KEY_BIAS.keys()))
-        if '/' in name:
-            remainder, root = name.split('/')
+        if "/" in name:
+            remainder, root = name.split("/")
         else:
             remainder = name
             root = chord_note
-        remainder = remainder.replace(chord_note, '')
+        remainder = remainder.replace(chord_note, "")
         quality = best_match(remainder, list(self.QUALITY_SEMITONE_MAPPER.keys()))
-        remainder = remainder.replace(quality, '')
+        remainder = remainder.replace(quality, "")
         extensions = []
         while remainder:
             extensions.append(best_match(remainder, list(self.EXTENSION_SEMITONE_MAPPER.keys())))
-            remainder = remainder.replace(extensions[-1], '')
+            remainder = remainder.replace(extensions[-1], "")
         assert not remainder
         return chord_note, quality, extensions, root
 
     def get_chord(
-            self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[int, int] = None
-    ) -> 'Chord':
+        self, *, lower: "Note" = Note("C", 0), raise_octave: dict[int, int] = None
+    ) -> "Chord":
         """
         For a chord name, return a `Chord` in close position whose root is the lowest note >= `lower`;
         alternately, `raise_octave` can raise one or more of the chord tones by one or more octaves
@@ -432,11 +427,14 @@ class ChordName:
         return Chord(notes)
 
     def get_all_chords(
-            self, *, lower: 'Note' = Note('C', 0), upper: 'Note',
-            max_notes: Optional[int] = None,
-            allow_repeats: bool = False,
-            allow_identical: bool = False,
-    ) -> list['Chord']:
+        self,
+        *,
+        lower: "Note" = Note("C", 0),
+        upper: "Note",
+        max_notes: Optional[int] = None,
+        allow_repeats: bool = False,
+        allow_identical: bool = False,
+    ) -> list["Chord"]:
         """
         For a chord name, return all `Chord`s that can fit between `lower` and `upper`;
         If `allow_repeats`, chord notes (but not extensions) can be repeated
@@ -445,7 +443,10 @@ class ChordName:
         """
         max_notes = max_notes or len(self.note_names) + len(self.extension_names)
         max_octaves = (upper - lower) // 12 + 1
-        root_notes = [lower.nearest_above(self.root).add_semitones(12 * octave) for octave in range(max_octaves)]
+        root_notes = [
+            lower.nearest_above(self.root).add_semitones(12 * octave)
+            for octave in range(max_octaves)
+        ]
         required_notes = set(Note(name, 0) for name in self.note_names[1:])
         possible_notes = [
             lower.nearest_above(note).add_semitones(12 * octave)
@@ -470,28 +471,34 @@ class ChordName:
             elif allow_repeats:
                 note_list = filter(lambda x: root_note < x <= upper_, possible_notes)
             else:
-                note_list = filter(lambda x: (root_note < x <= upper_) and not x.same_name(root_note), possible_notes)
+                note_list = filter(
+                    lambda x: (root_note < x <= upper_) and not x.same_name(root_note),
+                    possible_notes,
+                )
             available_notes = max_notes - 1 - len(ext)  # root and extensions are already taken
             mid_notes_list = constrained_powerset(
                 list(note_list),
                 required_notes=required_notes,
                 max_len=available_notes,
                 allow_repeats=allow_repeats,
-                allow_identical=allow_identical
+                allow_identical=allow_identical,
             )
-            chord_list += [
-                Chord([root_note, *mid_notes, *ext])
-                for mid_notes in mid_notes_list
-            ]
+            chord_list += [Chord([root_note, *mid_notes, *ext]) for mid_notes in mid_notes_list]
         return chord_list
 
     def get_all_guitar_chords(
-            self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False, allow_identical: bool = False
-    ) -> list['Chord']:
+        self,
+        guitar: Optional["Guitar"] = None,
+        allow_repeats: bool = False,
+        allow_identical: bool = False,
+    ) -> list["Chord"]:
         guitar = guitar or Guitar()
         return self.get_all_chords(
-            lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.string_names),
-            allow_repeats=allow_repeats, allow_identical=allow_identical
+            lower=guitar.lowest,
+            upper=guitar.highest,
+            max_notes=len(guitar.string_names),
+            allow_repeats=allow_repeats,
+            allow_identical=allow_identical,
         )
 
 
@@ -503,16 +510,16 @@ class ChordProgression:
     Attributes:
         - chords: list[ChordName]
     """
+
     def __init__(self, chords: list[ChordName]):
         self.chords = chords
 
-    def optimal_voice_leading(self, lower: Note, upper: Note, use_dijkstra: bool = True) -> list[Chord]:
-        voicings = [
-            chord.get_all_chords(lower=lower, upper=upper)
-            for chord in self.chords
-        ]
+    def optimal_voice_leading(
+        self, lower: Note, upper: Note, use_dijkstra: bool = True
+    ) -> list[Chord]:
+        voicings = [chord.get_all_chords(lower=lower, upper=upper) for chord in self.chords]
         if use_dijkstra:
-            chord_progression_with_boundaries = [['start'], *voicings, ['end']]
+            chord_progression_with_boundaries = [["start"], *voicings, ["end"]]
             terminal_ind = len(voicings) + 1
             # Construct directed graph of possible voicing progressions
             # Keys are either:
@@ -527,8 +534,8 @@ class ChordProgression:
             graph[rhs[0]] = []
             # Initialize weights as inf and initial condition
             nodes_list = list(graph.keys())
-            costs = {node: float('inf') for node in nodes_list}
-            costs[(0, 'start')] = 0
+            costs = {node: float("inf") for node in nodes_list}
+            costs[(0, "start")] = 0
             predecesors = {}
             unvisited = costs.copy()
             while True:
@@ -542,14 +549,16 @@ class ChordProgression:
                 for neighbor in neighbors:
                     current_neighbor_cost = costs[neighbor]
                     if isinstance(current_node[1], Chord) and isinstance(neighbor[1], Chord):
-                        neighbor_cost = current_node[1].semitone_distance(neighbor[1]) + current_cost
+                        neighbor_cost = (
+                            current_node[1].semitone_distance(neighbor[1]) + current_cost
+                        )
                     else:  # Boundaries are zero cost
                         neighbor_cost = current_cost
                     if neighbor_cost < current_neighbor_cost:
                         costs[neighbor] = neighbor_cost
                         predecesors[neighbor] = current_node
             # Compute trajectory by backtracking
-            key = (terminal_ind, 'end')
+            key = (terminal_ind, "end")
             trajectory: list[Chord] = []
             while True:
                 key = predecesors[key]
@@ -563,16 +572,10 @@ class ChordProgression:
             motions = []
             for prog_ in product(*voicings):
                 prog = list(prog_)
-                motion = sum([
-                    c.semitone_distance(prog[i + 1])
-                    for i, c in enumerate(prog[:-1])
-                ])
-                motions.append({
-                    'progression': prog,
-                    'motion': motion
-                })
-            motions = sorted(motions, key=lambda x: x['motion'])
-            return motions[0]['progression']
+                motion = sum([c.semitone_distance(prog[i + 1]) for i, c in enumerate(prog[:-1])])
+                motions.append({"progression": prog, "motion": motion})
+            motions = sorted(motions, key=lambda x: x["motion"])
+            return motions[0]["progression"]
 
 
 class Audio:
@@ -582,6 +585,7 @@ class Audio:
         duration: float, total duration [s] of audio
         waveform: the waveform of the audio signal
     """
+
     def __init__(self, sample_rate: int, waveform: np.array):
         self.sample_rate = sample_rate
         self.waveform = waveform
@@ -594,18 +598,18 @@ class Audio:
         """
         audio = np.array([self.waveform, self.waveform]).T
         # Convert to (little-endian) 16 bit integers.
-        audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
+        audio_norm = (audio * (2**15 - 1)).astype("<h")
         with wave.open(path, "w") as f:
             f.setnchannels(2)
             f.setsampwidth(2)
             f.setframerate(self.sample_rate)
             f.writeframes(audio_norm.tobytes())
 
-    def __add__(self, other: 'Audio') -> 'Audio':
+    def __add__(self, other: "Audio") -> "Audio":
         assert self.sample_rate == other.sample_rate
         return Audio(
             sample_rate=self.sample_rate,
-            waveform=np.concatenate([self.waveform, other.waveform], axis=0)
+            waveform=np.concatenate([self.waveform, other.waveform], axis=0),
         )
 
 
@@ -620,15 +624,18 @@ class Staff:
         - ledger_lines: list[tuple[int, int]], for each chord, the number of additional ledger lines
             above or below the grand staff that are needed
     """
+
     def __init__(self, chords: Optional[list[Chord]] = None):
         # ledger line 0 is middle C, one int index for each line or space
         self.chords = chords or []
         self.ledger_lines = []
         for chord in chords:
-            self.ledger_lines.append((
-                min((min(chord.notes).staff_line + 1) & ~1, 2),
-                max(max(chord.notes).staff_line & ~1, 10)
-            ))
+            self.ledger_lines.append(
+                (
+                    min((min(chord.notes).staff_line + 1) & ~1, 2),
+                    max(max(chord.notes).staff_line & ~1, 10),
+                )
+            )
 
     def write_png(self, path: str) -> None:
         """Write a png of the staff to a file"""
@@ -640,22 +647,24 @@ class Staff:
         note_positions = [10 + 6 * n for n in range(len(self.chords))]
         note_rad = 1
         # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'treble_clef.png'))
+        im = plt.imread(os.path.join(PROJ_DIR, "static", "treble_clef.png"))
         ax.imshow(im, extent=(1, 5, -1, 12))
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'bass_clef.png'))
+        im = plt.imread(os.path.join(PROJ_DIR, "static", "bass_clef.png"))
         ax.imshow(im, extent=(1, 6, -9, -2))
         # staff
         for line in range(2, 12, 2):
-            ax.plot(xlim, [line] * 2, 'k-')
+            ax.plot(xlim, [line] * 2, "k-")
         for line in range(-2, -12, -2):
-            ax.plot(xlim, [line] * 2, 'k-')
-        for chord, (lowest_line, highest_line), note_pos in zip(self.chords, self.ledger_lines, note_positions):
+            ax.plot(xlim, [line] * 2, "k-")
+        for chord, (lowest_line, highest_line), note_pos in zip(
+            self.chords, self.ledger_lines, note_positions
+        ):
             if lowest_line < -10:
                 for line in range(lowest_line, 10, 2):
-                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, "k-")
             if highest_line > 10:
                 for line in range(12, highest_line + 2, 2):
-                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, 'k-')
+                    ax.plot([note_pos - 2 * note_rad, note_pos + 2 * note_rad], [line] * 2, "k-")
             shift = 0
             for note, gap in zip(chord.notes, chord.staff_line_gaps):
                 if shift == 0 and gap is not None and gap < 2:
@@ -663,14 +672,26 @@ class Staff:
                 else:
                     shift = 0
                 note_pos_ = note_pos + shift
-                ax.add_patch(plt.Circle(xy=(note_pos_, note.staff_line), radius=0.9 * note_rad, facecolor="none", edgecolor='k'))
-                ax.annotate(note.modifier, xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6), fontsize=12, family='arial')
+                ax.add_patch(
+                    plt.Circle(
+                        xy=(note_pos_, note.staff_line),
+                        radius=0.9 * note_rad,
+                        facecolor="none",
+                        edgecolor="k",
+                    )
+                )
+                ax.annotate(
+                    note.modifier,
+                    xy=(note_pos_ - 2.25 * note_rad, note.staff_line - 0.6),
+                    fontsize=12,
+                    family="arial",
+                )
                 if note.staff_line == 0:
-                    ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], 'k-')
+                    ax.plot([note_pos_ - 2 * note_rad, note_pos_ + 2 * note_rad], [0, 0], "k-")
         ax.set_aspect(0.9)
-        ax.axis('off')
+        ax.axis("off")
         plt.tight_layout()
-        fig.savefig(path, bbox_inches='tight', pad_inches=0)
+        fig.savefig(path, bbox_inches="tight", pad_inches=0)
 
 
 class Guitar:
@@ -688,21 +709,23 @@ class Guitar:
         - highest: Note, highest playable note
     """
 
-    STANDARD_TUNING: dict[str, 'Note'] = {
-        'E': Note('E', 2),
-        'A': Note('A', 2),
-        'D': Note('D', 3),
-        'G': Note('G', 3),
-        'B': Note('B', 3),
-        'e': Note('E', 4),
+    STANDARD_TUNING: dict[str, "Note"] = {
+        "E": Note("E", 2),
+        "A": Note("A", 2),
+        "D": Note("D", 3),
+        "G": Note("G", 3),
+        "B": Note("B", 3),
+        "e": Note("E", 4),
     }
     DEFAULT_FRETS = 22
 
-    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
+    def __init__(
+        self, tuning: dict[Hashable, "Note"] = None, frets: int = DEFAULT_FRETS, capo: int = 0
+    ):
         self.open_tuning = tuning or self.STANDARD_TUNING
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
-        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
+        self.tuning_name = "standard" if self.tuning == self.STANDARD_TUNING else "custom"
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
         self.lowest = min(note for note in self.tuning.values())
@@ -712,7 +735,7 @@ class Guitar:
         return str(self.tuning)
 
     @staticmethod
-    def parse_tuning(tuning: Optional[str] = None) -> dict[str, 'Note']:
+    def parse_tuning(tuning: Optional[str] = None) -> dict[str, "Note"]:
         if not tuning:
             return Guitar.STANDARD_TUNING
         else:
@@ -755,12 +778,12 @@ class GuitarPosition:
     """
 
     def __init__(
-            self,
-            positions: dict[Hashable, int],
-            *,
-            notes: Optional[list['Note']] = None,
-            guitar: 'Guitar' = None,
-            max_fret_span: int = DEFAULT_MAX_FRET_SPAN
+        self,
+        positions: dict[Hashable, int],
+        *,
+        notes: Optional[list["Note"]] = None,
+        guitar: "Guitar" = None,
+        max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
     ):
         self.guitar = guitar or Guitar()
         self.valid = all(0 <= fret <= self.guitar.frets for fret in positions.values())
@@ -769,50 +792,55 @@ class GuitarPosition:
             self.fret_span = None
         else:
             self.lowest_fret = (
-                0 if all(f == 0 for f in positions.values())
+                0
+                if all(f == 0 for f in positions.values())
                 else min(f for f in positions.values() if f != 0)
             )
             highest_fret = max(positions.values())
             self.fret_span = highest_fret - self.lowest_fret + 1
         # Sort the position in order of the guitar strings
         self.positions_dict = {
-            string: positions[string]
-            for string in self.guitar.string_names
-            if string in positions
+            string: positions[string] for string in self.guitar.string_names if string in positions
         }
         # Indices of open, muted, and fretted strings
         self.open_strings = [
-            i for i, string in enumerate(self.guitar.string_names)
+            i
+            for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) == 0
         ]
         self.muted_strings = [
-            i for i, string in enumerate(self.guitar.string_names)
+            i
+            for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) == -1
         ]
         self.fretted_strings = [
-            i for i, string in enumerate(self.guitar.string_names)
+            i
+            for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) > 0
         ]
         lowest_fret_strings = [
-            i for i, string in enumerate(self.guitar.string_names)
+            i
+            for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) == self.lowest_fret
         ]
         # Can play a 5th note with thumb on bottom string
-        self.use_thumb = (
-            (len(self.fretted_strings) == 5) and
-            (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
+        self.use_thumb = (len(self.fretted_strings) == 5) and (
+            self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret
         )
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable(max_fret_span=max_fret_span)
         # Barre chord needs
         self.barre = (
-            self.playable and
+            self.playable
+            and
             # more than 4 fretted strings
-            len(self.fretted_strings) > 4 and
+            len(self.fretted_strings) > 4
+            and
             # no open strings
-            len(self.open_strings) == 0 and
-            len(lowest_fret_strings) > 1 and
-            not self.use_thumb and
+            len(self.open_strings) == 0
+            and len(lowest_fret_strings) > 1
+            and not self.use_thumb
+            and
             # No open or muted strings inside the barre position
             not any(
                 min(lowest_fret_strings) < string < max(lowest_fret_strings)
@@ -821,7 +849,9 @@ class GuitarPosition:
         )
         if self.barre:
             # All strings along the barre position
-            self.barred_strings_inds = list(range(min(lowest_fret_strings), max(lowest_fret_strings) + 1))
+            self.barred_strings_inds = list(
+                range(min(lowest_fret_strings), max(lowest_fret_strings) + 1)
+            )
         else:
             self.barred_strings_inds = []
         # If all fretted notes are >= fret 12, this is a redundant position
@@ -872,16 +902,15 @@ class GuitarPosition:
         else:
             return True
 
-    def __eq__(self, other: 'GuitarPosition') -> bool:
+    def __eq__(self, other: "GuitarPosition") -> bool:
         return self.positions_dict == other.positions_dict
 
     def __repr__(self) -> str:
         return str(self.positions_dict)
 
-    def is_subset(self, other: 'GuitarPosition') -> bool:
-        return (
-            (self.positions_dict.keys() <= other.positions_dict.keys()) and
-            all(self_val == other.positions_dict[key] for key, self_val in self.positions_dict.items())
+    def is_subset(self, other: "GuitarPosition") -> bool:
+        return (self.positions_dict.keys() <= other.positions_dict.keys()) and all(
+            self_val == other.positions_dict[key] for key, self_val in self.positions_dict.items()
         )
 
     def printable(self) -> list[str]:
@@ -892,39 +921,44 @@ class GuitarPosition:
         rows = []
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
         for i, string in reversed(list(enumerate(self.guitar.string_names))):
-            fret_marker = '-T-' if string == self.guitar.string_names[0] and self.use_thumb else '-@-'
-            left_padding = ' ' * (widest_name - len(str(string)))
-            frets = ['---'] * self.fret_span
+            fret_marker = (
+                "-T-" if string == self.guitar.string_names[0] and self.use_thumb else "-@-"
+            )
+            left_padding = " " * (widest_name - len(str(string)))
+            frets = ["---"] * self.fret_span
             fret = self.positions_dict.get(string, -1)
             if fret > 0:
                 frets[fret - self.lowest_fret] = fret_marker
-                ring_status = ' '
+                ring_status = " "
             else:
-                ring_status = 'o' if fret == 0 else 'x'
+                ring_status = "o" if fret == 0 else "x"
             if self.barre:
                 if min(self.barred_strings_inds) < i < max(self.barred_strings_inds):
-                    frets[0] = '-|-'
+                    frets[0] = "-|-"
             row = f'{left_padding}{string} {ring_status}|{"|".join(frets)}|'
             rows.append(row)
         if self.lowest_fret > 0:
-            left_padding = ' ' * widest_name
-            rows.append(f'{left_padding}   {self.lowest_fret}fr')
+            left_padding = " " * widest_name
+            rows.append(f"{left_padding}   {self.lowest_fret}fr")
         return rows
 
     @staticmethod
-    def sorted(p: list['GuitarPosition'], target_fret: int = 7) -> list['GuitarPosition']:
+    def sorted(p: list["GuitarPosition"], target_fret: int = 7) -> list["GuitarPosition"]:
         """Sort a list of GuitarPositions on fret span, then interior gaps, then near a target fret"""
-        return sorted(p, key=lambda x: (
-            # Sort first on fret span
-            x.fret_span,
-            # Then, fewest interior gaps
-            x.max_interior_gap,
-            # Then nearest to target fret
-            abs(x.lowest_fret - target_fret),
-        ))
+        return sorted(
+            p,
+            key=lambda x: (
+                # Sort first on fret span
+                x.fret_span,
+                # Then, fewest interior gaps
+                x.max_interior_gap,
+                # Then nearest to target fret
+                abs(x.lowest_fret - target_fret),
+            ),
+        )
 
     @staticmethod
-    def filter_subsets(p: list['GuitarPosition']) -> list['GuitarPosition']:
+    def filter_subsets(p: list["GuitarPosition"]) -> list["GuitarPosition"]:
         """
         Drop any positions that are subsets of another position,
         e.g. given [{"E": 3, "A": 2}, {"E": 3}], drop the last element
@@ -951,7 +985,7 @@ def best_match(s: str, choices: list[str]) -> str:
     try:
         return max(matches, key=len)
     except ValueError:
-        raise ValueError(f'Invalid Input: {s} did not match any of {choices}')
+        raise ValueError(f"Invalid Input: {s} did not match any of {choices}")
 
 
 def note_set(note_list: list[Note]) -> set[Note]:
@@ -959,11 +993,11 @@ def note_set(note_list: list[Note]) -> set[Note]:
 
 
 def constrained_powerset(
-        note_list: list[Note],
-        max_len: int = 0,
-        required_notes: set[Note] = None,
-        allow_repeats: bool = True,
-        allow_identical: bool = False
+    note_list: list[Note],
+    max_len: int = 0,
+    required_notes: set[Note] = None,
+    allow_repeats: bool = True,
+    allow_identical: bool = False,
 ) -> list[list[Note]]:
     """
     Given a list a notes, return the powerset (list of lists of notes) such that:
@@ -979,28 +1013,29 @@ def constrained_powerset(
     if allow_repeats:
         subset = [s for s in powerset if note_set(s) >= required_notes]
     else:
-        subset = [s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)]
+        subset = [
+            s for s in powerset if note_set(s) >= required_notes and len(note_set(s)) == len(s)
+        ]
     return subset
 
 
 def get_all_guitar_positions_for_chord_name(
-        chord_name: 'ChordName',
-        guitar: 'Guitar',
-        allow_repeats: bool,
-        allow_identical: bool,
-        max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
-        allow_thumb: bool = True,
-        parallel: bool = False,
-) -> list['GuitarPosition']:
+    chord_name: "ChordName",
+    guitar: "Guitar",
+    allow_repeats: bool,
+    allow_identical: bool,
+    max_fret_span: int = DEFAULT_MAX_FRET_SPAN,
+    allow_thumb: bool = True,
+    parallel: bool = False,
+) -> list["GuitarPosition"]:
     chords = chord_name.get_all_chords(
-        lower=guitar.lowest, upper=guitar.highest, max_notes=len(guitar.tuning),
-        allow_repeats=allow_repeats, allow_identical=allow_identical,
+        lower=guitar.lowest,
+        upper=guitar.highest,
+        max_notes=len(guitar.tuning),
+        allow_repeats=allow_repeats,
+        allow_identical=allow_identical,
     )
-    kwargs = {
-        'guitar': guitar,
-        'allow_thumb': allow_thumb,
-        'max_fret_span': max_fret_span
-    }
+    kwargs = {"guitar": guitar, "allow_thumb": allow_thumb, "max_fret_span": max_fret_span}
     if parallel:
         with Pool(os.cpu_count()) as p:
             nested = p.map(partial(_parallel_helper, **kwargs), chords)
@@ -1012,8 +1047,7 @@ def get_all_guitar_positions_for_chord_name(
     return positions
 
 
-def _parallel_helper(chord: 'Chord', guitar: 'Guitar', allow_thumb: bool, max_fret_span: int):
+def _parallel_helper(chord: "Chord", guitar: "Guitar", allow_thumb: bool, max_fret_span: int):
     return chord.guitar_positions(
-        guitar=guitar, include_unplayable=True,
-        allow_thumb=allow_thumb, max_fret_span=max_fret_span
+        guitar=guitar, include_unplayable=True, allow_thumb=allow_thumb, max_fret_span=max_fret_span
     )
