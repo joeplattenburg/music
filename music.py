@@ -601,6 +601,13 @@ class Audio:
             f.setframerate(self.sample_rate)
             f.writeframes(audio_norm.tobytes())
 
+    def __add__(self, other: 'Audio') -> 'Audio':
+        assert self.sample_rate == other.sample_rate
+        return Audio(
+            sample_rate=self.sample_rate,
+            waveform=np.concatenate([self.waveform, other.waveform], axis=0)
+        )
+
 
 class Staff:
     """
