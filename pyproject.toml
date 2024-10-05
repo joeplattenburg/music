@@ -17,6 +17,9 @@ test = [
   "pytest",
   "ruff",
 ]
+dev = [
+  "jupyter"
+]
 
 [tool.pytest.ini_options]
 pythonpath = [
