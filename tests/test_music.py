@@ -779,7 +779,7 @@ def test_write_wav(tmp_path) -> None:
         music.Note('C', 3),
         music.Note('E', 3),
         music.Note('G', 3),
-    ]).write_wav(p)
+    ]).to_audio().write_wav(p)
     assert os.path.exists(p)
 
 

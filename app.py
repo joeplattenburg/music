@@ -75,7 +75,11 @@ def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span:
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
-    chord.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'), sample_rate=SAMPLE_RATE, duration=NOTE_DURATION)
+    chord.to_audio(
+        sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
+    ).write_wav(
+        os.path.join(PROJ_DIR, 'static', 'temp.wav')
+    )
     music.Staff(chords=[chord]).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
@@ -127,9 +131,10 @@ def guitar_positions_display_name(
     t1 = time.time()
     chord = music.ChordName(chord_name_)
     low_chord = chord.get_chord(lower=music.Note('E', 2))
-    low_chord.write_wav(
-        os.path.join(PROJ_DIR, 'static', 'temp.wav'),
+    low_chord.to_audio(
         sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
+    ).write_wav(
+        os.path.join(PROJ_DIR, 'static', 'temp.wav')
     )
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
