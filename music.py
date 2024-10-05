@@ -235,11 +235,10 @@ class Chord:
     def from_string(string: str) -> 'Chord':
         return Chord([Note.from_string(n) for n in string.split(',')])
 
-    def write_wav(self, path: str, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> None:
+    def to_audio(self, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> 'Audio':
         """
-        Write a wave file of the chord; the chord is arpeggiated over the first half of the `duration`,
-        and then rings for the second half
-        :param path: str, path to write to
+        Convert a chord to an `Audio` waveform;
+        the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
         :param sample_rate: int
         :param duration: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
@@ -247,7 +246,7 @@ class Chord:
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
-        audio = np.zeros(n)
+        waveform = np.zeros(n)
         delay_duration = duration / (2 * len(self.notes)) if delay else 0
         for i, note in enumerate(self.notes):
             signal = np.zeros(n)
@@ -261,16 +260,9 @@ class Chord:
             envelope = np.exp(-(t - delay_duration * i) / tau)
             envelope[:delay_samples] = 0
             signal *= envelope
-            audio += signal
-        audio /= (2 * np.max(np.abs(audio)))
-        audio = np.array([audio, audio]).T
-        # Convert to (little-endian) 16 bit integers.
-        audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
-        with wave.open(path, "w") as f:
-            f.setnchannels(2)
-            f.setsampwidth(2)
-            f.setframerate(sample_rate)
-            f.writeframes(audio_norm.tobytes())
+            waveform += signal
+        waveform /= (2 * np.max(np.abs(waveform)))
+        return Audio(sample_rate=sample_rate, waveform=waveform)
 
     def semitone_distance(self, other: 'Chord') -> int:
         """
@@ -581,6 +573,40 @@ class ChordProgression:
                 })
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
+
+
+class Audio:
+    """
+    Class to define an audio signal. Attributes:
+        sample_rate: int, sampling frequency in Hz
+        duration: float, total duration [s] of audio
+        waveform: the waveform of the audio signal
+    """
+    def __init__(self, sample_rate: int, waveform: np.array):
+        self.sample_rate = sample_rate
+        self.waveform = waveform
+        self.duration = len(waveform) / sample_rate
+
+    def write_wav(self, path: str) -> None:
+        """
+        Write a wave file of the audio signal
+        :param path: str, path to write to
+        """
+        audio = np.array([self.waveform, self.waveform]).T
+        # Convert to (little-endian) 16 bit integers.
+        audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
+        with wave.open(path, "w") as f:
+            f.setnchannels(2)
+            f.setsampwidth(2)
+            f.setframerate(self.sample_rate)
+            f.writeframes(audio_norm.tobytes())
+
+    def __add__(self, other: 'Audio') -> 'Audio':
+        assert self.sample_rate == other.sample_rate
+        return Audio(
+            sample_rate=self.sample_rate,
+            waveform=np.concatenate([self.waveform, other.waveform], axis=0)
+        )
 
 
 class Staff:

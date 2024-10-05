@@ -1,3 +1,5 @@
+from functools import reduce
+from operator import add
 import os
 
 import pytest
@@ -779,7 +781,7 @@ def test_write_wav(tmp_path) -> None:
         music.Note('C', 3),
         music.Note('E', 3),
         music.Note('G', 3),
-    ]).write_wav(p)
+    ]).to_audio().write_wav(p)
     assert os.path.exists(p)
 
 
@@ -893,3 +895,23 @@ def test_voice_leading() -> None:
         use_dijkstra=False
     )
     assert result1 == result2
+
+
+def test_audio_add() -> None:
+    import numpy as np
+    t = np.linspace(0, 1, 100)
+    sample_rate = 100
+    x1 = music.Audio(sample_rate=sample_rate, waveform=np.sin(t))
+    x2 = music.Audio(sample_rate=sample_rate, waveform=np.sin(2 * t))
+    x3 = x1 + x2
+    assert x3.duration == 2.0
+
+
+def test_audio_from_chord_list() -> None:
+    chords = [
+        music.ChordName('G7').get_chord(),
+        music.ChordName('C7').get_chord(),
+        music.ChordName('F7').get_chord(),
+    ]
+    audio = reduce(add, (chord.to_audio() for chord in chords))
+    assert audio.duration == 3.0
