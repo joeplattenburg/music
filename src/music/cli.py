@@ -33,7 +33,7 @@ def guitar_positions(args: argparse.Namespace):
     tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
     print(
         f'There are {len(chords_playable)} playable voicings and {len(positions_playable)} guitar positions '
-        f'(out of {positions_all_count} possible) for a guitar tuned to {tuning_display}.\n'
+        f'(out of {positions_all_count} possible) for a guitar tuned to {tuning_display}.'
     )
     if args.top_n:
         print(f'Here are the top {args.top_n}:')
@@ -53,14 +53,14 @@ def voice_leading(args: argparse.Namespace):
         print(f'{chord}: {voicing}')
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='General purpose helpers for music',
     )
     subparsers = parser.add_subparsers(title='subcommands')
 
     guitar_positions_parser = subparsers.add_parser(
-        'guitar_positions', help='Given a chord, show the corresponding guitar positions'
+        'guitar-positions', help='Given a chord, show the corresponding guitar positions'
     )
     guitar_positions_parser.add_argument(
         '--notes', type=str, help='A comma separated list of notes, e.g. `C3,G3,Eb4`'
@@ -70,19 +70,19 @@ if __name__ == "__main__":
         help='A chord name, like Bbmaj7/D; will return all possible voicings'
     )
     guitar_positions_parser.add_argument(
-        '--top_n', '-n', type=int, default=None,
+        '--top-n', '-n', type=int, default=None,
         help='How many positions to return'
     )
     guitar_positions_parser.add_argument(
-        '--max_fret_span', '-f', type=int, default=music.DEFAULT_MAX_FRET_SPAN,
+        '--max-fret-span', '-f', type=int, default=music.DEFAULT_MAX_FRET_SPAN,
         help='Max fret span to consider playable'
     )
     guitar_positions_parser.add_argument(
-        '--allow_repeats', '-r', action='store_true',
+        '--allow-repeats', '-r', action='store_true',
         help='Allow chord tones to appear more than once (different octaves)'
     )
     guitar_positions_parser.add_argument(
-        '--allow_identical', '-i', action='store_true',
+        '--allow-identical', '-i', action='store_true',
         help='Allow chord tones to appear more than once in the same octave'
     )
     guitar_positions_parser.add_argument(
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     guitar_positions_parser.set_defaults(func=guitar_positions)
 
     voice_leading_parser = subparsers.add_parser(
-        'voice_leading', help='Given a chord progression, compute the optimal voicings'
+        'voice-leading', help='Given a chord progression, compute the optimal voicings'
     )
     voice_leading_parser.add_argument(
         '--chords', nargs='+', help='A chord progression, e.g. `Dm7 G7 CM7`'
@@ -126,3 +126,7 @@ if __name__ == "__main__":
     args.func(args)
     t2 = time.time()
     print(f'(Computed in {(t2 - t1):.2f} seconds)')
+
+
+if __name__ == "__main__":
+    main()
