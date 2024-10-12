@@ -7,7 +7,7 @@ import time
 from flask import Flask, render_template, request, url_for, flash, redirect
 from markupsafe import escape
 
-import music
+from music import music
 
 PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)

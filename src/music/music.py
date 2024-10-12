@@ -17,7 +17,7 @@ except ImportError:
     warnings.warn('Additional dependencies for multimedia not installed.')
 
 DEFAULT_MAX_FRET_SPAN = 4
-PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
+PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
 
 
 @total_ordering

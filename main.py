@@ -1,7 +1,7 @@
 import argparse
 import time
 
-import music
+from music import music
 
 
 def guitar_positions(args: argparse.Namespace):
