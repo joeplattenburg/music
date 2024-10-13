@@ -143,14 +143,14 @@ CM7: C3,E3,G3,B3
 
 This includes a Flask web app to run a server that will accept user requests and display the chord positions.
 
-Run the app with `uv run app.py`. The main landing page looks like this:
+Run the app with `music-app [--port <port-num>]`. The main landing page looks like this:
 
 ![web app](images/web_app_sample.png "Web App")
 
 ## Environment
 
 To generate a compatible environment with required dependencies, you can use uv 
-(see https://docs.astral.sh/uv/getting-started/installation/ for installation):
+(see instructions [here](https://docs.astral.sh/uv/getting-started/installation/) for installation):
 
 ```commandline
 uv sync --frozen --extra media

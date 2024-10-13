@@ -9,7 +9,6 @@ from markupsafe import escape
 
 from music import music
 
-#PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
 STATIC_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 TEMPLATE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
 

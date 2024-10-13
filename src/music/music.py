@@ -4,7 +4,7 @@ from itertools import product, combinations_with_replacement, combinations, chai
 import json
 from multiprocessing import Pool
 import os
-from typing import Hashable, Optional, Any, Literal
+from typing import Hashable, Optional, Any, Literal, Iterable
 import warnings
 
 try:
@@ -17,7 +17,6 @@ except ImportError:
     warnings.warn('Additional dependencies for multimedia not installed.')
 
 DEFAULT_MAX_FRET_SPAN = 4
-#PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
 IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 
 
@@ -583,10 +582,10 @@ class Audio:
         duration: float, total duration [s] of audio
         waveform: the waveform of the audio signal
     """
-    def __init__(self, sample_rate: int, waveform):
+    def __init__(self, sample_rate: int, waveform: Iterable[float]):
         self.sample_rate = sample_rate
-        self.waveform = waveform
-        self.duration = len(waveform) / sample_rate
+        self.waveform = np.array(waveform)
+        self.duration = len(self.waveform) / sample_rate
 
     def write_wav(self, path: str) -> None:
         """
