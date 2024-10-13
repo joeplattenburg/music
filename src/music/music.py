@@ -17,7 +17,8 @@ except ImportError:
     warnings.warn('Additional dependencies for multimedia not installed.')
 
 DEFAULT_MAX_FRET_SPAN = 4
-PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
+#PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
+IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 
 
 @total_ordering
@@ -582,7 +583,7 @@ class Audio:
         duration: float, total duration [s] of audio
         waveform: the waveform of the audio signal
     """
-    def __init__(self, sample_rate: int, waveform: np.array):
+    def __init__(self, sample_rate: int, waveform):
         self.sample_rate = sample_rate
         self.waveform = waveform
         self.duration = len(waveform) / sample_rate
@@ -640,9 +641,9 @@ class Staff:
         note_positions = [10 + 6 * n for n in range(len(self.chords))]
         note_rad = 1
         # clef
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'treble_clef.png'))
+        im = plt.imread(os.path.join(IMAGE_DIR, 'treble_clef.png'))
         ax.imshow(im, extent=(1, 5, -1, 12))
-        im = plt.imread(os.path.join(PROJ_DIR, 'static', 'bass_clef.png'))
+        im = plt.imread(os.path.join(IMAGE_DIR, 'bass_clef.png'))
         ax.imshow(im, extent=(1, 6, -9, -2))
         # staff
         for line in range(2, 12, 2):

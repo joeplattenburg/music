@@ -9,8 +9,15 @@ from markupsafe import escape
 
 from music import music
 
-PROJ_DIR = os.path.abspath(os.path.dirname(__file__))
-app = Flask(__name__)
+#PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', '..')
+STATIC_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
+TEMPLATE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
+
+app = Flask(
+    'music',
+    static_folder=STATIC_DIR,
+    template_folder=TEMPLATE_DIR,
+)
 app.config['SECRET_KEY'] = os.urandom(24).hex()
 SAMPLE_RATE = 11_025
 NOTE_DURATION = 2.0
@@ -80,9 +87,9 @@ def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span:
     chord.to_audio(
         sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
     ).write_wav(
-        os.path.join(PROJ_DIR, 'static', 'temp.wav')
+        os.path.join(STATIC_DIR, 'temp.wav')
     )
-    music.Staff(chords=[chord]).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -136,7 +143,7 @@ def guitar_positions_display_name(
     low_chord.to_audio(
         sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
     ).write_wav(
-        os.path.join(PROJ_DIR, 'static', 'temp.wav')
+        os.path.join(STATIC_DIR, 'temp.wav')
     )
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
@@ -152,7 +159,7 @@ def guitar_positions_display_name(
         positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
-    music.Staff(chords=chords_print).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    music.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
@@ -188,8 +195,8 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     upper_ = music.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
     audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
-    audio.write_wav(os.path.join(PROJ_DIR, 'static', 'temp.wav'))
-    music.Staff(chords=opt_chords).write_png(os.path.join(PROJ_DIR, 'static', 'temp.png'))
+    audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
+    music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'voice_leading_display.html',
@@ -199,7 +206,7 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Run the Guitar Position Calculator web server')
+    parser = argparse.ArgumentParser(description='Run music helpers web app')
     parser.add_argument('--port', type=int, default=5000)
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
