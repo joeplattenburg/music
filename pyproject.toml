@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "music"
 version = "1.0.0"
@@ -14,9 +18,14 @@ media = [
     "numpy<2",
 ]
 test = [
-  "pytest",
-  "ruff",
+    "setuptools",
+    "pytest",
+    "ruff",
 ]
+
+[project.scripts]
+music-cli = "music.cli:main"
+music-app = "music.app:main"
 
 [tool.pytest.ini_options]
 pythonpath = [

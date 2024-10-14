@@ -1,9 +1,6 @@
-import os
 import subprocess
 
 import pytest
-
-PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 
 
 @pytest.mark.parametrize(
@@ -17,7 +14,7 @@ PROJ_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 )
 def test_guitar_positions_name(name: str, args: list[str]) -> None:
     result = subprocess.run(
-        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--name', name, *args],
+        ['music-cli', 'guitar-positions', '--name', name, *args],
         capture_output=True)
     assert result.returncode == 0
 
@@ -33,7 +30,7 @@ def test_guitar_positions_name(name: str, args: list[str]) -> None:
 )
 def test_guitar_positions_notes(notes: str, args: list[str]) -> None:
     result = subprocess.run(
-        ['python', os.path.join(PROJ_DIR, 'main.py'), 'guitar_positions', '--notes', notes, *args],
+        ['music-cli', 'guitar-positions', '--notes', notes, *args],
         capture_output=True)
     assert result.returncode == 0
 
@@ -47,6 +44,6 @@ def test_guitar_positions_notes(notes: str, args: list[str]) -> None:
 )
 def test_voice_leading(args: list[str]) -> None:
     result = subprocess.run(
-        ['python', os.path.join(PROJ_DIR, 'main.py'), 'voice_leading', *args],
+        ['music-cli', 'voice-leading', *args],
         capture_output=True)
     assert result.returncode == 0

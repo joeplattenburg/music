@@ -4,7 +4,7 @@ import os
 
 import pytest
 
-import music
+from music import music
 
 
 @pytest.mark.parametrize(
