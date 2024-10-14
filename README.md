@@ -156,6 +156,8 @@ To generate a compatible environment with required dependencies, you can use uv
 uv sync --frozen --extra media
 ```
 
+The above CLI entrypoints will be available as scripts in the `.venv/bin/` directory.
+
 To deploy on Raspberry Pi, it is highly recommended to use `--extra-index-url https://www.piwheels.org/simple` 
 when syncing the environment, and to change the `.python-version` to match the system version 
 (since PiWheels typically only builds wheels for the sys python version that comes with a given Linux version).
