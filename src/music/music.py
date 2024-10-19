@@ -1,25 +1,22 @@
 #! /usr/bin/python
 from functools import total_ordering, partial
+from importlib import util as importlib_util
 from itertools import product, combinations_with_replacement, combinations, chain, permutations
 import json
 from multiprocessing import Pool
 import os
 from typing import Hashable, Optional, Any, Literal, Iterable
-import warnings
 
 from music import graph
 
-try:
-    import numpy as np
-    import wave
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-except ImportError:
-    warnings.warn('Additional dependencies for multimedia not installed.')
-
+MEDIA_PACKAGES = ['numpy', 'matplotlib', 'wave']
+media_installed = all(importlib_util.find_spec(p) for p in MEDIA_PACKAGES)
 DEFAULT_MAX_FRET_SPAN = 4
 IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
+
+
+class MissingMultimediaError(Exception):
+    pass
 
 
 @total_ordering
@@ -245,6 +242,9 @@ class Chord:
         :param duration: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
         """
+        if not media_installed:
+            raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
+        import numpy as np
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
@@ -562,7 +562,7 @@ class Audio:
     """
     def __init__(self, sample_rate: int, waveform: Iterable[float]):
         self.sample_rate = sample_rate
-        self.waveform = np.array(waveform)
+        self.waveform = list(waveform)
         self.duration = len(self.waveform) / sample_rate
 
     def write_wav(self, path: str) -> None:
@@ -570,6 +570,10 @@ class Audio:
         Write a wave file of the audio signal
         :param path: str, path to write to
         """
+        if not media_installed:
+            raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
+        import numpy as np
+        import wave
         audio = np.array([self.waveform, self.waveform]).T
         # Convert to (little-endian) 16 bit integers.
         audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
@@ -583,7 +587,7 @@ class Audio:
         assert self.sample_rate == other.sample_rate
         return Audio(
             sample_rate=self.sample_rate,
-            waveform=np.concatenate([self.waveform, other.waveform], axis=0)
+            waveform=self.waveform + other.waveform
         )
 
 
@@ -610,6 +614,11 @@ class Staff:
 
     def write_png(self, path: str) -> None:
         """Write a png of the staff to a file"""
+        if not media_installed:
+            raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
+        import matplotlib
+        matplotlib.use('Agg')
+        import matplotlib.pyplot as plt
         figsize = (len(self.chords) + 1, 1.75)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
