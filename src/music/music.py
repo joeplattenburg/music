@@ -516,30 +516,27 @@ class ChordProgression:
         ]
         if use_dijkstra:
             # for each chord, add the index to ensure the nodes are unique
-            voicings_flat = [graph.Node((i, vv)) for i, v in enumerate(voicings) for vv in v]
-            initial, terminal = graph.Node((-1, None)), graph.Node((self.n_chords, None))
-            nodes: list[graph.Node] = [initial, *voicings_flat, terminal]
+            voicings_flat = [(i, vv) for i, v in enumerate(voicings) for vv in v]
+            initial, terminal = (-1, None), (self.n_chords, None)
+            nodes = [initial, *voicings_flat, terminal]
             edges: list[graph.Edge] = []
             initial_edges = [
-                graph.Edge(boundaries=(initial, graph.Node((0, v))), weight=0.)
+                graph.Edge(start=initial, end=(0, v), weight=0.)
                 for v in voicings[0]
             ]
             terminal_edges = [
-                graph.Edge(boundaries=(graph.Node((self.n_chords - 1, v)), terminal), weight=0.)
+                graph.Edge(start=(self.n_chords - 1, v), end=terminal, weight=0.)
                 for v in voicings[-1]
             ]
             for i, v in enumerate(voicings[:-1]):
                 v_next = voicings[i + 1]
                 for start, end in product(v, v_next):
-                    edge = graph.Edge(
-                        boundaries=(graph.Node((i, start)), graph.Node((i + 1, end))),
-                        weight=start.semitone_distance(end)
-                    )
+                    edge = graph.Edge(start=(i, start), end=(i + 1, end), weight=start.semitone_distance(end))
                     edges.append(edge)
             edges = initial_edges + edges + terminal_edges
             g = graph.Graph(nodes=nodes, edges=edges)
             prog = g.shortest_path(initial, terminal)
-            return [p.name[1] for p in prog[1:-1]]
+            return [p[1] for p in prog[1:-1]]
         else:
             motions = []
             for prog_ in product(*voicings):
