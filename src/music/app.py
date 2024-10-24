@@ -22,6 +22,13 @@ SAMPLE_RATE = 11_025
 NOTE_DURATION = 2.0
 
 
+def cleanup() -> None:
+    if os.path.isfile(os.path.join(STATIC_DIR, 'temp.png')):
+        os.remove(os.path.join(STATIC_DIR, 'temp.png'))
+    if os.path.isfile(os.path.join(STATIC_DIR, 'temp.wav')):
+        os.remove(os.path.join(STATIC_DIR, 'temp.wav'))
+
+
 @app.route("/", methods=('GET', 'POST'))
 def home():
     return render_template('base.html')
@@ -83,12 +90,15 @@ def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span:
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
-    chord.to_audio(
-        sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
-    ).write_wav(
-        os.path.join(STATIC_DIR, 'temp.wav')
-    )
-    music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    if music.media_installed:
+        chord.to_audio(
+            sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
+        ).write_wav(
+            os.path.join(STATIC_DIR, 'temp.wav')
+        )
+        music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    else:
+        cleanup()
     guitar = (
         music.Guitar() if tuning_ == 'standard' else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
@@ -139,11 +149,6 @@ def guitar_positions_display_name(
     t1 = time.time()
     chord = music.ChordName(chord_name_)
     low_chord = chord.get_chord(lower=music.Note('E', 2))
-    low_chord.to_audio(
-        sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
-    ).write_wav(
-        os.path.join(STATIC_DIR, 'temp.wav')
-    )
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
         guitar=guitar,
@@ -158,7 +163,15 @@ def guitar_positions_display_name(
         positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
-    music.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    if music.media_installed:
+        music.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        low_chord.to_audio(
+            sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
+        ).write_wav(
+            os.path.join(STATIC_DIR, 'temp.wav')
+        )
+    else:
+        cleanup()
     positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable()) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
@@ -193,9 +206,12 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     lower_ = music.Note.from_string(escape(lower).split('=')[1])
     upper_ = music.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
-    audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
-    audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
-    music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    if music.media_installed:
+        audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
+        audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
+        music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    else:
+        cleanup()
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'voice_leading_display.html',
