@@ -7,6 +7,8 @@ import os
 from typing import Hashable, Optional, Any, Literal, Iterable
 import warnings
 
+from music import graph
+
 try:
     import numpy as np
     import wave
@@ -505,6 +507,7 @@ class ChordProgression:
     """
     def __init__(self, chords: list[ChordName]):
         self.chords = chords
+        self.n_chords = len(chords)
 
     def optimal_voice_leading(self, lower: Note, upper: Note, use_dijkstra: bool = True) -> list[Chord]:
         voicings = [
@@ -512,53 +515,28 @@ class ChordProgression:
             for chord in self.chords
         ]
         if use_dijkstra:
-            chord_progression_with_boundaries = [['start'], *voicings, ['end']]
-            terminal_ind = len(voicings) + 1
-            # Construct directed graph of possible voicing progressions
-            # Keys are either:
-            # - tuple[int, Chord] for chords
-            # - tuple[int, Literal['start', 'end']] for boundaries
-            graph = {}
-            for i, chord in enumerate(chord_progression_with_boundaries[:-1]):
-                next_chord = chord_progression_with_boundaries[i + 1]
-                rhs = list(zip([i + 1] * len(next_chord), next_chord))
-                for voicing in chord:
-                    graph[(i, voicing)] = rhs
-            graph[rhs[0]] = []
-            # Initialize weights as inf and initial condition
-            nodes_list = list(graph.keys())
-            costs = {node: float('inf') for node in nodes_list}
-            costs[(0, 'start')] = 0
-            predecesors = {}
-            unvisited = costs.copy()
-            while True:
-                unvisited = {node: costs[node] for node in unvisited.keys()}
-                current_node = min(unvisited, key=unvisited.get)
-                if current_node[0] == terminal_ind:
-                    break
-                unvisited.pop(current_node)
-                current_cost = costs[current_node]
-                neighbors = graph[current_node]
-                for neighbor in neighbors:
-                    current_neighbor_cost = costs[neighbor]
-                    if isinstance(current_node[1], Chord) and isinstance(neighbor[1], Chord):
-                        neighbor_cost = current_node[1].semitone_distance(neighbor[1]) + current_cost
-                    else:  # Boundaries are zero cost
-                        neighbor_cost = current_cost
-                    if neighbor_cost < current_neighbor_cost:
-                        costs[neighbor] = neighbor_cost
-                        predecesors[neighbor] = current_node
-            # Compute trajectory by backtracking
-            key = (terminal_ind, 'end')
-            trajectory: list[Chord] = []
-            while True:
-                key = predecesors[key]
-                if isinstance(key[1], Chord):
-                    trajectory.append(key[1])
-                else:
-                    break
-            trajectory = list(reversed(trajectory))
-            return trajectory
+            # for each chord, add the index to ensure the nodes are unique
+            voicings_flat = [(i, vv) for i, v in enumerate(voicings) for vv in v]
+            initial, terminal = (-1, None), (self.n_chords, None)
+            nodes = [initial, *voicings_flat, terminal]
+            edges: list[graph.Edge] = []
+            initial_edges = [
+                graph.Edge(start=initial, end=(0, v), weight=0.)
+                for v in voicings[0]
+            ]
+            terminal_edges = [
+                graph.Edge(start=(self.n_chords - 1, v), end=terminal, weight=0.)
+                for v in voicings[-1]
+            ]
+            for i, v in enumerate(voicings[:-1]):
+                v_next = voicings[i + 1]
+                for start, end in product(v, v_next):
+                    edge = graph.Edge(start=(i, start), end=(i + 1, end), weight=start.semitone_distance(end))
+                    edges.append(edge)
+            edges = initial_edges + edges + terminal_edges
+            g = graph.Graph(nodes=nodes, edges=edges)
+            prog = g.shortest_path(initial, terminal)
+            return [p[1] for p in prog[1:-1]]
         else:
             motions = []
             for prog_ in product(*voicings):
