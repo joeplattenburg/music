@@ -915,3 +915,25 @@ def test_audio_from_chord_list() -> None:
     ]
     audio = reduce(add, (chord.to_audio() for chord in chords))
     assert audio.duration == 3.0
+
+
+@pytest.mark.parametrize(
+    'p1,p2,expected',
+    [
+        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 2),
+        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 2),
+        ({}, {'A': 3, 'B': 3}, 0),
+    ]
+)
+def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
+    p1 = music.GuitarPosition(positions=p1)
+    p2 = music.GuitarPosition(positions=p2)
+    assert p1.motion_distance(p2) == expected
+
+
+def test_optimal_progression() -> None:
+    cp = music.ChordProgression([
+        music.ChordName(n) for n in ['Dm7', 'G7', 'CM7']
+    ])
+    result = cp.optimal_guitar_positions()
+    print(result)
