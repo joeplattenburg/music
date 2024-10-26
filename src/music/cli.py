@@ -41,6 +41,16 @@ def guitar_positions(args: argparse.Namespace):
         print('\n' + '\n'.join(p.printable())) if args.graphical else print(p)
 
 
+def guitar_optimal_progression(args: argparse.Namespace):
+    print(f'You input the chord progresssion: {args.chords}')
+    cp = music.ChordProgression([music.ChordName(n) for n in args.chords])
+    result = cp.optimal_guitar_positions()
+    print('The optimal voicing for this progression is:')
+    for chord, position in zip(args.chords, result):
+        print(f'{chord}')
+        print('\n' + '\n'.join(position.printable())) if args.graphical else print(position)
+
+
 def voice_leading(args: argparse.Namespace):
     print(f'You input the chord progresssion: {args.chords}')
     cp = music.ChordProgression([music.ChordName(n) for n in args.chords])
@@ -106,6 +116,18 @@ def main() -> None:
         help='Use parallel processing for calculations'
     )
     guitar_positions_parser.set_defaults(func=guitar_positions)
+
+    guitar_optimal_progression_parser = subparsers.add_parser(
+        'guitar-chord-progression', help='Given a chord progression, show the optimal guitar positions'
+    )
+    guitar_optimal_progression_parser.add_argument(
+        '--chords', nargs='+', help='A chord progression, e.g. `Dm7 G7 CM7`'
+    )
+    guitar_optimal_progression_parser.add_argument(
+        '--graphical', '-g', action='store_true',
+        help='Show ASCII art for guitar positions'
+    )
+    guitar_optimal_progression_parser.set_defaults(func=guitar_optimal_progression)
 
     voice_leading_parser = subparsers.add_parser(
         'voice-leading', help='Given a chord progression, compute the optimal voicings'
