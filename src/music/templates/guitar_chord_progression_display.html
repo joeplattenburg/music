@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
+<p>
+    The chord progression you entered was: {{ chords }}<br>
+    <audio src="/static/temp.wav" controls></audio>
+    <br>
+    <img src="/static/temp.png"></img>
+    <br>
+    For a guitar tuned to standard, the optimal positions are:
+</p>
+
+{% autoescape false %}
+{% for position in positions %}
+    <pre>{{ position }}</pre>
+{% endfor %}
+{% endautoescape %}
+
+{% endblock %}
