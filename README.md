@@ -2,6 +2,19 @@
 
 Helpers for music.
 
+## Installation
+
+You can install `music` from GitHub, e.g. with `pip` or `uv`:
+
+```commandline
+# Basic install
+uv add git+ssh://git@github.com/joeplattenburg/music.git
+# To add optional dependencies
+uv add 'music[media] @ git+ssh://git@github.com/joeplattenburg/music.git'
+# To specify a particular version / release
+uv add git+ssh://git@github.com/joeplattenburg/music.git@vx.y.z
+```
+
 ## `music` Package
 
 Classes include:
@@ -14,7 +27,8 @@ Classes include:
 - `ChordName`: constructed from a string (e.g., `ChordName('C7b9/E')`); methods:
   - `get_all_chords` returns all possible voicings for a chord that fit between a `lower` and `upper` `Note`
 - `ChordProgression`: constructed from a `list[ChordName]`; methods
-  - `optimal_voice_leading`: compute optimals voicings for progression
+  - `optimal_voice_leading`: compute optimal chord voicings 
+  - `optimal_guitar_positions`: compute optimal guitar fingering positions
 - `Staff`: constructed from a `list[Chord]`, used to generate a png image 
 - `Guitar`: define a guitar by its tuning and number of frets (can include a capo)
 - `GuitarPosition`: the set of fret positions to be played for each string
@@ -125,7 +139,7 @@ F#  |-@-|---|---|---|
 (Computed in 0.00 seconds)
 ```
 
-### `voice_leading` Subcommand
+### `voice-leading` Subcommand
 
 Compute the optimal voicings for a chord progression.
 
@@ -139,6 +153,41 @@ CM7: C3,E3,G3,B3
 (Computed in 0.03 seconds)
 ```
 
+### `guitar-chord-progression` Subcommand
+
+Compute the optimal guitar positions for a chord progression.
+
+```commandline
+$ music-cli guitar-chord-progression --chords Dm7 G7 CM7 -g
+You input the chord progression: ['Dm7', 'G7', 'CM7']
+The optimal positions for this progression are:
+Dm7
+e  |-@-|---|
+B  |-@-|---|
+G  |---|-@-|
+D o|---|---|
+A x|---|---|
+E x|---|---|
+    1fr
+G7
+e  |-@-|---|---|
+B o|---|---|---|
+G x|---|---|---|
+D o|---|---|---|
+A x|---|---|---|
+E  |---|---|-@-|
+    1fr
+CM7
+e o|---|
+B o|---|
+G o|---|
+D x|---|
+A  |-@-|
+E x|---|
+    3fr
+(Computed in 0.13 seconds)
+```
+
 ## Web App
 
 This includes a Flask web app to run a server that will accept user requests and display the chord positions.
@@ -147,9 +196,9 @@ Run the app with `music-app [--port <port-num>]`. The main landing page looks li
 
 ![web app](images/web_app_sample.png "Web App")
 
-## Environment
+## Development Environment
 
-To generate a compatible environment with required dependencies, you can use uv 
+To generate a compatible environment with required dependencies, you can use `uv` 
 (see instructions [here](https://docs.astral.sh/uv/getting-started/installation/) for installation):
 
 ```commandline
@@ -192,8 +241,13 @@ A longer term goal will be to eliminate circular dependencies from the module.
 - [x] Rename module (`music`?)
 - [x] Show voicings on staff
 - [x] Add audio
+- [x] Voice leading
+- [x] Optimal guitar chords
+- [ ] Add more guitar options for chord progression
 - [ ] Sort on different metrics
 - [ ] Better input for specifying tuning
 - [ ] Remove circular dependencies
+- [ ] Which fingers to use
+- [ ] Improve cost function for position movement
 - [ ] Deploy on AWS
 - [ ] Request logging

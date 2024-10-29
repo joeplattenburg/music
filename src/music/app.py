@@ -182,6 +182,39 @@ def guitar_positions_display_name(
     )
 
 
+@app.route("/guitar_chord_progression", methods=('GET', 'POST'))
+def guitar_chord_progression():
+    if request.method == 'POST':
+        chords_string = request.form['chords'].strip()
+        return redirect(url_for(
+            'guitar_chord_progression_display',
+            chords_string=chords_string,
+        ))
+    return render_template('guitar_chord_progression_input.html')
+
+
+@app.route("/guitar_chord_progression/<chords_string>", methods=('GET', 'POST'))
+def guitar_chord_progression_display(chords_string: str):
+    t1 = time.time()
+    chord_progression = music.ChordProgression(
+        [music.ChordName(chord) for chord in escape(chords_string).split(',')]
+    )
+    opt_positions = chord_progression.optimal_guitar_positions()
+    opt_chords = [p.chord for p in opt_positions]
+    if music.media_installed:
+        audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
+        audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
+        music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    else:
+        cleanup()
+    positions_printable = ['<br>'.join(p.printable()) for p in opt_positions]
+    elapsed_time = f'{(time.time() - t1):.2f}'
+    return render_template(
+        'guitar_chord_progression_display.html',
+        chords=chords_string, positions=positions_printable, elapsed_time=elapsed_time
+    )
+
+
 @app.route("/voice_leading", methods=('GET', 'POST'))
 def voice_leading():
     if request.method == 'POST':

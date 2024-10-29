@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{% block title %} Voice Leading {% endblock %}</h2>
+    <p>
+        Computes the optimal guitar positions for a chord progression.<br>
+        Enter the chord progression as comma separated chord names.
+    </p>
+    <form method="post">
+        <label for="chords">Chord Progression</label>
+        <br>
+        <input type="text" name="chords" id="chords"
+               placeholder="Dm7,G7,Cmaj7"
+               value="{{ request.form['chords'] }}"></input>
+        <br>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
+{% endblock %}
+
+

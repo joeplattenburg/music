@@ -552,6 +552,42 @@ class ChordProgression:
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
 
+    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None) -> list['GuitarPosition']:
+        guitar = guitar or Guitar()
+        positions = [
+            get_all_guitar_positions_for_chord_name(
+                chord_name=chord, guitar=guitar,
+                allow_repeats=False, allow_identical=False
+            )
+            for chord in self.chords
+        ]
+        positions = [
+            list(filter(lambda x: (x.playable and not x.redundant), p))
+            for p in positions
+        ]
+        # for each chord, add the index to ensure the nodes are unique
+        positions_flat = [(i, pp) for i, p in enumerate(positions) for pp in p]
+        initial, terminal = (-1, None), (self.n_chords, None)
+        nodes = [initial, *positions_flat, terminal]
+        edges: list[graph.Edge] = []
+        initial_edges = [
+            graph.Edge(start=initial, end=(0, p), weight=0.)
+            for p in positions[0]
+        ]
+        terminal_edges = [
+            graph.Edge(start=(self.n_chords - 1, p), end=terminal, weight=0.)
+            for p in positions[-1]
+        ]
+        for i, p in enumerate(positions[:-1]):
+            p_next = positions[i + 1]
+            for start, end in product(p, p_next):
+                edge = graph.Edge(start=(i, start), end=(i + 1, end), weight=start.motion_distance(end))
+                edges.append(edge)
+        edges = initial_edges + edges + terminal_edges
+        g = graph.Graph(nodes=nodes, edges=edges)
+        prog = g.shortest_path(initial, terminal)
+        return [p[1] for p in prog[1:-1]]
+
 
 class Audio:
     """
@@ -865,6 +901,9 @@ class GuitarPosition:
     def __repr__(self) -> str:
         return str(self.positions_dict)
 
+    def __hash__(self):
+        return hash(tuple(self.positions_dict.items()))
+
     def is_subset(self, other: 'GuitarPosition') -> bool:
         return (
             (self.positions_dict.keys() <= other.positions_dict.keys()) and
@@ -897,6 +936,24 @@ class GuitarPosition:
             left_padding = ' ' * widest_name
             rows.append(f'{left_padding}   {self.lowest_fret}fr')
         return rows
+
+    def motion_distance(self, other: 'GuitarPosition') -> float:
+        """
+        A measure of the "distance" required to move from one guitar position to another;
+        for now, equal to the total number of frets and strings that need moved
+        """
+        #assert len(self.fretted_strings) == len(other.fretted_strings), \
+        #    'Can only compute movement distance between chords with the same number of fretted strings'
+        n_frets = min(len(self.fretted_strings), len(other.fretted_strings))
+        if n_frets == 0:
+            return 0
+        self_frets = [fret for fret in self.positions_dict.values() if fret != 0][:n_frets]
+        other_frets = [fret for fret in other.positions_dict.values() if fret != 0][:n_frets]
+        return min(
+            sum(abs(self_f - other_f) for self_f, other_f in zip(self_frets, perm))
+            for perm in permutations(other_frets, len(other_frets))
+        )
+
 
     @staticmethod
     def sorted(p: list['GuitarPosition'], target_fret: int = 7) -> list['GuitarPosition']:
