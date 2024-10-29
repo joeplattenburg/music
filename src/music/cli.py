@@ -48,7 +48,7 @@ def guitar_optimal_progression(args: argparse.Namespace):
     print('The optimal positions for this progression are:')
     for chord, position in zip(args.chords, result):
         print(f'{chord}')
-        print('\n' + '\n'.join(position.printable())) if args.graphical else print(position)
+        print('\n'.join(position.printable())) if args.graphical else print(position)
 
 
 def voice_leading(args: argparse.Namespace):
