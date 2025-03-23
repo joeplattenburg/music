@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>{% block title %} Guitar Position Calculator {% endblock %}</h2>
+    <h2>{% block title %} Guitar Positions {% endblock %}</h2>
     <p>Computes all possible guitar fingering positions for a chord.
     You can enter:
     <ul>
@@ -51,7 +51,7 @@
         <br>
         <input type="checkbox" id="allow_identical" name="allow_identical"
                value="true"></input>
-        <label for="allow_repeats"> Allow identical (same octave) chord tones<br>
+        <label for="allow_identical"> Allow identical (same octave) chord tones<br>
             (Warning, this may increase compute time)</label><br>
         <br>
         <input type="checkbox" id="allow_thumb" name="allow_thumb"

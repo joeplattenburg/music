@@ -880,6 +880,22 @@ def test_semitone_distance() -> None:
     assert c2.semitone_distance(c1) == 4
 
 
+def test_semitone_distance_different_cardinality() -> None:
+    c1 = music.Chord([
+        music.Note('C', 3),
+        music.Note('F', 3),
+        music.Note('A', 3)
+    ])
+    c2 = music.Chord([
+        music.Note('C', 3),
+        music.Note('E', 3),
+        music.Note('G', 3),
+        music.Note('Bb', 3),
+    ])
+    assert c1.semitone_distance(c2) == 4
+    assert c2.semitone_distance(c1) == 4
+
+
 def test_voice_leading() -> None:
     cp = music.ChordProgression([
         music.ChordName(n) for n in ['Em7', 'A7', 'Dm7', 'G7', 'CM7']]
@@ -920,8 +936,8 @@ def test_audio_from_chord_list() -> None:
 @pytest.mark.parametrize(
     'p1,p2,expected',
     [
-        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 2),
-        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 2),
+        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 3),
+        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 1),
         ({}, {'A': 3, 'B': 3}, 0),
     ]
 )
@@ -931,9 +947,13 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
     assert p1.motion_distance(p2) == expected
 
 
-def test_optimal_progression() -> None:
-    cp = music.ChordProgression([
-        music.ChordName(n) for n in ['Dm7', 'G7', 'CM7']
-    ])
-    result = cp.optimal_guitar_positions()
-    print(result)
+@pytest.mark.parametrize(
+    'prog', [
+        ['Dm7', 'G7', 'CM7'],
+        ['Dm7', 'G7b9', 'C'],
+        ['Dm7#11', 'G7', 'C']
+    ]
+)
+def test_optimal_progression(prog: list[str]) -> None:
+    cp = music.ChordProgression([music.ChordName(n) for n in prog])
+    cp.optimal_guitar_positions()

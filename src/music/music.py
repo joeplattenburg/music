@@ -1,15 +1,16 @@
 #! /usr/bin/python
 from functools import total_ordering, partial
 from importlib import util as importlib_util
-from itertools import product, combinations_with_replacement, combinations, chain, permutations
+from itertools import product, combinations_with_replacement, combinations, chain
 import json
 from multiprocessing import Pool
+import numpy as np
 import os
 from typing import Hashable, Optional, Any, Literal, Iterable
 
 from music import graph
 
-MEDIA_PACKAGES = ['numpy', 'matplotlib', 'wave']
+MEDIA_PACKAGES = ['matplotlib', 'wave']
 media_installed = all(importlib_util.find_spec(p) for p in MEDIA_PACKAGES)
 DEFAULT_MAX_FRET_SPAN = 4
 IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
@@ -242,9 +243,6 @@ class Chord:
         :param duration: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
         """
-        if not media_installed:
-            raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
-        import numpy as np
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
@@ -271,12 +269,14 @@ class Chord:
         It might not be that the case that each note resolves to its same-index counterpart in the other chord;
         so we need to check all the pairings
         """
-        assert len(self.notes) == len(other.notes), \
-            'Can only compute semitone distance between chords of equal cardinality'
-        return min(
-            sum(abs(self_n - other_n) for self_n, other_n in zip(self.notes, perm))
-            for perm in permutations(other.notes, len(other.notes))
-        )
+        cost_matrix = np.zeros(shape=(len(self.notes), len(other.notes)))
+        for row, s in enumerate(self.notes):
+            for col, o in enumerate(other.notes):
+                cost_matrix[row, col] = abs(s - o)
+        if col > row:
+            cost_matrix = cost_matrix.transpose()
+        assignments = graph.assign(cost_matrix)
+        return int(sum(cost_matrix[row, col] for row, col in enumerate(assignments)))
 
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
@@ -552,12 +552,12 @@ class ChordProgression:
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
 
-    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None) -> list['GuitarPosition']:
+    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         positions = [
             get_all_guitar_positions_for_chord_name(
                 chord_name=chord, guitar=guitar,
-                allow_repeats=False, allow_identical=False
+                allow_repeats=allow_repeats, allow_identical=False
             )
             for chord in self.chords
         ]
@@ -565,6 +565,8 @@ class ChordProgression:
             list(filter(lambda x: (x.playable and not x.redundant), p))
             for p in positions
         ]
+        if any(len(p) == 0 for p in positions):
+            return []
         # for each chord, add the index to ensure the nodes are unique
         positions_flat = [(i, pp) for i, p in enumerate(positions) for pp in p]
         initial, terminal = (-1, None), (self.n_chords, None)
@@ -608,7 +610,6 @@ class Audio:
         """
         if not media_installed:
             raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
-        import numpy as np
         import wave
         audio = np.array([self.waveform, self.waveform]).T
         # Convert to (little-endian) 16 bit integers.
@@ -940,20 +941,28 @@ class GuitarPosition:
     def motion_distance(self, other: 'GuitarPosition') -> float:
         """
         A measure of the "distance" required to move from one guitar position to another;
-        for now, equal to the total number of frets and strings that need moved
+        for now, equal to the total number of frets and strings that need moved.
+        Assume moving from unfretted to fretted is zero cost
         """
-        #assert len(self.fretted_strings) == len(other.fretted_strings), \
-        #    'Can only compute movement distance between chords with the same number of fretted strings'
-        n_frets = min(len(self.fretted_strings), len(other.fretted_strings))
-        if n_frets == 0:
-            return 0
-        self_frets = [fret for fret in self.positions_dict.values() if fret != 0][:n_frets]
-        other_frets = [fret for fret in other.positions_dict.values() if fret != 0][:n_frets]
-        return min(
-            sum(abs(self_f - other_f) for self_f, other_f in zip(self_frets, perm))
-            for perm in permutations(other_frets, len(other_frets))
-        )
+        cost_matrix = np.zeros((len(self.positions_dict), len(other.positions_dict)))
+        for row, s in enumerate(self.positions_dict.items()):
+            for col, o in enumerate(other.positions_dict.items()):
+                cost_matrix[row, col] = self.motion_helper(start=s, end=o)
+        if cost_matrix.shape[0] < cost_matrix.shape[1]:
+            cost_matrix = cost_matrix.transpose()
+        assignments = graph.assign(cost_matrix, assign_surplus=False)
+        return int(sum(cost_matrix[row, col] for row, col in enumerate(assignments) if col is not None))
 
+    def motion_helper(self, start: tuple[Hashable, int], end: tuple[Hashable, int]) -> int:
+        """
+        Compute the Manhattan distance between two fretted positions on a fretboard
+        (unfretted positions have zero distance)
+        """
+        if start[1] == 0 or end[1] == 0:
+            return 0
+        string_motion = abs(self.guitar.string_names.index(start[0]) - self.guitar.string_names.index(end[0]))
+        fret_motion = abs(start[1] - end[1])
+        return string_motion + fret_motion
 
     @staticmethod
     def sorted(p: list['GuitarPosition'], target_fret: int = 7) -> list['GuitarPosition']:
