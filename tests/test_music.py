@@ -936,8 +936,8 @@ def test_audio_from_chord_list() -> None:
 @pytest.mark.parametrize(
     'p1,p2,expected',
     [
-        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 2),
-        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 2),
+        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 3),
+        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 1),
         ({}, {'A': 3, 'B': 3}, 0),
     ]
 )

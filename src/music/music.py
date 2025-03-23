@@ -940,20 +940,28 @@ class GuitarPosition:
     def motion_distance(self, other: 'GuitarPosition') -> float:
         """
         A measure of the "distance" required to move from one guitar position to another;
-        for now, equal to the total number of frets and strings that need moved
+        for now, equal to the total number of frets and strings that need moved.
+        Assume moving from unfretted to fretted is zero cost
         """
-        #assert len(self.fretted_strings) == len(other.fretted_strings), \
-        #    'Can only compute movement distance between chords with the same number of fretted strings'
-        n_frets = min(len(self.fretted_strings), len(other.fretted_strings))
-        if n_frets == 0:
-            return 0
-        self_frets = [fret for fret in self.positions_dict.values() if fret != 0][:n_frets]
-        other_frets = [fret for fret in other.positions_dict.values() if fret != 0][:n_frets]
-        return min(
-            sum(abs(self_f - other_f) for self_f, other_f in zip(self_frets, perm))
-            for perm in permutations(other_frets, len(other_frets))
-        )
+        cost_matrix = np.zeros((len(self.positions_dict), len(other.positions_dict)))
+        for row, s in enumerate(self.positions_dict.items()):
+            for col, o in enumerate(other.positions_dict.items()):
+                cost_matrix[row, col] = self.motion_helper(start=s, end=o)
+        if cost_matrix.shape[0] < cost_matrix.shape[1]:
+            cost_matrix = cost_matrix.transpose()
+        assignments = graph.assign(cost_matrix, assign_surplus=False)
+        return int(sum(cost_matrix[row, col] for row, col in enumerate(assignments) if col is not None))
 
+    def motion_helper(self, start: tuple[Hashable, int], end: tuple[Hashable, int]) -> int:
+        """
+        Compute the Manhattan distance between two fretted positions on a fretboard
+        (unfretted positions have zero distance)
+        """
+        if start[1] == 0 or end[1] == 0:
+            return 0
+        string_motion = abs(self.guitar.string_names.index(start[0]) - self.guitar.string_names.index(end[0]))
+        fret_motion = abs(start[1] - end[1])
+        return string_motion + fret_motion
 
     @staticmethod
     def sorted(p: list['GuitarPosition'], target_fret: int = 7) -> list['GuitarPosition']:

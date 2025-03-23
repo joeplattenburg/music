@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Hashable
+from typing import Hashable, Optional
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -47,12 +47,13 @@ class Graph:
         return list(reversed(trajectory))
 
 
-def assign(cost_matrix: np.ndarray) -> list[int]:
+def assign(cost_matrix: np.ndarray, assign_surplus: bool = True) -> list[Optional[int]]:
     """
     Solve the assignment problem given an input cost_matrix of shape (m, n) with m >= n.
     If the cost matrix is not square, the general problem will be solved first
     (the n rows that optimize the problem will be assigned)
     and the surplus rows will then be assigned to their lowest cost column (thus duplicating some column assignments)
+    if `assign_surplus` is True, or otherwise will be assigned `None`
     """
     if cost_matrix.shape[0] < cost_matrix.shape[1]:
         raise ValueError('`cost_matrix` cannot have more columns than rows')
@@ -60,5 +61,5 @@ def assign(cost_matrix: np.ndarray) -> list[int]:
     surplus = set(range(cost_matrix.shape[0])) - set(assignments[:, 0])
     assignments = assignments.tolist()
     for s in surplus:
-        assignments.append([s, cost_matrix[s, :].argmin()])
-    return [col for _, col  in sorted(assignments)]
+        assignments.append([s, cost_matrix[s, :].argmin() if assign_surplus else None])
+    return [col for _, col in sorted(assignments)]
