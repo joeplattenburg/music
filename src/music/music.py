@@ -1,15 +1,17 @@
 #! /usr/bin/python
+from copy import deepcopy
 from functools import total_ordering, partial
 from importlib import util as importlib_util
 from itertools import product, combinations_with_replacement, combinations, chain, permutations
 import json
 from multiprocessing import Pool
+import numpy as np
 import os
 from typing import Hashable, Optional, Any, Literal, Iterable
 
 from music import graph
 
-MEDIA_PACKAGES = ['numpy', 'matplotlib', 'wave']
+MEDIA_PACKAGES = ['matplotlib', 'wave']
 media_installed = all(importlib_util.find_spec(p) for p in MEDIA_PACKAGES)
 DEFAULT_MAX_FRET_SPAN = 4
 IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
@@ -242,9 +244,6 @@ class Chord:
         :param duration: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
         """
-        if not media_installed:
-            raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
-        import numpy as np
         n = int(sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         tau = duration * 0.2
@@ -271,12 +270,14 @@ class Chord:
         It might not be that the case that each note resolves to its same-index counterpart in the other chord;
         so we need to check all the pairings
         """
-        assert len(self.notes) == len(other.notes), \
-            'Can only compute semitone distance between chords of equal cardinality'
-        return min(
-            sum(abs(self_n - other_n) for self_n, other_n in zip(self.notes, perm))
-            for perm in permutations(other.notes, len(other.notes))
-        )
+        cost_matrix = np.zeros(shape=(len(self.notes), len(other.notes)))
+        for row, s in enumerate(self.notes):
+            for col, o in enumerate(other.notes):
+                cost_matrix[row, col] = abs(s - o)
+        if col > row:
+            cost_matrix = cost_matrix.transpose()
+        assignments = graph.assign(cost_matrix)
+        return int(sum(cost_matrix[row, col] for row, col in enumerate(assignments)))
 
     def __repr__(self):
         return ','.join(str(n) for n in self.notes)
@@ -608,7 +609,6 @@ class Audio:
         """
         if not media_installed:
             raise MissingMultimediaError('Missing multimedia packages; use `--extra media` on install')
-        import numpy as np
         import wave
         audio = np.array([self.waveform, self.waveform]).T
         # Convert to (little-endian) 16 bit integers.
