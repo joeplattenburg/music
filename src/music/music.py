@@ -552,12 +552,12 @@ class ChordProgression:
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
 
-    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None) -> list['GuitarPosition']:
+    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         positions = [
             get_all_guitar_positions_for_chord_name(
                 chord_name=chord, guitar=guitar,
-                allow_repeats=False, allow_identical=False
+                allow_repeats=allow_repeats, allow_identical=False
             )
             for chord in self.chords
         ]
@@ -565,6 +565,8 @@ class ChordProgression:
             list(filter(lambda x: (x.playable and not x.redundant), p))
             for p in positions
         ]
+        if any(len(p) == 0 for p in positions):
+            return []
         # for each chord, add the index to ensure the nodes are unique
         positions_flat = [(i, pp) for i, p in enumerate(positions) for pp in p]
         initial, terminal = (-1, None), (self.n_chords, None)

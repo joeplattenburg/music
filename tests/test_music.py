@@ -947,9 +947,13 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
     assert p1.motion_distance(p2) == expected
 
 
-def test_optimal_progression() -> None:
-    cp = music.ChordProgression([
-        music.ChordName(n) for n in ['Dm7', 'G7', 'CM7']
-    ])
-    result = cp.optimal_guitar_positions()
-    print(result)
+@pytest.mark.parametrize(
+    'prog', [
+        ['Dm7', 'G7', 'CM7'],
+        ['Dm7', 'G7b9', 'C'],
+        ['Dm7#11', 'G7', 'C']
+    ]
+)
+def test_optimal_progression(prog: list[str]) -> None:
+    cp = music.ChordProgression([music.ChordName(n) for n in prog])
+    cp.optimal_guitar_positions()

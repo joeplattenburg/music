@@ -186,22 +186,25 @@ def guitar_positions_display_name(
 def guitar_chord_progression():
     if request.method == 'POST':
         chords_string = request.form['chords'].strip()
+        allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
         return redirect(url_for(
             'guitar_chord_progression_display',
             chords_string=chords_string,
+            allow_repeats='allow_repeats=' + allow_repeats,
         ))
     return render_template('guitar_chord_progression_input.html')
 
 
-@app.route("/guitar_chord_progression/<chords_string>", methods=('GET', 'POST'))
-def guitar_chord_progression_display(chords_string: str):
+@app.route("/guitar_chord_progression/<chords_string>/<allow_repeats>", methods=('GET', 'POST'))
+def guitar_chord_progression_display(chords_string: str, allow_repeats: str):
     t1 = time.time()
     chord_progression = music.ChordProgression(
         [music.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
-    opt_positions = chord_progression.optimal_guitar_positions()
+    allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
+    opt_positions = chord_progression.optimal_guitar_positions(allow_repeats=allow_repeats_)
     opt_chords = [p.chord for p in opt_positions]
-    if music.media_installed:
+    if music.media_installed and opt_chords:
         audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
         audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
         music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))

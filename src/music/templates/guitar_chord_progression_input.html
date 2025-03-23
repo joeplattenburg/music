@@ -13,6 +13,11 @@
                placeholder="Dm7,G7,Cmaj7"
                value="{{ request.form['chords'] }}"></input>
         <br>
+        <p><b>Optional Parameters</b></p>
+        <input type="checkbox" id="allow_repeats" name="allow_repeats"
+               value="true" checked></input>
+        <label for="allow_repeats"> Allow repeated chord tones</label><br>
+        <br>
         <br>
         <button type="submit">Submit</button>
     </form>
