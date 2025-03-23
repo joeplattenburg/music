@@ -1,5 +1,4 @@
 from collections import defaultdict
-from copy import deepcopy
 from dataclasses import dataclass
 from typing import Hashable
 
@@ -51,17 +50,15 @@ class Graph:
 def assign(cost_matrix: np.ndarray) -> list[int]:
     """
     Solve the assignment problem given an input cost_matrix of shape (m, n) with m >= n.
-    If the cost matrix is not square, the surplus rows will be assigned by first selecting the globally minimal costs,
-    and then solving the balanced assignment problem on the remaining square matrix
+    If the cost matrix is not square, the general problem will be solved first
+    (the n rows that optimize the problem will be assigned)
+    and the surplus rows will then be assigned to their lowest cost column (thus duplicating some column assignments)
     """
-    c = deepcopy(cost_matrix)
-    upper = cost_matrix.max() + 1
-    assignments = []
-    if c.shape[0] < c.shape[1]:
+    if cost_matrix.shape[0] < cost_matrix.shape[1]:
         raise ValueError('`cost_matrix` cannot have more columns than rows')
-    for i in range(c.shape[0] - c.shape[1]):
-        global_min = np.unravel_index(c.argmin(), c.shape)
-        assignments.append(global_min)
-        c[global_min[0], :] = upper
-    assignments += list(zip(*linear_sum_assignment(c)))
+    assignments = np.array(linear_sum_assignment(cost_matrix)).transpose()
+    surplus = set(range(cost_matrix.shape[0])) - set(assignments[:, 0])
+    assignments = assignments.tolist()
+    for s in surplus:
+        assignments.append([s, cost_matrix[s, :].argmin()])
     return [col for _, col  in sorted(assignments)]
