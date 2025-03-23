@@ -1,8 +1,7 @@
 #! /usr/bin/python
-from copy import deepcopy
 from functools import total_ordering, partial
 from importlib import util as importlib_util
-from itertools import product, combinations_with_replacement, combinations, chain, permutations
+from itertools import product, combinations_with_replacement, combinations, chain
 import json
 from multiprocessing import Pool
 import numpy as np
