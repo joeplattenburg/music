@@ -1,6 +1,10 @@
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Hashable
+
+import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 
 @dataclass
@@ -44,3 +48,20 @@ class Graph:
         return list(reversed(trajectory))
 
 
+def assign(cost_matrix: np.ndarray) -> list[int]:
+    """
+    Solve the assignment problem given an input cost_matrix of shape (m, n) with m >= n.
+    If the cost matrix is not square, the surplus rows will be assigned by first selecting the globally minimal costs,
+    and then solving the balanced assignment problem on the remaining square matrix
+    """
+    c = deepcopy(cost_matrix)
+    upper = cost_matrix.max() + 1
+    assignments = []
+    if c.shape[0] < c.shape[1]:
+        raise ValueError('`cost_matrix` cannot have more columns than rows')
+    for i in range(c.shape[0] - c.shape[1]):
+        global_min = np.unravel_index(c.argmin(), c.shape)
+        assignments.append(global_min)
+        c[global_min[0], :] = upper
+    assignments += list(zip(*linear_sum_assignment(c)))
+    return [col for _, col  in sorted(assignments)]
