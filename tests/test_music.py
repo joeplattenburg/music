@@ -957,3 +957,33 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
 def test_optimal_progression(prog: list[str]) -> None:
     cp = music.ChordProgression([music.ChordName(n) for n in prog])
     cp.optimal_guitar_positions()
+
+
+@pytest.mark.parametrize(
+    'positions,expected',
+    [
+        (
+            {'A': 3, 'D': 2, 'G': 0, 'B': 1, 'e': 0},
+            {'A': '3', 'D': '2', 'B': '1'}
+        ),
+        (
+            {'E': 0, 'A': 2, 'D': 2, 'G': 1, 'B': 0, 'e': 0},
+            {'A': '2', 'D': '3', 'G': '1'}
+        ),
+        (
+            {'E': 3, 'A': 2, 'D': 0, 'G': 0, 'B': 3, 'e': 3},
+            {'E': '2', 'A': '1', 'B': '3', 'e': '4'},
+        ),
+        (
+            {'E': 3, 'D': 3, 'G': 4, 'B': 3, 'e': 4},
+            {'E': 'T', 'D': '1', 'G': '3', 'B': '2', 'e': '4'},
+        ),
+        (
+            {'E': 3, 'A': 5, 'D': 5, 'G': 4, 'B': 3, 'e': 3},
+            {'E': '1', 'A': '3', 'D': '4', 'G': '2', 'B': '1', 'e': '1'},
+        ),
+    ]
+)
+def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> None:
+    positions = music.GuitarPosition(positions)
+    assert positions.fingers_dict == expected

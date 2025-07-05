@@ -799,7 +799,7 @@ class GuitarPosition:
             highest_fret = max(positions.values())
             self.fret_span = highest_fret - self.lowest_fret + 1
         # Sort the position in order of the guitar strings
-        self.positions_dict = {
+        self.positions_dict: dict[Hashable, int] = {
             string: positions[string]
             for string in self.guitar.string_names
             if string in positions
@@ -821,11 +821,14 @@ class GuitarPosition:
             i for i, string in enumerate(self.guitar.string_names)
             if self.positions_dict.get(string, -1) == self.lowest_fret
         ]
+        self.fingers_dict: dict[Hashable, str] = dict()
         # Can play a 5th note with thumb on bottom string
         self.use_thumb = (
             (len(self.fretted_strings) == 5) and
             (self.positions_dict.get(self.guitar.string_names[0], -1) == self.lowest_fret)
         )
+        if self.use_thumb:
+            self.fingers_dict[self.guitar.string_names[0]] = 'T'
         self.max_interior_gap = self._max_interior_gap()
         self.playable = self.is_playable(max_fret_span=max_fret_span)
         # Barre chord needs
@@ -846,8 +849,12 @@ class GuitarPosition:
         if self.barre:
             # All strings along the barre position
             self.barred_strings_inds = list(range(min(lowest_fret_strings), max(lowest_fret_strings) + 1))
+            for string in self.barred_strings_inds:
+                self.fingers_dict[self.guitar.string_names[string]] = '1'
+            available_fingers = ['2', '3', '4']
         else:
             self.barred_strings_inds = []
+            available_fingers = ['1', '2', '3', '4']
         # If all fretted notes are >= fret 12, this is a redundant position
         # there is an identical shape 12 frets below that gives (nearly) the same voicing
         self.redundant = all(fret >= 12 for fret in self.positions_dict.values() if fret != 0)
@@ -858,6 +865,24 @@ class GuitarPosition:
             self.chord = enharmonic_chord
         else:
             self.chord = chord
+        sorted_positions = self._get_sorted_positions()
+        for (fret, string), finger in zip(sorted_positions, available_fingers):
+            self.fingers_dict[self.guitar.string_names[string]] = finger
+
+    def _get_sorted_positions(self) -> list[tuple[int, int]]:
+        """
+        Sort positions by fret ascending, string ascending
+        (this should generally correspond with the ordering of fingers)
+        skip positions that are open, already accounted for with thumb, or barred
+        """
+        return sorted([
+            (fret, self.guitar.string_names.index(string))
+            for string, fret in self.positions_dict.items()
+            if fret > 0 and not (
+                self.fingers_dict.get(string) == 'T' or
+                (self.barre and self.fingers_dict.get(string) == '1' and fret == self.lowest_fret)
+            )
+        ])
 
     def _max_interior_gap(self) -> int:
         if len(self.fretted_strings) == 0:
