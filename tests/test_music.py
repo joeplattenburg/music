@@ -185,6 +185,21 @@ def test_print() -> None:
     assert actual == expected
 
 
+def test_print_with_fingers() -> None:
+    position = music.GuitarPosition({'A': 2, 'D': 2})
+    expected = [
+        "e x|---|",
+        "B x|---|",
+        "G x|---|",
+        "D  |-2-|",
+        "A  |-1-|",
+        "E x|---|",
+        "    2fr",
+    ]
+    actual = position.printable(fingers=True)
+    assert actual == expected
+
+
 def test_print_more_complex() -> None:
     open_d = {"D": "D2", "A": "A2", "d": "D3", "F#": "F#3", "a": "A3", "dd": "D4"}
     guitar = music.Guitar(tuning={
@@ -234,6 +249,17 @@ def test_print_barre() -> None:
     ]
     actual = position.printable()
     assert actual == expected
+    expected = [
+        "e  |-1-|---|---|",
+        "B  |-|-|---|-3-|",
+        "G  |-|-|---|---|",
+        "D  |-|-|---|-2-|",
+        "A  |-1-|---|---|",
+        "E x|---|---|---|",
+        "    10fr",
+    ]
+    actual = position.printable(fingers=True)
+    assert actual == expected
 
 
 def test_no_open_strings_along_barre() -> None:
@@ -245,22 +271,22 @@ def test_no_open_strings_along_barre() -> None:
         "G  |---|---|---|---|-@-|",
         "D  |---|---|-@-|---|---|",
         "A x|---|---|---|---|---|",
-        "E  |-T-|---|---|---|---|",
+        "E  |-@-|---|---|---|---|",
         "    3fr",
     ]
     assert position.printable() == expected
     position = music.GuitarPosition({"E": 3, "A": 0, "D": 5, "G": 7, "B": 3, "e": 7})
     assert not position.barre
     expected = [
-        "e  |---|---|---|---|-@-|",
-        "B  |-@-|---|---|---|---|",
-        "G  |---|---|---|---|-@-|",
-        "D  |---|---|-@-|---|---|",
+        "e  |---|---|---|---|-4-|",
+        "B  |-1-|---|---|---|---|",
+        "G  |---|---|---|---|-3-|",
+        "D  |---|---|-2-|---|---|",
         "A o|---|---|---|---|---|",
         "E  |-T-|---|---|---|---|",
         "    3fr",
     ]
-    assert position.printable() == expected
+    assert position.printable(fingers=True) == expected
 
 @pytest.mark.parametrize(
     'string',
@@ -540,10 +566,20 @@ def test_thumb_position_not_barre() -> None:
         "G  |---|-@-|---|---|",
         "D  |-@-|---|---|---|",
         "A  |---|---|-@-|---|",
-        "E  |-T-|---|---|---|",
+        "E  |-@-|---|---|---|",
         "    3fr",
     ]
     assert position.printable() == expected
+    expected = [
+        "e x|---|---|---|---|",
+        "B  |---|---|---|-4-|",
+        "G  |---|-2-|---|---|",
+        "D  |-1-|---|---|---|",
+        "A  |---|---|-3-|---|",
+        "E  |-T-|---|---|---|",
+        "    3fr",
+    ]
+    assert position.printable(fingers=True) == expected
 
 
 def test_constrained_powerset_same_len() -> None:

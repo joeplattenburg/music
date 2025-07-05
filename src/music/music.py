@@ -936,7 +936,7 @@ class GuitarPosition:
             all(self_val == other.positions_dict[key] for key, self_val in self.positions_dict.items())
         )
 
-    def printable(self) -> list[str]:
+    def printable(self, fingers: bool = False) -> list[str]:
         """
         Given a chord position, return ASCII art for the position; each line is an item of the list
         (e.g., you can `print('\n'.join(position.printable()))`)
@@ -944,11 +944,11 @@ class GuitarPosition:
         rows = []
         widest_name = max(len(str(string)) for string in self.guitar.string_names)
         for i, string in reversed(list(enumerate(self.guitar.string_names))):
-            fret_marker = '-T-' if string == self.guitar.string_names[0] and self.use_thumb else '-@-'
             left_padding = ' ' * (widest_name - len(str(string)))
             frets = ['---'] * self.fret_span
             fret = self.positions_dict.get(string, -1)
             if fret > 0:
+                fret_marker = f'-{self.fingers_dict[string]}-' if fingers else '-@-'
                 frets[fret - self.lowest_fret] = fret_marker
                 ring_status = ' '
             else:
