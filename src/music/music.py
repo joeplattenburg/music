@@ -554,7 +554,12 @@ class ChordProgression:
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
 
-    def optimal_guitar_positions(self, guitar: Optional['Guitar'] = None, allow_repeats: bool = False) -> list['GuitarPosition']:
+    def optimal_guitar_positions(
+            self,
+            guitar: Optional['Guitar'] = None,
+            allow_repeats: bool = False,
+            respect_fingers: bool = False,
+    ) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         positions = [
             get_all_guitar_positions_for_chord_name(
@@ -585,7 +590,11 @@ class ChordProgression:
         for i, p in enumerate(positions[:-1]):
             p_next = positions[i + 1]
             for start, end in product(p, p_next):
-                edge = graph.Edge(start=(i, start), end=(i + 1, end), weight=start.motion_distance(end))
+                edge = graph.Edge(
+                    start=(i, start),
+                    end=(i + 1, end),
+                    weight=start.motion_distance(end, respect_fingers=respect_fingers)
+                )
                 edges.append(edge)
         edges = initial_edges + edges + terminal_edges
         g = graph.Graph(nodes=nodes, edges=edges)

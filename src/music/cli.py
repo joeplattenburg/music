@@ -44,7 +44,7 @@ def guitar_positions(args: argparse.Namespace):
 def guitar_optimal_progression(args: argparse.Namespace):
     print(f'You input the chord progression: {args.chords}')
     cp = music.ChordProgression([music.ChordName(n) for n in args.chords])
-    result = cp.optimal_guitar_positions(allow_repeats=args.allow_repeats)
+    result = cp.optimal_guitar_positions(allow_repeats=args.allow_repeats, respect_fingers=args.fingers)
     print('The optimal positions for this progression are:')
     for chord, position in zip(args.chords, result):
         print(f'{chord}')

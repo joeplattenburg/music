@@ -229,7 +229,9 @@ def guitar_chord_progression_display(
     )
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
     show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
-    opt_positions = chord_progression.optimal_guitar_positions(allow_repeats=allow_repeats_)
+    opt_positions = chord_progression.optimal_guitar_positions(
+        allow_repeats=allow_repeats_, respect_fingers=show_fingers_
+    )
     opt_chords = [p.chord for p in opt_positions]
     if music.media_installed and opt_chords:
         audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))

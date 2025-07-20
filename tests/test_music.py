@@ -1046,16 +1046,19 @@ def test_position_motion_distance_respect_fingers(p1: dict[str, int], p2: dict[s
     assert p1.motion_distance(p2, respect_fingers=True) == expected
 
 
+@pytest.mark.parametrize('respect_fingers', [True, False])
 @pytest.mark.parametrize(
     'prog', [
         ['Dm7', 'G7', 'CM7'],
         ['Dm7', 'G7b9', 'C'],
-        ['Dm7#11', 'G7', 'C']
+        ['Dm7#13', 'G7', 'C'],
+        ['Em7', 'A7', 'Dm7', 'G7', 'CM7'],
     ]
 )
-def test_optimal_progression(prog: list[str]) -> None:
+def test_optimal_progression(prog: list[str], respect_fingers: bool) -> None:
     cp = music.ChordProgression([music.ChordName(n) for n in prog])
-    cp.optimal_guitar_positions()
+    actual = cp.optimal_guitar_positions(respect_fingers=respect_fingers)
+    assert  len(actual) == len(prog)
 
 
 @pytest.mark.parametrize(
