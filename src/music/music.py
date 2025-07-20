@@ -866,8 +866,15 @@ class GuitarPosition:
         else:
             self.chord = chord
         sorted_positions = self._get_sorted_positions()
+        finger_skip = 0
+        excess_fingers = len(available_fingers) - len(sorted_positions)
         for (fret, string), finger in zip(sorted_positions, available_fingers):
-            self.fingers_dict[self.guitar.string_names[string]] = finger
+            # If there is a fret gap, skip a finger if there are excess
+            fret_gap = fret - self.lowest_fret
+            if fret_gap >= int(finger) and excess_fingers > finger_skip:
+                finger_skip += min(fret_gap - 1, excess_fingers)
+            finger_ = str(int(finger) + finger_skip)
+            self.fingers_dict[self.guitar.string_names[string]] = finger_
 
     def _get_sorted_positions(self) -> list[tuple[int, int]]:
         """

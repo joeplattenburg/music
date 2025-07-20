@@ -251,9 +251,9 @@ def test_print_barre() -> None:
     assert actual == expected
     expected = [
         "e  |-1-|---|---|",
-        "B  |-|-|---|-3-|",
+        "B  |-|-|---|-4-|",
         "G  |-|-|---|---|",
-        "D  |-|-|---|-2-|",
+        "D  |-|-|---|-3-|",
         "A  |-1-|---|---|",
         "E x|---|---|---|",
         "    10fr",
@@ -1023,3 +1023,16 @@ def test_optimal_progression(prog: list[str]) -> None:
 def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> None:
     positions = music.GuitarPosition(positions)
     assert positions.fingers_dict == expected
+
+
+@pytest.mark.parametrize(
+    'positions,expected',
+    [
+        ({'A': 2, 'D': 4}, {'A': '1', 'D': '3'}),
+        ({'A': 2, 'D': 5}, {'A': '1', 'D': '4'}),
+        ({'A': 2, 'D': 5, 'G': 2}, {'A': '1', 'D': '4', 'G': '2'}),
+    ]
+)
+def test_finger_skips(positions: dict, expected: dict) -> None:
+    position = music.GuitarPosition(positions=positions)
+    assert position.fingers_dict == expected
