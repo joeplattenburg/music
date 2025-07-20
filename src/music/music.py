@@ -765,7 +765,7 @@ class Guitar:
             capo: int = 0
     ):
         if tuning_name:
-            assert tuning_name in self.TUNINGS, f"Invalid `tuning_name`; choose from {self.TUNINGS.keys()}"
+            assert tuning_name in self.TUNINGS, f"Invalid `tuning_name` ({tuning_name}); choose from {self.TUNINGS.keys()}"
             self.tuning_name = tuning_name
             self.open_tuning = self.TUNINGS[self.tuning_name]
         elif tuning:

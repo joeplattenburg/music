@@ -37,8 +37,9 @@ def home():
 @app.route("/guitar_positions", methods=('GET', 'POST'))
 def guitar_positions():
     if request.method == 'POST':
-        guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning'].strip()))
-        tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
+        tuning_name = request.form['tuning_name'].strip()
+        tuning = request.form['tuning'].strip()
+        tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         top_n = request.form['top_n'].strip() or '-1'
         max_fret_span = request.form['max_fret_span'].strip() or str(music.DEFAULT_MAX_FRET_SPAN)
         notes_string = request.form['notes'].strip()
@@ -111,7 +112,7 @@ def guitar_positions_display_notes(
     else:
         cleanup()
     guitar = (
-        music.Guitar() if tuning_ == 'standard' else
+        music.Guitar(tuning_name=tuning_) if not tuning_.startswith('custom') else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
@@ -156,7 +157,7 @@ def guitar_positions_display_name(
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
     guitar = (
-        music.Guitar() if tuning_ == 'standard' else
+        music.Guitar(tuning_name=tuning_) if not tuning_.startswith('custom') else
         music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
     )
     t1 = time.time()
