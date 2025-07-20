@@ -785,14 +785,22 @@ class Guitar:
         return str(self.tuning)
 
     @staticmethod
-    def parse_tuning(tuning: Optional[str] = None) -> Tuning:
+    def parse_tuning(tuning: Optional[str] = None, how: Optional[Literal['json', 'csv']] = None) -> Tuning:
         if not tuning:
             return Guitar.TUNINGS['standard']
-        else:
+        how = how or 'json' if tuning.startswith('{') else 'csv'
+        if how == 'json':
             return {
                 string: Note.from_string(note)
                 for string, note in json.loads(tuning.replace("'", '"')).items()
             }
+        elif how == 'csv':
+            out = dict()
+            for pair in tuning.split(';'):
+                string, note = pair.split(',')
+                out[string.strip()] = Note.from_string(note.strip())
+            return out
+
 
     def notes(self, position: dict[Hashable, int]) -> list[Note]:
         return [self.tuning[string].add_semitones(fret) for string, fret in position.items()]

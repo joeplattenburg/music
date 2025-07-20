@@ -111,10 +111,11 @@ def guitar_positions_display_notes(
         music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
-    guitar = (
-        music.Guitar(tuning_name=tuning_) if not tuning_.startswith('custom') else
-        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
-    )
+    if tuning_.startswith('custom'):
+        tuning_ = tuning_.split(';', maxsplit=1)[1]
+        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+    else:
+        guitar = music.Guitar(tuning_name=tuning_)
     t1 = time.time()
     positions_playable = chord.guitar_positions(
         guitar=guitar, max_fret_span=max_fret_span_, include_unplayable=False, allow_thumb=allow_thumb_
@@ -156,10 +157,11 @@ def guitar_positions_display_name(
     show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
-    guitar = (
-        music.Guitar(tuning_name=tuning_) if not tuning_.startswith('custom') else
-        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
-    )
+    if tuning_.startswith('custom'):
+        tuning_ = tuning_.split(';', maxsplit=1)[1]
+        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+    else:
+        guitar = music.Guitar(tuning_name=tuning_)
     t1 = time.time()
     chord = music.ChordName(chord_name_)
     low_chord = chord.get_chord(lower=music.Note('E', 2))

@@ -30,7 +30,7 @@ def guitar_positions(args: argparse.Namespace):
         positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     positions = music.GuitarPosition.sorted(positions_playable)[:args.top_n]
-    tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
+    tuning_display = guitar.tuning_name if guitar.tuning_name != 'custom' else f'{guitar}'
     print(
         f'There are {len(chords_playable)} playable voicings and {len(positions_playable)} guitar positions '
         f'(out of {positions_all_count} possible) for a guitar tuned to {tuning_display}.'
@@ -109,7 +109,10 @@ def main() -> None:
     )
     guitar_positions_parser.add_argument(
         '--tuning', type=music.Guitar.parse_tuning, default=None,
-        help='A json dict specifying a custom guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
+        help=(
+            'A json dict or comma/semicolon separated list specifying a custom guitar tuning, '
+            'e.g.: {"D": "D2", "A": "A2", ...} or D,D2;A,A2;...'
+        )
     )
     guitar_positions_parser.add_argument(
         '--capo', type=int, default=0,

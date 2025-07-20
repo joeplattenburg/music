@@ -1,6 +1,7 @@
 from functools import reduce
 from operator import add
 import os
+from typing import Optional
 
 import pytest
 
@@ -306,13 +307,21 @@ def test_no_open_strings_along_barre() -> None:
         str({"E": str(music.Note('E', 2)), "A": str(music.Note('A', 2))}),
     ]
 )
-def test_parse_tuning(string: str) -> None:
+def test_parse_tuning_json(string: str) -> None:
     expected = {
         "E": music.Note('E', 2),
         "A": music.Note('A', 2)
     }
     assert music.Guitar.parse_tuning(string) == expected
 
+
+@pytest.mark.parametrize('how', ['csv', None])
+def test_parse_tuning_csv(how: Optional[str]) -> None:
+    expected = {
+        "E": music.Note('E', 2),
+        "A": music.Note('A', 2)
+    }
+    assert music.Guitar.parse_tuning('E,E2;A,A2', how=how) == expected
 
 @pytest.mark.parametrize(
     'name,expected',
