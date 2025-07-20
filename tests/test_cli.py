@@ -9,7 +9,8 @@ import pytest
 @pytest.mark.parametrize(
     'args',
     [
-        [], ['-n 3'], ['-f 5'], ['-r'], ['-i'], ['-p'], ['-g']
+        [], ['-n', '3'], ['-f', '5'], ['-r'], ['-i'], ['-p'], ['-g'], ['-F'],
+        ['-t', 'open_g'], ['--tuning', 'DD,D2;A,A2;D,D3;G,G3;B,B3;d,D4']
     ]
 )
 def test_guitar_positions_name(name: str, args: list[str]) -> None:
@@ -25,12 +26,30 @@ def test_guitar_positions_name(name: str, args: list[str]) -> None:
 @pytest.mark.parametrize(
     'args',
     [
-        [], ['-n 3'], ['-f 5'], ['-r'], ['-i'], ['-p'], ['-g']
+        [], ['-n', '3'], ['-f', '5'], ['-r'], ['-i'], ['-p'], ['-g'], ['-F'],
+        ['-t', 'open_g'], ['--tuning', 'DD,D2;A,A2;D,D3;G,G3;B,B3;d,D4']
     ]
 )
 def test_guitar_positions_notes(notes: str, args: list[str]) -> None:
     result = subprocess.run(
         ['music-cli', 'guitar-positions', '--notes', notes, *args],
+        capture_output=True)
+    assert result.returncode == 0
+
+
+@pytest.mark.parametrize(
+    'chords', [['Dm7', 'G7b9', 'CM7']]
+)
+@pytest.mark.parametrize(
+    'args',
+    [
+        [], ['-r'], ['-g'], ['-F'],
+        ['-t', 'open_g'], ['--tuning', 'DD,D2;A,A2;D,D3;G,G3;B,B3;d,D4']
+    ]
+)
+def test_guitar_chord_progression(chords: list[str], args: list[str]) -> None:
+    result = subprocess.run(
+        ['music-cli', 'guitar-chord-progression', '--chords', *chords, *args],
         capture_output=True)
     assert result.returncode == 0
 

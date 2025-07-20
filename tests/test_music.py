@@ -1030,15 +1030,35 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
 
 
 @pytest.mark.parametrize(
+    'p1,p2,expected',
+    [
+        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 3),
+        # Here, we move from second finger on the G string to the B string
+        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 3),
+        ({}, {'A': 3, 'B': 3}, 0),
+        # # For barre chord, index only costs 1
+        ({'A': 2, 'D': 4, 'G': 2, 'B': 4, 'e': 2}, {'A': 3, 'D': 5, 'G': 3, 'B': 5, 'e': 3}, 3),
+    ]
+)
+def test_position_motion_distance_respect_fingers(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
+    p1 = music.GuitarPosition(positions=p1)
+    p2 = music.GuitarPosition(positions=p2)
+    assert p1.motion_distance(p2, respect_fingers=True) == expected
+
+
+@pytest.mark.parametrize('respect_fingers', [True, False])
+@pytest.mark.parametrize(
     'prog', [
         ['Dm7', 'G7', 'CM7'],
         ['Dm7', 'G7b9', 'C'],
-        ['Dm7#11', 'G7', 'C']
+        ['Dm7#13', 'G7', 'C'],
+        ['Em7', 'A7', 'Dm7', 'G7', 'CM7'],
     ]
 )
-def test_optimal_progression(prog: list[str]) -> None:
+def test_optimal_progression(prog: list[str], respect_fingers: bool) -> None:
     cp = music.ChordProgression([music.ChordName(n) for n in prog])
-    cp.optimal_guitar_positions()
+    actual = cp.optimal_guitar_positions(respect_fingers=respect_fingers)
+    assert  len(actual) == len(prog)
 
 
 @pytest.mark.parametrize(

@@ -14,13 +14,41 @@
                value="{{ request.form['chords'] }}"></input>
         <br>
         <p><b>Optional Parameters</b></p>
+        <label for="tuning_name">Tuning (default Standard)</label>
+        <br>
+        <select name="tuning_name" id="tuning_name">
+            <option value="standard">Standard</option>
+            <option value="drop_d">Drop D</option>
+            <option value="open_d">Open D</option>
+            <option value="open_g">Open G</option>
+            <option value="open_a">Open A</option>
+            <option value="custom">Custom</option>
+        </select>
+        <br>
+        <br>
+        <label for="tuning">(Optional) Custom Guitar Tuning</label>
+        <br>
+        <input type="text" name="tuning" id="tuning"
+               placeholder='E,E2;A,A2;...'
+               value="{{ request.form['tuning'] }}"></input>
+        <br>
+        <br>
         <input type="checkbox" id="allow_repeats" name="allow_repeats"
                value="true"></input>
         <label for="allow_repeats"> Allow repeated chord tones</label><br>
         <br>
+        <input type="checkbox" id="allow_identical" name="allow_identical"
+               value="true"></input>
+        <label for="allow_identical"> Allow identical (same octave) chord tones<br>
+            (Warning, this may increase compute time)</label><br>
+        <br>
         <input type="checkbox" id="show_fingers" name="show_fingers"
                value="true"></input>
         <label for="show_fingers"> Show recommended finger to use for each note</label><br>
+        <br>
+        <input type="checkbox" id="allow_thumb" name="allow_thumb"
+               value="true" checked></input>
+        <label for="allow_thumb"> Allow positions requiring thumb</label><br>
         <br>
         <br>
         <button type="submit">Submit</button>
