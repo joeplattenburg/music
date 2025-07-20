@@ -1030,6 +1030,23 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
 
 
 @pytest.mark.parametrize(
+    'p1,p2,expected',
+    [
+        ({'A': 2, 'G': 2}, {'A': 3, 'B': 3}, 3),
+        # Here, we move from second finger on the G string to the B string
+        ({'A': 2, 'G': 2, 'B': 3}, {'A': 3, 'B': 3}, 3),
+        ({}, {'A': 3, 'B': 3}, 0),
+        # # For barre chord, index only costs 1
+        ({'A': 2, 'D': 4, 'G': 2, 'B': 4, 'e': 2}, {'A': 3, 'D': 5, 'G': 3, 'B': 5, 'e': 3}, 3),
+    ]
+)
+def test_position_motion_distance_respect_fingers(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
+    p1 = music.GuitarPosition(positions=p1)
+    p2 = music.GuitarPosition(positions=p2)
+    assert p1.motion_distance(p2, respect_fingers=True) == expected
+
+
+@pytest.mark.parametrize(
     'prog', [
         ['Dm7', 'G7', 'CM7'],
         ['Dm7', 'G7b9', 'C'],

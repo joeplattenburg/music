@@ -942,6 +942,10 @@ class GuitarPosition:
                 finger_skip += min(fret_gap - 1, excess_fingers)
             finger_ = str(int(finger) + finger_skip)
             self.fingers_dict[self.guitar.string_names[string]] = finger_
+        self.fingers_positions_dict: dict[Hashable, tuple[str, int]] = {
+            string: (finger, self.positions_dict[string])
+            for string, finger in self.fingers_dict.items()
+        }
 
     def _get_sorted_positions(self) -> list[tuple[int, int]]:
         """
@@ -1037,20 +1041,32 @@ class GuitarPosition:
             rows.append(f'{left_padding}   {self.lowest_fret}fr')
         return rows
 
-    def motion_distance(self, other: 'GuitarPosition') -> float:
+    def motion_distance(self, other: 'GuitarPosition', respect_fingers: bool = False) -> float:
         """
         A measure of the "distance" required to move from one guitar position to another;
-        for now, equal to the total number of frets and strings that need moved.
+        If `respect_fingers`, distance is computed as the total distance each recommended finger needs to move;
+        Otherwise, equal to the total number of frets and strings that need moved for minimum motion.
         Assume moving from unfretted to fretted is zero cost
         """
-        cost_matrix = np.zeros((len(self.positions_dict), len(other.positions_dict)))
-        for row, s in enumerate(self.positions_dict.items()):
-            for col, o in enumerate(other.positions_dict.items()):
-                cost_matrix[row, col] = self.motion_helper(start=s, end=o)
-        if cost_matrix.shape[0] < cost_matrix.shape[1]:
-            cost_matrix = cost_matrix.transpose()
-        assignments = graph.assign(cost_matrix, assign_surplus=False)
-        return int(sum(cost_matrix[row, col] for row, col in enumerate(assignments) if col is not None))
+        if respect_fingers:
+            moving_fingers = set(self.fingers_dict.values()).intersection(set(other.fingers_dict.values()))
+            cost = 0
+            for finger in moving_fingers:
+                start = [(string, fret) for string, (finger_, fret) in self.fingers_positions_dict.items() if finger == finger_]
+                end = [(string, fret) for string, (finger_, fret) in other.fingers_positions_dict.items() if finger == finger_]
+                # if a finger is barring multiple strings, only count the cost of moving from
+                # the lowest string-fret pair of self to other
+                cost += self.motion_helper(start=start[0], end=end[0])
+        else:
+            cost_matrix = np.zeros((len(self.positions_dict), len(other.positions_dict)))
+            for row, s in enumerate(self.positions_dict.items()):
+                for col, o in enumerate(other.positions_dict.items()):
+                    cost_matrix[row, col] = self.motion_helper(start=s, end=o)
+            if cost_matrix.shape[0] < cost_matrix.shape[1]:
+                cost_matrix = cost_matrix.transpose()
+            assignments = graph.assign(cost_matrix, assign_surplus=False)
+            cost = int(sum(cost_matrix[row, col] for row, col in enumerate(assignments) if col is not None))
+        return cost
 
     def motion_helper(self, start: tuple[Hashable, int], end: tuple[Hashable, int]) -> int:
         """
