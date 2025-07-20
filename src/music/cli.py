@@ -44,7 +44,10 @@ def guitar_positions(args: argparse.Namespace):
 def guitar_optimal_progression(args: argparse.Namespace):
     print(f'You input the chord progression: {args.chords}')
     cp = music.ChordProgression([music.ChordName(n) for n in args.chords])
-    result = cp.optimal_guitar_positions(allow_repeats=args.allow_repeats, respect_fingers=args.fingers)
+    guitar = music.Guitar(tuning_name=args.tuning_name, tuning=args.tuning)
+    result = cp.optimal_guitar_positions(
+        guitar=guitar, allow_repeats=args.allow_repeats, respect_fingers=args.fingers
+    )
     print('The optimal positions for this progression are:')
     for chord, position in zip(args.chords, result):
         print(f'{chord}')
@@ -145,6 +148,17 @@ def main() -> None:
     guitar_optimal_progression_parser.add_argument(
         '--allow-repeats', '-r', action='store_true',
         help='Allow chord tones to appear more than once (different octaves)'
+    )
+    guitar_optimal_progression_parser.add_argument(
+        '--tuning-name', '-t', type=str, default=None,
+        help='Name of alternate tuning', choices=list(music.Guitar.TUNINGS.keys())
+    )
+    guitar_optimal_progression_parser.add_argument(
+        '--tuning', type=music.Guitar.parse_tuning, default=None,
+        help=(
+            'A json dict or comma/semicolon separated list specifying a custom guitar tuning, '
+            'e.g.: {"D": "D2", "A": "A2", ...} or D,D2;A,A2;...'
+        )
     )
     guitar_optimal_progression_parser.set_defaults(func=guitar_optimal_progression)
 
