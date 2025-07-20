@@ -38,7 +38,7 @@ def guitar_positions(args: argparse.Namespace):
     if args.top_n:
         print(f'Here are the top {args.top_n}:')
     for p in positions:
-        print('\n' + '\n'.join(p.printable())) if args.graphical else print(p)
+        print('\n' + '\n'.join(p.printable(fingers=args.fingers))) if args.graphical else print(p)
 
 
 def guitar_optimal_progression(args: argparse.Namespace):
@@ -48,7 +48,7 @@ def guitar_optimal_progression(args: argparse.Namespace):
     print('The optimal positions for this progression are:')
     for chord, position in zip(args.chords, result):
         print(f'{chord}')
-        print('\n'.join(position.printable())) if args.graphical else print(position)
+        print('\n'.join(position.printable(fingers=args.fingers))) if args.graphical else print(position)
 
 
 def voice_leading(args: argparse.Namespace):
@@ -86,6 +86,10 @@ def main() -> None:
     guitar_positions_parser.add_argument(
         '--max-fret-span', '-f', type=int, default=music.DEFAULT_MAX_FRET_SPAN,
         help='Max fret span to consider playable'
+    )
+    guitar_positions_parser.add_argument(
+        '--fingers', '-F', action='store_true',
+        help='Show which finger to use for each note'
     )
     guitar_positions_parser.add_argument(
         '--allow-repeats', '-r', action='store_true',
@@ -126,6 +130,10 @@ def main() -> None:
     guitar_optimal_progression_parser.add_argument(
         '--graphical', '-g', action='store_true',
         help='Show ASCII art for guitar positions'
+    )
+    guitar_optimal_progression_parser.add_argument(
+        '--fingers', '-F', action='store_true',
+        help='Show which finger to use for each note'
     )
     guitar_optimal_progression_parser.add_argument(
         '--allow-repeats', '-r', action='store_true',

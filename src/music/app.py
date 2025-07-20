@@ -45,6 +45,7 @@ def guitar_positions():
         chord_name = request.form['chord_name'].strip()
         allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
         allow_identical = request.form.get('allow_identical', '').strip() or 'false'
+        show_fingers = request.form.get('show_fingers', '').strip() or 'false'
         allow_thumb = request.form.get('allow_thumb', '').strip() or 'false'
         all_voicings = request.form.get('all_voicings', '').strip() or 'false'
         if notes_string:
@@ -54,6 +55,7 @@ def guitar_positions():
                 top_n='top_n=' + top_n,
                 max_fret_span='max_fret_span=' + max_fret_span,
                 tuning='tuning=' + tuning,
+                show_fingers='show_fingers=' + show_fingers,
                 allow_thumb='allow_thumb=' + allow_thumb,
             ))
         elif chord_name:
@@ -67,6 +69,7 @@ def guitar_positions():
                     tuning='tuning=' + tuning,
                     allow_repeats='allow_repeats=' + allow_repeats,
                     allow_identical='allow_identical=' + allow_identical,
+                    show_fingers='show_fingers=' + show_fingers,
                     allow_thumb='allow_thumb=' + allow_thumb,
                     all_voicings='all_voicings=' + all_voicings,
                 ))
@@ -79,14 +82,22 @@ def guitar_positions():
 
 @app.route(
     "/guitar_positions/notes/<notes_string>"
-    "/<top_n>/<max_fret_span>/<tuning>/<allow_thumb>"
+    "/<top_n>/<max_fret_span>/<tuning>/<show_fingers>/<allow_thumb>"
 )
-def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span: str, tuning: str, allow_thumb: str) -> str:
+def guitar_positions_display_notes(
+        notes_string: str,
+        top_n: str,
+        max_fret_span: str,
+        tuning: str,
+        show_fingers: str,
+        allow_thumb: str,
+) -> str:
     top_n_ = int(escape(top_n).split('=')[1])
     if top_n_ < 0:
         top_n_ = None
     max_fret_span_ = int(escape(max_fret_span).split('=')[1])
     tuning_ = escape(tuning).split('=')[1]
+    show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = music.Chord(notes_list)
@@ -109,7 +120,7 @@ def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span:
     )
     positions_all = chord.num_total_guitar_positions
     positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
-    positions_printable = ['<br>'.join(p.printable()) for p in positions]
+    positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'guitar_positions_display.html',
@@ -120,7 +131,7 @@ def guitar_positions_display_notes(notes_string: str, top_n: str, max_fret_span:
 
 @app.route(
     "/guitar_positions/chord_name/<chord_name>"
-    "/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<allow_thumb>/<all_voicings>"
+    "/<top_n>/<max_fret_span>/<tuning>/<allow_repeats>/<allow_identical>/<show_fingers>/<allow_thumb>/<all_voicings>"
 )
 def guitar_positions_display_name(
         chord_name: str,
@@ -129,6 +140,7 @@ def guitar_positions_display_name(
         tuning: str,
         allow_repeats: str,
         allow_identical: str,
+        show_fingers: str,
         allow_thumb: str,
         all_voicings: str
 ) -> str:
@@ -140,6 +152,7 @@ def guitar_positions_display_name(
     tuning_ = escape(tuning).split('=')[1]
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
     allow_identical_: bool = escape(allow_identical).split('=')[1] == 'true'
+    show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
     guitar = (
@@ -173,7 +186,7 @@ def guitar_positions_display_name(
     else:
         cleanup()
     positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
-    positions_printable = ['<br>'.join(p.printable()) for p in positions]
+    positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'guitar_positions_display.html',
@@ -187,21 +200,28 @@ def guitar_chord_progression():
     if request.method == 'POST':
         chords_string = request.form['chords'].strip()
         allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
+        show_fingers = request.form.get('show_fingers', '').strip() or 'false'
         return redirect(url_for(
             'guitar_chord_progression_display',
             chords_string=chords_string,
             allow_repeats='allow_repeats=' + allow_repeats,
+            show_fingers='show_fingers=' + show_fingers,
         ))
     return render_template('guitar_chord_progression_input.html')
 
 
-@app.route("/guitar_chord_progression/<chords_string>/<allow_repeats>", methods=('GET', 'POST'))
-def guitar_chord_progression_display(chords_string: str, allow_repeats: str):
+@app.route("/guitar_chord_progression/<chords_string>/<allow_repeats>/<show_fingers>", methods=('GET', 'POST'))
+def guitar_chord_progression_display(
+        chords_string: str,
+        allow_repeats: str,
+        show_fingers: str,
+):
     t1 = time.time()
     chord_progression = music.ChordProgression(
         [music.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
     allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
+    show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     opt_positions = chord_progression.optimal_guitar_positions(allow_repeats=allow_repeats_)
     opt_chords = [p.chord for p in opt_positions]
     if music.media_installed and opt_chords:
@@ -210,7 +230,7 @@ def guitar_chord_progression_display(chords_string: str, allow_repeats: str):
         music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
-    positions_printable = ['<br>'.join(p.printable()) for p in opt_positions]
+    positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in opt_positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'guitar_chord_progression_display.html',
