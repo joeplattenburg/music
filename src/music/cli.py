@@ -5,7 +5,7 @@ from music import music
 
 
 def guitar_positions(args: argparse.Namespace):
-    guitar = music.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
+    guitar = music.Guitar(tuning=args.tuning, tuning_name=args.tuning_name, capo=args.capo, frets=args.frets)
     if args.notes:
         note_list = [music.Note.from_string(note) for note in args.notes.split(',')]
         chord = music.Chord(note_list)
@@ -104,8 +104,12 @@ def main() -> None:
         help='Show ASCII art for guitar positions'
     )
     guitar_positions_parser.add_argument(
+        '--tuning-name', '-t', type=str, default=None,
+        help='Name of alternate tuning', choices=list(music.Guitar.TUNINGS.keys())
+    )
+    guitar_positions_parser.add_argument(
         '--tuning', type=music.Guitar.parse_tuning, default=None,
-        help='A json dict specifying a different guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
+        help='A json dict specifying a custom guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
     )
     guitar_positions_parser.add_argument(
         '--capo', type=int, default=0,

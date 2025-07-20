@@ -712,21 +712,70 @@ class Guitar:
         - highest: Note, highest playable note
     """
 
-    STANDARD_TUNING: dict[str, 'Note'] = {
-        'E': Note('E', 2),
-        'A': Note('A', 2),
-        'D': Note('D', 3),
-        'G': Note('G', 3),
-        'B': Note('B', 3),
-        'e': Note('E', 4),
+    Tuning = dict[Hashable, Note]
+    TUNINGS: dict[str, Tuning] = {
+        'standard': {
+            'E': Note('E', 2),
+            'A': Note('A', 2),
+            'D': Note('D', 3),
+            'G': Note('G', 3),
+            'B': Note('B', 3),
+            'e': Note('E', 4),
+        },
+        'drop_d': {
+            'D': Note('D', 2),
+            'A': Note('A', 2),
+            'd': Note('D', 3),
+            'G': Note('G', 3),
+            'B': Note('B', 3),
+            'e': Note('E', 4),
+        },
+        'open_d': {
+            'D': Note('D', 2),
+            'A': Note('A', 2),
+            'd': Note('D', 3),
+            'F#': Note('F#', 3),
+            'a': Note('A', 3),
+            'dd': Note('D', 4),
+        },
+        'open_g': {
+            'D': Note('D', 2),
+            'G': Note('G', 2),
+            'd': Note('D', 3),
+            'g': Note('G', 3),
+            'B': Note('B', 3),
+            'dd': Note('D', 4),
+        },
+        'open_a': {
+            'E': Note('E', 2),
+            'A': Note('A', 2),
+            'C#': Note('C#', 3),
+            'e': Note('E', 3),
+            'a': Note('A', 3),
+            'ee': Note('E', 4),
+        },
     }
     DEFAULT_FRETS = 22
 
-    def __init__(self, tuning: dict[Hashable, 'Note'] = None, frets: int = DEFAULT_FRETS, capo: int = 0):
-        self.open_tuning = tuning or self.STANDARD_TUNING
+    def __init__(
+            self,
+            tuning_name: Optional[Literal[str]] = None,
+            tuning: Optional[Tuning] = None,
+            frets: int = DEFAULT_FRETS,
+            capo: int = 0
+    ):
+        if tuning_name:
+            assert tuning_name in self.TUNINGS, f"Invalid `tuning_name`; choose from {self.TUNINGS.keys()}"
+            self.tuning_name = tuning_name
+            self.open_tuning = self.TUNINGS[self.tuning_name]
+        elif tuning:
+            self.tuning_name = 'custom'
+            self.open_tuning = tuning
+        else:
+            self.tuning_name = 'standard'
+            self.open_tuning = self.TUNINGS[self.tuning_name]
         self.capo = capo
         self.tuning = {name: note.add_semitones(capo) for name, note in self.open_tuning.items()}
-        self.tuning_name = 'standard' if self.tuning == self.STANDARD_TUNING else 'custom'
         self.string_names = list(self.tuning.keys())
         self.frets = frets - capo
         self.lowest = min(note for note in self.tuning.values())
@@ -736,9 +785,9 @@ class Guitar:
         return str(self.tuning)
 
     @staticmethod
-    def parse_tuning(tuning: Optional[str] = None) -> dict[str, 'Note']:
+    def parse_tuning(tuning: Optional[str] = None) -> Tuning:
         if not tuning:
-            return Guitar.STANDARD_TUNING
+            return Guitar.TUNINGS['standard']
         else:
             return {
                 string: Note.from_string(note)

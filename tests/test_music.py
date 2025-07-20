@@ -118,6 +118,16 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     assert actual == expected
 
 
+@pytest.mark.parametrize('tuning_name,tuning', music.Guitar.TUNINGS.items())
+def test_different_guitar_tuning_names(tuning_name: str, tuning: music.Guitar.Tuning) -> None:
+    guitar = music.Guitar(tuning_name=tuning_name)
+    chord = music.Chord([note for note in tuning.values()])
+    expected = {s: 0 for s in guitar.string_names}
+    actual = chord.guitar_positions(guitar=guitar, include_unplayable=True)[0].positions_dict
+    print(expected, actual)
+    assert actual == expected
+
+
 @pytest.mark.parametrize(
     'position,expected',
     [
