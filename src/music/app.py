@@ -281,7 +281,7 @@ def guitar_chord_progression_display(
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'guitar_chord_progression_display.html',
-        chords=chords_string, positions=positions_printable, elapsed_time=elapsed_time
+        chords=chords_string, tuning=tuning_, positions=positions_printable, elapsed_time=elapsed_time
     )
 
 
