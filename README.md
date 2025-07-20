@@ -243,11 +243,14 @@ A longer term goal will be to eliminate circular dependencies from the module.
 - [x] Add audio
 - [x] Voice leading
 - [x] Optimal guitar chords
-- [ ] Add more guitar options for chord progression
+- [x] Add more guitar options for chord progression
+- [x] Better input for specifying tuning
+- [x] Which fingers to use
+- [x] Improve cost function for position movement
 - [ ] Sort on different metrics
-- [ ] Better input for specifying tuning
+- [ ] Refactor CLI tests to be exhaustive
+- [ ] Test on other python versions
+- [ ] Refactor app to DRY out
 - [ ] Remove circular dependencies
-- [ ] Which fingers to use
-- [ ] Improve cost function for position movement
 - [ ] Deploy on AWS
 - [ ] Request logging
