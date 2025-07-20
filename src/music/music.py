@@ -19,6 +19,8 @@ IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 class MissingMultimediaError(Exception):
     pass
 
+class InvalidParseError(Exception):
+    pass
 
 @total_ordering
 class Note:
@@ -788,18 +790,26 @@ class Guitar:
     def parse_tuning(tuning: Optional[str] = None, how: Optional[Literal['json', 'csv']] = None) -> Tuning:
         if not tuning:
             return Guitar.TUNINGS['standard']
-        how = how or 'json' if tuning.startswith('{') else 'csv'
+        how = how or ('json' if tuning.startswith('{') else 'csv')
         if how == 'json':
-            return {
-                string: Note.from_string(note)
-                for string, note in json.loads(tuning.replace("'", '"')).items()
-            }
+            try:
+                return {
+                    string: Note.from_string(note)
+                    for string, note in json.loads(tuning.replace("'", '"')).items()
+                }
+            except Exception:
+                raise InvalidParseError(f'Invalid json string ({tuning})')
         elif how == 'csv':
-            out = dict()
-            for pair in tuning.split(';'):
-                string, note = pair.split(',')
-                out[string.strip()] = Note.from_string(note.strip())
-            return out
+            try:
+                out = dict()
+                for pair in tuning.split(';'):
+                    string, note = pair.split(',')
+                    out[string.strip()] = Note.from_string(note.strip())
+                return out
+            except Exception:
+                raise InvalidParseError(f'Invalid csv string ({tuning})')
+        else:
+            raise InvalidParseError(f'Unsupported `how` ({how}); choose `json` or `csv`')
 
 
     def notes(self, position: dict[Hashable, int]) -> list[Note]:

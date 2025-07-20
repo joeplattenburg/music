@@ -323,6 +323,33 @@ def test_parse_tuning_csv(how: Optional[str]) -> None:
     }
     assert music.Guitar.parse_tuning('E,E2;A,A2', how=how) == expected
 
+
+@pytest.mark.parametrize(
+    'string,how,error',
+    [
+        ('{"foo"}', 'json', True),
+        ('{"foo"}', 'csv', True),
+        ('{"foo"}', None, True),
+        ('a;b;c', 'json', True),
+        ('a;b;c', 'csv', True),
+        ('a;b;c', None, True),
+        ('{"E": "E2"}', 'json', False),
+        ('{"E": "E2"}', 'csv', True),
+        ('{"E": "E2"}', None, False),
+        ('E,E2;A,A2', 'json', True),
+        ('E,E2;A,A2', 'csv', False),
+        ('E,E2;A,A2', None, False),
+        ('E,E2;A,A2', 'xml', True),
+    ]
+)
+def test_parse_tuning_error(string: str, how: Optional[str], error: bool) -> None:
+    if error:
+        with pytest.raises(music.InvalidParseError):
+            music.Guitar.parse_tuning(string, how)
+    else:
+        music.Guitar.parse_tuning(string, how)
+
+
 @pytest.mark.parametrize(
     'name,expected',
     [

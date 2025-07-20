@@ -39,6 +39,10 @@ def guitar_positions():
     if request.method == 'POST':
         tuning_name = request.form['tuning_name'].strip()
         tuning = request.form['tuning'].strip()
+        try:
+            music.Guitar.parse_tuning(tuning, how='csv')
+        except music.InvalidParseError as e:
+            flash(f'Invalid tuning! ({e})')
         tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         top_n = request.form['top_n'].strip() or '-1'
         max_fret_span = request.form['max_fret_span'].strip() or str(music.DEFAULT_MAX_FRET_SPAN)
