@@ -30,10 +30,10 @@ jobs:
 
       - name: Calculate next version and create tag
         id: tag
-        uses: mathieudutour/github-tag-action@v6
+        uses: mathieudutour/github-tag-action@v6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          
+
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
@@ -42,5 +42,5 @@ jobs:
           body: ${{ steps.tag.outputs.changelog }}
           generateReleaseNotes: true
           artifacts: "dist/*.whl,dist/*.tar.gz"
-      
+
       - run: echo "This job's status is ${{ job.status }}."
