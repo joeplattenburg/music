@@ -559,12 +559,17 @@ class ChordProgression:
             guitar: Optional['Guitar'] = None,
             allow_repeats: bool = False,
             respect_fingers: bool = False,
+            allow_identical: bool = False,
+            allow_thumb: bool = True,
     ) -> list['GuitarPosition']:
         guitar = guitar or Guitar()
         positions = [
             get_all_guitar_positions_for_chord_name(
-                chord_name=chord, guitar=guitar,
-                allow_repeats=allow_repeats, allow_identical=False
+                chord_name=chord,
+                guitar=guitar,
+                allow_repeats=allow_repeats,
+                allow_identical=allow_identical,
+                allow_thumb=allow_thumb,
             )
             for chord in self.chords
         ]

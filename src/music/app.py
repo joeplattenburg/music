@@ -205,32 +205,70 @@ def guitar_positions_display_name(
 @app.route("/guitar_chord_progression", methods=('GET', 'POST'))
 def guitar_chord_progression():
     if request.method == 'POST':
+        tuning_name = request.form['tuning_name'].strip()
+        tuning = request.form['tuning'].strip()
+        try:
+            music.Guitar.parse_tuning(tuning, how='csv')
+        except music.InvalidParseError as e:
+            flash(f'Invalid tuning! ({e})')
+        tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         chords_string = request.form['chords'].strip()
+        for chord_name in escape(chords_string).split(','):
+            print(chord_name)
+            try:
+                music.ChordName(chord_name)
+            except Exception as e:
+                flash(f'Invalid chord name! ({e})')
         allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
         show_fingers = request.form.get('show_fingers', '').strip() or 'false'
+        allow_identical = request.form.get('allow_identical', '').strip() or 'false'
+        allow_thumb = request.form.get('allow_thumb', '').strip() or 'false'
         return redirect(url_for(
             'guitar_chord_progression_display',
             chords_string=chords_string,
+            tuning='tuning=' + tuning,
             allow_repeats='allow_repeats=' + allow_repeats,
+            allow_identical='allow_identical=' + allow_identical,
             show_fingers='show_fingers=' + show_fingers,
+            allow_thumb='allow_thumb=' + allow_thumb,
         ))
     return render_template('guitar_chord_progression_input.html')
 
 
-@app.route("/guitar_chord_progression/<chords_string>/<allow_repeats>/<show_fingers>", methods=('GET', 'POST'))
+@app.route(
+    "/guitar_chord_progression/<chords_string>"
+    "/<tuning>/<allow_repeats>/<allow_identical>/<show_fingers>/<allow_thumb>",
+    methods=('GET', 'POST')
+)
 def guitar_chord_progression_display(
         chords_string: str,
+        tuning: str,
         allow_repeats: str,
+        allow_identical: str,
         show_fingers: str,
+        allow_thumb: str,
 ):
     t1 = time.time()
+
+    tuning_ = escape(tuning).split('=')[1]
+    allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
+    allow_identical_: bool = escape(allow_identical).split('=')[1] == 'true'
+    show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
+    allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
+    if tuning_.startswith('custom'):
+        tuning_ = tuning_.split(';', maxsplit=1)[1]
+        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+    else:
+        guitar = music.Guitar(tuning_name=tuning_)
     chord_progression = music.ChordProgression(
         [music.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
-    allow_repeats_: bool = escape(allow_repeats).split('=')[1] == 'true'
-    show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     opt_positions = chord_progression.optimal_guitar_positions(
-        allow_repeats=allow_repeats_, respect_fingers=show_fingers_
+        guitar=guitar,
+        allow_repeats=allow_repeats_,
+        respect_fingers=show_fingers_,
+        allow_identical=allow_identical_,
+        allow_thumb=allow_thumb_,
     )
     opt_chords = [p.chord for p in opt_positions]
     if music.media_installed and opt_chords:
