@@ -5,7 +5,7 @@ from music import music
 
 
 def guitar_positions(args: argparse.Namespace):
-    guitar = music.Guitar(tuning=args.tuning, capo=args.capo, frets=args.frets)
+    guitar = music.Guitar(tuning=args.tuning, tuning_name=args.tuning_name, capo=args.capo, frets=args.frets)
     if args.notes:
         note_list = [music.Note.from_string(note) for note in args.notes.split(',')]
         chord = music.Chord(note_list)
@@ -30,7 +30,7 @@ def guitar_positions(args: argparse.Namespace):
         positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     positions = music.GuitarPosition.sorted(positions_playable)[:args.top_n]
-    tuning_display = guitar.tuning_name if guitar.tuning_name == 'standard' else f'{guitar.tuning_name} ({guitar}):'
+    tuning_display = guitar.tuning_name if guitar.tuning_name != 'custom' else f'{guitar}'
     print(
         f'There are {len(chords_playable)} playable voicings and {len(positions_playable)} guitar positions '
         f'(out of {positions_all_count} possible) for a guitar tuned to {tuning_display}.'
@@ -104,8 +104,15 @@ def main() -> None:
         help='Show ASCII art for guitar positions'
     )
     guitar_positions_parser.add_argument(
+        '--tuning-name', '-t', type=str, default=None,
+        help='Name of alternate tuning', choices=list(music.Guitar.TUNINGS.keys())
+    )
+    guitar_positions_parser.add_argument(
         '--tuning', type=music.Guitar.parse_tuning, default=None,
-        help='A json dict specifying a different guitar tuning, e.g.: {"D": "D2", "A": "A2", ...}'
+        help=(
+            'A json dict or comma/semicolon separated list specifying a custom guitar tuning, '
+            'e.g.: {"D": "D2", "A": "A2", ...} or D,D2;A,A2;...'
+        )
     )
     guitar_positions_parser.add_argument(
         '--capo', type=int, default=0,

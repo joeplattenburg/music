@@ -37,8 +37,13 @@ def home():
 @app.route("/guitar_positions", methods=('GET', 'POST'))
 def guitar_positions():
     if request.method == 'POST':
-        guitar = music.Guitar(music.Guitar.parse_tuning(request.form['tuning'].strip()))
-        tuning = 'standard' if guitar.tuning_name == 'standard' else 'custom;' + request.form['tuning']
+        tuning_name = request.form['tuning_name'].strip()
+        tuning = request.form['tuning'].strip()
+        try:
+            music.Guitar.parse_tuning(tuning, how='csv')
+        except music.InvalidParseError as e:
+            flash(f'Invalid tuning! ({e})')
+        tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         top_n = request.form['top_n'].strip() or '-1'
         max_fret_span = request.form['max_fret_span'].strip() or str(music.DEFAULT_MAX_FRET_SPAN)
         notes_string = request.form['notes'].strip()
@@ -110,10 +115,11 @@ def guitar_positions_display_notes(
         music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
-    guitar = (
-        music.Guitar() if tuning_ == 'standard' else
-        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
-    )
+    if tuning_.startswith('custom'):
+        tuning_ = tuning_.split(';', maxsplit=1)[1]
+        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+    else:
+        guitar = music.Guitar(tuning_name=tuning_)
     t1 = time.time()
     positions_playable = chord.guitar_positions(
         guitar=guitar, max_fret_span=max_fret_span_, include_unplayable=False, allow_thumb=allow_thumb_
@@ -155,10 +161,11 @@ def guitar_positions_display_name(
     show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
-    guitar = (
-        music.Guitar() if tuning_ == 'standard' else
-        music.Guitar(tuning=music.Guitar.parse_tuning(tuning_.split(';')[1]))
-    )
+    if tuning_.startswith('custom'):
+        tuning_ = tuning_.split(';', maxsplit=1)[1]
+        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+    else:
+        guitar = music.Guitar(tuning_name=tuning_)
     t1 = time.time()
     chord = music.ChordName(chord_name_)
     low_chord = chord.get_chord(lower=music.Note('E', 2))

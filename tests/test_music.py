@@ -1,6 +1,7 @@
 from functools import reduce
 from operator import add
 import os
+from typing import Optional
 
 import pytest
 
@@ -115,6 +116,16 @@ def test_different_guitar_tunings(strings: list[tuple[str, int]], capo: int) -> 
     chord = music.Chord([music.Note(*string).add_semitones(capo) for string in strings])
     expected = {i: 0 for i in range(len(strings))}
     actual = chord.guitar_positions(guitar=guitar, include_unplayable=True)[0].positions_dict
+    assert actual == expected
+
+
+@pytest.mark.parametrize('tuning_name,tuning', music.Guitar.TUNINGS.items())
+def test_different_guitar_tuning_names(tuning_name: str, tuning: music.Guitar.Tuning) -> None:
+    guitar = music.Guitar(tuning_name=tuning_name)
+    chord = music.Chord([note for note in tuning.values()])
+    expected = {s: 0 for s in guitar.string_names}
+    actual = chord.guitar_positions(guitar=guitar, include_unplayable=True)[0].positions_dict
+    print(expected, actual)
     assert actual == expected
 
 
@@ -296,12 +307,47 @@ def test_no_open_strings_along_barre() -> None:
         str({"E": str(music.Note('E', 2)), "A": str(music.Note('A', 2))}),
     ]
 )
-def test_parse_tuning(string: str) -> None:
+def test_parse_tuning_json(string: str) -> None:
     expected = {
         "E": music.Note('E', 2),
         "A": music.Note('A', 2)
     }
     assert music.Guitar.parse_tuning(string) == expected
+
+
+@pytest.mark.parametrize('how', ['csv', None])
+def test_parse_tuning_csv(how: Optional[str]) -> None:
+    expected = {
+        "E": music.Note('E', 2),
+        "A": music.Note('A', 2)
+    }
+    assert music.Guitar.parse_tuning('E,E2;A,A2', how=how) == expected
+
+
+@pytest.mark.parametrize(
+    'string,how,error',
+    [
+        ('{"foo"}', 'json', True),
+        ('{"foo"}', 'csv', True),
+        ('{"foo"}', None, True),
+        ('a;b;c', 'json', True),
+        ('a;b;c', 'csv', True),
+        ('a;b;c', None, True),
+        ('{"E": "E2"}', 'json', False),
+        ('{"E": "E2"}', 'csv', True),
+        ('{"E": "E2"}', None, False),
+        ('E,E2;A,A2', 'json', True),
+        ('E,E2;A,A2', 'csv', False),
+        ('E,E2;A,A2', None, False),
+        ('E,E2;A,A2', 'xml', True),
+    ]
+)
+def test_parse_tuning_error(string: str, how: Optional[str], error: bool) -> None:
+    if error:
+        with pytest.raises(music.InvalidParseError):
+            music.Guitar.parse_tuning(string, how)
+    else:
+        music.Guitar.parse_tuning(string, how)
 
 
 @pytest.mark.parametrize(
