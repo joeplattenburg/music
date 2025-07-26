@@ -458,13 +458,13 @@ class ChordName:
             lower.nearest_above(note).add_semitones(12 * octave)
             for octave in range(max_octaves)
             for note in self.note_names
-            if lower.nearest_above(note).add_semitones(12 * octave) <= upper
+            if lower.nearest_above(note).add_semitones(12 * octave) <= upper  # type: ignore
         ]
         possible_extensions = [
             lower.nearest_above(ext).add_semitones(12 * octave)
             for octave in range(1, max_octaves)
             for ext in self.extension_names
-            if lower.nearest_above(ext).add_semitones(12 * octave) <= upper
+            if lower.nearest_above(ext).add_semitones(12 * octave) <= upper  # type: ignore
         ]
         extensions = constrained_powerset(
             possible_extensions, max_len=len(self.extension_names), allow_repeats=False
@@ -542,7 +542,7 @@ class ChordProgression:
                     edges.append(edge)
             edges = initial_edges + edges + terminal_edges
             g = graph.Graph(nodes=nodes, edges=edges)
-            prog: list[chord_node] = g.shortest_path(initial, terminal)
+            prog: list[chord_node] = g.shortest_path(initial, terminal)  # type: ignore
             return [c for _, c in prog[1:-1]]
         else:
             motions = []
@@ -584,10 +584,11 @@ class ChordProgression:
         ]
         if any(len(p) == 0 for p in positions):
             return []
+        position_node = tuple[int, Optional[GuitarPosition]]
         # for each chord, add the index to ensure the nodes are unique
         positions_flat = [(i, pp) for i, p in enumerate(positions) for pp in p]
         initial, terminal = (-1, None), (self.n_chords, None)
-        nodes = [initial, *positions_flat, terminal]
+        nodes: list[position_node] = [initial, *positions_flat, terminal]
         edges: list[graph.Edge] = []
         initial_edges = [
             graph.Edge(start=initial, end=(0, p), weight=0.)
@@ -608,8 +609,8 @@ class ChordProgression:
                 edges.append(edge)
         edges = initial_edges + edges + terminal_edges
         g = graph.Graph(nodes=nodes, edges=edges)
-        prog = g.shortest_path(initial, terminal)
-        return [p[1] for p in prog[1:-1]]
+        prog: list[position_node] = g.shortest_path(initial, terminal)  # type: ignore
+        return [p for _, p in prog[1:-1]]
 
 
 class Audio:
