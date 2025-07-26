@@ -1,7 +1,7 @@
 from functools import reduce
 from operator import add
 import os
-from typing import Optional, Literal
+from typing import Optional, Literal, Hashable
 
 import pytest
 
@@ -1023,7 +1023,7 @@ def test_audio_from_chord_list() -> None:
         ({}, {'A': 3, 'B': 3}, 0),
     ]
 )
-def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
+def test_position_motion_distance(p1: dict[Hashable, int], p2: dict[Hashable, int], expected: int) -> None:
     p1_ = music.GuitarPosition(positions=p1)
     p2_ = music.GuitarPosition(positions=p2)
     assert p1_.motion_distance(p2_) == expected
@@ -1040,7 +1040,9 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
         ({'A': 2, 'D': 4, 'G': 2, 'B': 4, 'e': 2}, {'A': 3, 'D': 5, 'G': 3, 'B': 5, 'e': 3}, 3),
     ]
 )
-def test_position_motion_distance_respect_fingers(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
+def test_position_motion_distance_respect_fingers(
+        p1: dict[Hashable, int], p2: dict[Hashable, int], expected: int
+) -> None:
     p1_ = music.GuitarPosition(positions=p1)
     p2_ = music.GuitarPosition(positions=p2)
     assert p1_.motion_distance(p2_, respect_fingers=True) == expected
@@ -1086,7 +1088,7 @@ def test_optimal_progression(prog: list[str], respect_fingers: bool) -> None:
         ),
     ]
 )
-def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> None:
+def test_fingers_dict(positions: dict[Hashable, int], expected: dict[Hashable, str]) -> None:
     assert music.GuitarPosition(positions).fingers_dict == expected
 
 
@@ -1098,7 +1100,7 @@ def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> No
         ({'A': 2, 'D': 5, 'G': 2}, {'A': '1', 'D': '4', 'G': '2'}),
     ]
 )
-def test_finger_skips(positions: dict, expected: dict) -> None:
+def test_finger_skips(positions: dict[Hashable, int], expected: dict[Hashable, str]) -> None:
     position = music.GuitarPosition(positions=positions)
     assert position.fingers_dict == expected
 
@@ -1107,5 +1109,5 @@ def test_finger_skips(positions: dict, expected: dict) -> None:
     'positions',
     [{'E': 8, 'A': 7, 'D': 9, 'G': 0, 'B': 8, 'e': 7}]
 )
-def check_unplayable_positions(positions: dict[str, int]) -> None:
+def check_unplayable_positions(positions: dict[Hashable, int]) -> None:
     assert not music.GuitarPosition(positions=positions).playable
