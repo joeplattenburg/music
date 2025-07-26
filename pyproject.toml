@@ -22,6 +22,7 @@ test = [
     "setuptools",
     "pytest",
     "ruff",
+    "ty",
 ]
 
 [project.scripts]
