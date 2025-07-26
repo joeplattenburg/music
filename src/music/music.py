@@ -7,6 +7,7 @@ from multiprocessing import Pool
 import numpy as np
 import os
 from typing import Hashable, Optional, Any, Literal, Iterable
+import warnings
 
 from music import graph
 
@@ -911,10 +912,8 @@ class GuitarPosition:
         if self.use_thumb:
             self.fingers_dict[self.guitar.string_names[0]] = 'T'
         self.max_interior_gap = self._max_interior_gap()
-        self.playable = self.is_playable(max_fret_span=max_fret_span)
         # Barre chord needs
         self.barre = (
-            self.playable and
             # more than 4 fretted strings
             len(self.fretted_strings) > 4 and
             # no open strings
@@ -927,6 +926,7 @@ class GuitarPosition:
                 for string in self.muted_strings + self.open_strings
             )
         )
+        self.playable = self.is_playable(max_fret_span=max_fret_span)
         if self.barre:
             # All strings along the barre position
             self.barred_strings_inds = list(range(min(lowest_fret_strings), max(lowest_fret_strings) + 1))
@@ -960,6 +960,9 @@ class GuitarPosition:
             string: (finger, self.positions_dict[string])
             for string, finger in self.fingers_dict.items()
         }
+        if len(self.fingers_dict) < len(self.fretted_strings) and self.playable:
+            self.playable = False
+            warnings.warn(f'Unplayable position not flagged by `is_playable` method: {self}')
 
     def _get_sorted_positions(self) -> list[tuple[int, int]]:
         """
@@ -1002,6 +1005,8 @@ class GuitarPosition:
             return True
         if self.use_thumb:
             return True
+        if not self.barre and n_notes > 4:
+            return False
         # Otherwise, cannot be on more than 4 frets (at least some notes must be barred)
         if n_frets > 4:
             return False

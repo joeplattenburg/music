@@ -1102,3 +1102,11 @@ def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> No
 def test_finger_skips(positions: dict, expected: dict) -> None:
     position = music.GuitarPosition(positions=positions)
     assert position.fingers_dict == expected
+
+
+@pytest.mark.parametrize(
+    'positions',
+    [{'E': 8, 'A': 7, 'D': 9, 'G': 0, 'B': 8, 'e': 7}]
+)
+def check_unplayable_positions(positions: dict[str, int]) -> None:
+    assert not music.GuitarPosition(positions=positions).playable
