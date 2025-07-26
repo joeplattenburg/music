@@ -87,7 +87,7 @@ class Note:
             modifier = ''
         return simple_name, modifier
 
-    def guitar_positions(self, guitar: 'Guitar' = None, valid_only: bool = True) -> 'GuitarPosition':
+    def guitar_positions(self, guitar: Optional['Guitar'] = None, valid_only: bool = True) -> 'GuitarPosition':
         """
         Return the set of all positions (string + fret) a note can be played on a guitar
         :param guitar: Guitar, defines the guitar (standard tuning by default)
@@ -190,7 +190,7 @@ class Chord:
 
     def guitar_positions(
             self,
-            guitar: 'Guitar' = None,
+            guitar: Optional['Guitar'] = None,
             max_fret_span: int = 4,
             include_unplayable: bool = False,
             allow_thumb: bool = True
@@ -411,7 +411,9 @@ class ChordName:
         return chord_note, quality, extensions, root
 
     def get_chord(
-            self, *, lower: 'Note' = Note('C', 0), raise_octave: dict[int, int] = None
+            self, *,
+            lower: 'Note' = Note('C', 0),
+            raise_octave: Optional[dict[int, int]] = None
     ) -> 'Chord':
         """
         For a chord name, return a `Chord` in close position whose root is the lowest note >= `lower`;
@@ -518,9 +520,11 @@ class ChordProgression:
         ]
         if use_dijkstra:
             # for each chord, add the index to ensure the nodes are unique
+            chord_node = tuple[int, Optional[Chord]]
             voicings_flat = [(i, vv) for i, v in enumerate(voicings) for vv in v]
-            initial, terminal = (-1, None), (self.n_chords, None)
-            nodes = [initial, *voicings_flat, terminal]
+            initial: chord_node = (-1, None)
+            terminal: chord_node = (self.n_chords, None)
+            nodes: list[chord_node] = [initial, *voicings_flat, terminal]
             edges: list[graph.Edge] = []
             initial_edges = [
                 graph.Edge(start=initial, end=(0, v), weight=0.)
@@ -537,12 +541,12 @@ class ChordProgression:
                     edges.append(edge)
             edges = initial_edges + edges + terminal_edges
             g = graph.Graph(nodes=nodes, edges=edges)
-            prog = g.shortest_path(initial, terminal)
-            return [p[1] for p in prog[1:-1]]
+            prog: list[chord_node] = g.shortest_path(initial, terminal)
+            return [c for _, c in prog[1:-1]]
         else:
             motions = []
             for prog_ in product(*voicings):
-                prog = list(prog_)
+                prog: list[Chord] = list(prog_)
                 motion = sum([
                     c.semitone_distance(prog[i + 1])
                     for i, c in enumerate(prog[:-1])
@@ -659,7 +663,7 @@ class Staff:
         # ledger line 0 is middle C, one int index for each line or space
         self.chords = chords or []
         self.ledger_lines = []
-        for chord in chords:
+        for chord in self.chords:
             self.ledger_lines.append((
                 min((min(chord.notes).staff_line + 1) & ~1, 2),
                 max(max(chord.notes).staff_line & ~1, 10)
@@ -775,7 +779,7 @@ class Guitar:
 
     def __init__(
             self,
-            tuning_name: Optional[Literal[str]] = None,
+            tuning_name: Optional[str] = None,
             tuning: Optional[Tuning] = None,
             frets: int = DEFAULT_FRETS,
             capo: int = 0
@@ -864,7 +868,7 @@ class GuitarPosition:
             positions: dict[Hashable, int],
             *,
             notes: Optional[list['Note']] = None,
-            guitar: 'Guitar' = None,
+            guitar: Optional['Guitar'] = None,
             max_fret_span: int = DEFAULT_MAX_FRET_SPAN
     ):
         self.guitar = guitar or Guitar()
@@ -1143,7 +1147,7 @@ def note_set(note_list: list[Note]) -> set[Note]:
 def constrained_powerset(
         note_list: list[Note],
         max_len: int = 0,
-        required_notes: set[Note] = None,
+        required_notes: Optional[set[Note]] = None,
         allow_repeats: bool = True,
         allow_identical: bool = False
 ) -> list[list[Note]]:
