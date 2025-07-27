@@ -47,3 +47,10 @@ commands = [["pytest"]]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+addopts = "--cov=music"
+
+[tool.coverage.report]
+fail_under = 90
+omit = [
+    "src/music/app.py",
+]
