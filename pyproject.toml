@@ -7,7 +7,7 @@ name = "music"
 dynamic = ["version"]
 description = "Helper tools for music"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.14"
 dependencies = [
     "flask>=3.0.3",
     "numpy<2",
@@ -21,8 +21,10 @@ media = [
 test = [
     "setuptools",
     "pytest",
+    "pytest-cov",
     "ruff",
     "ty",
+    "tox-uv",
 ]
 
 [project.scripts]
@@ -35,7 +37,13 @@ source = "vcs"
 [tool.hatch.build.hooks.vcs]
 version-file = "_version.py"
 
+[tool.tox]
+env_list = ["py39", "py310", "py311", "py312", "py313"]
+isolated_build = true
+
+[tool.tox.env_run_base]
+description = "Run test under {base_python}"
+commands = [["pytest"]]
+
 [tool.pytest.ini_options]
-pythonpath = [
-  "."
-]
+pythonpath = ["."]
