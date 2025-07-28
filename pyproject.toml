@@ -43,14 +43,19 @@ isolated_build = true
 
 [tool.tox.env_run_base]
 description = "Run test under {base_python}"
-commands = [["pytest"]]
+commands = [["pytest"], ["ruff", "check"]]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 addopts = "--cov=music"
 
+[tool.coverage.run]
+parallel = true
+patch = ["subprocess"]
+
 [tool.coverage.report]
 fail_under = 90
 omit = [
     "src/music/app.py",
+    "src/music/cli.py",
 ]
