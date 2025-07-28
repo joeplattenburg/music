@@ -1,7 +1,7 @@
 from functools import reduce
 from operator import add
 import os
-from typing import Optional
+from typing import Optional, Literal, Hashable
 
 import pytest
 
@@ -17,7 +17,7 @@ from music import music
         (39, '#', music.Note('D#', 3)),
     ]
 )
-def test_note_from_semitones(semitones: int, bias: str, expected: music.Note) -> None:
+def test_note_from_semitones(semitones: int, bias: Literal['b', '#'], expected: music.Note) -> None:
     actual = music.Note.from_semitones(semitones=semitones, bias=bias)
     assert actual == expected
 
@@ -316,7 +316,7 @@ def test_parse_tuning_json(string: str) -> None:
 
 
 @pytest.mark.parametrize('how', ['csv', None])
-def test_parse_tuning_csv(how: Optional[str]) -> None:
+def test_parse_tuning_csv(how: Optional[Literal['csv', 'json']]) -> None:
     expected = {
         "E": music.Note('E', 2),
         "A": music.Note('A', 2)
@@ -342,7 +342,7 @@ def test_parse_tuning_csv(how: Optional[str]) -> None:
         ('E,E2;A,A2', 'xml', True),
     ]
 )
-def test_parse_tuning_error(string: str, how: Optional[str], error: bool) -> None:
+def test_parse_tuning_error(string: str, how: Optional[Literal['csv', 'json']], error: bool) -> None:
     if error:
         with pytest.raises(music.InvalidParseError):
             music.Guitar.parse_tuning(string, how)
@@ -408,11 +408,11 @@ def test_chord_name_error() -> None:
         ('Bbmaj7/D', [('D', 0), ('F', 0), ('A', 0), ('Bb', 0)]),
     ]
 )
-def test_chord_name_to_chord(name: str, expected: list) -> None:
+def test_chord_name_to_chord(name: str, expected: list[tuple[str, int]]) -> None:
     chord_name = music.ChordName(name)
-    expected = music.Chord([music.Note(*n) for n in expected])
+    expected_ = music.Chord([music.Note(*n) for n in expected])
     actual = chord_name.get_chord()
-    assert actual == expected
+    assert actual == expected_
 
 
 def test_chord_name_to_chord_different_lower() -> None:
@@ -434,7 +434,7 @@ def test_chord_name_to_chord_different_lower() -> None:
         ({0: 1, 2: 2}, [music.Note(*note) for note in [('C', 1), ('E', 1), ('Bb', 1), ('G', 3)]]),
     ]
 )
-def test_get_chord_with_add_octave(raise_octave: dict[str, int], expected: list[music.Note]) -> None:
+def test_get_chord_with_add_octave(raise_octave: dict[int, int], expected: list[music.Note]) -> None:
     chord = music.ChordName('C7').get_chord(raise_octave=raise_octave)
     assert chord.notes == expected
 
@@ -1023,10 +1023,10 @@ def test_audio_from_chord_list() -> None:
         ({}, {'A': 3, 'B': 3}, 0),
     ]
 )
-def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
-    p1 = music.GuitarPosition(positions=p1)
-    p2 = music.GuitarPosition(positions=p2)
-    assert p1.motion_distance(p2) == expected
+def test_position_motion_distance(p1: dict[Hashable, int], p2: dict[Hashable, int], expected: int) -> None:
+    p1_ = music.GuitarPosition(positions=p1)
+    p2_ = music.GuitarPosition(positions=p2)
+    assert p1_.motion_distance(p2_) == expected
 
 
 @pytest.mark.parametrize(
@@ -1040,10 +1040,12 @@ def test_position_motion_distance(p1: dict[str, int], p2: dict[str, int], expect
         ({'A': 2, 'D': 4, 'G': 2, 'B': 4, 'e': 2}, {'A': 3, 'D': 5, 'G': 3, 'B': 5, 'e': 3}, 3),
     ]
 )
-def test_position_motion_distance_respect_fingers(p1: dict[str, int], p2: dict[str, int], expected: int) -> None:
-    p1 = music.GuitarPosition(positions=p1)
-    p2 = music.GuitarPosition(positions=p2)
-    assert p1.motion_distance(p2, respect_fingers=True) == expected
+def test_position_motion_distance_respect_fingers(
+        p1: dict[Hashable, int], p2: dict[Hashable, int], expected: int
+) -> None:
+    p1_ = music.GuitarPosition(positions=p1)
+    p2_ = music.GuitarPosition(positions=p2)
+    assert p1_.motion_distance(p2_, respect_fingers=True) == expected
 
 
 @pytest.mark.parametrize('respect_fingers', [True, False])
@@ -1086,9 +1088,8 @@ def test_optimal_progression(prog: list[str], respect_fingers: bool) -> None:
         ),
     ]
 )
-def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> None:
-    positions = music.GuitarPosition(positions)
-    assert positions.fingers_dict == expected
+def test_fingers_dict(positions: dict[Hashable, int], expected: dict[Hashable, str]) -> None:
+    assert music.GuitarPosition(positions).fingers_dict == expected
 
 
 @pytest.mark.parametrize(
@@ -1099,7 +1100,7 @@ def test_fingers_dict(positions: dict[str, int], expected: dict[str, str]) -> No
         ({'A': 2, 'D': 5, 'G': 2}, {'A': '1', 'D': '4', 'G': '2'}),
     ]
 )
-def test_finger_skips(positions: dict, expected: dict) -> None:
+def test_finger_skips(positions: dict[Hashable, int], expected: dict[Hashable, str]) -> None:
     position = music.GuitarPosition(positions=positions)
     assert position.fingers_dict == expected
 
@@ -1108,5 +1109,5 @@ def test_finger_skips(positions: dict, expected: dict) -> None:
     'positions',
     [{'E': 8, 'A': 7, 'D': 9, 'G': 0, 'B': 8, 'e': 7}]
 )
-def check_unplayable_positions(positions: dict[str, int]) -> None:
+def check_unplayable_positions(positions: dict[Hashable, int]) -> None:
     assert not music.GuitarPosition(positions=positions).playable

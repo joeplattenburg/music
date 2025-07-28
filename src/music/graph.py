@@ -1,10 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Hashable, Optional
+from typing import Hashable, Optional, TypeVar
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
+A = TypeVar('A')
 
 @dataclass
 class Edge:
@@ -22,7 +23,7 @@ class Graph:
             self.edges[(edge.start, edge.end)] = edge.weight
             self.graph[edge.start].append(edge.end)
 
-    def shortest_path(self, initial: Hashable, terminal: Hashable) -> list[Hashable]:
+    def shortest_path(self, initial: A, terminal: A) -> list[A]:
         costs = {node: float('inf') for node in self.nodes}
         costs[initial] = 0
         predecessors = {}
