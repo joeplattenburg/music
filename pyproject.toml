@@ -43,7 +43,7 @@ isolated_build = true
 
 [tool.tox.env_run_base]
 description = "Run test under {base_python}"
-commands = [["pytest"], ["ruff", "check"]]
+commands = [["pytest"], ["ruff", "check"], ["ty", "check"]]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
