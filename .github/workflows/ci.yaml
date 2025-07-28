@@ -23,4 +23,6 @@ jobs:
         run: uv run ruff check
       - name: Typechecking
         run: uv run ty check
+      - name: Tox tests
+        run: uv run tox
       - run: echo "This job's status is ${{ job.status }}."
