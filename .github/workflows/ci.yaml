@@ -11,12 +11,6 @@ jobs:
         uses: astral-sh/setup-uv@v3.1.1
       - name: Clone repo
         uses: actions/checkout@v4
-      - name: Infer version
-        run: >
-          VERSION=$(cat ${{github.workspace}}/src/music/__init__.py | cut -d '=' -f 2 | sed 's/"//g;s/^ *//g') &&
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-      - name: Use version
-        run: echo "version=${{ env.VERSION }}"
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
