@@ -9,8 +9,8 @@ jobs:
     steps:
       - name: Python setup uv
         uses: astral-sh/setup-uv@v3.1.1
-      - uses: actions/checkout@v4
-      - run: echo "Cloned ${{ github.repository }} repository to the runner."
+      - name: Clone repo
+        uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
