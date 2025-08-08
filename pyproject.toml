@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
@@ -30,10 +30,7 @@ music-cli = "music.cli:main"
 music-app = "music.app:main"
 
 [tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.hooks.vcs]
-version-file = "_version.py"
+path = "src/music/__init__.py"
 
 [tool.pytest.ini_options]
 pythonpath = [
