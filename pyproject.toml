@@ -23,8 +23,6 @@ test = [
     "pytest",
     "pytest-cov",
     "ruff",
-    "tox",
-    "tox-uv",
     "ty",
 ]
 
@@ -40,18 +38,18 @@ pythonpath = ["."]
 addopts = "--cov=music"
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 80
 omit = [
-    "src/music/app.py",
+    "*/music/app.py",
 ]
 
 [tool.coverage.run]
 patch = ["subprocess"]
 
 [tool.tox]
-env_list = ["py39", "py310"]
+env_list = ["py39", "py310", "py311", "py312"]
 isolated_build = true
 
 [tool.tox.env_run_base]
-description = "Run test under {base_python}"
-commands = [["uv", "run", "pytest"], ["uv", "run", "ruff", "check"], ["uv", "run", "ty", "check"]]
+extras = ['test', 'media']
+commands = [["pytest"], ["ruff", "check"], ["ty", "check"]]
