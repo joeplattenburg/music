@@ -21,6 +21,7 @@ media = [
 test = [
     "setuptools",
     "pytest",
+    "pytest-cov",
     "ruff",
     "ty",
 ]
@@ -33,6 +34,11 @@ music-app = "music.app:main"
 path = "src/music/__init__.py"
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "."
+pythonpath = ["."]
+addopts = "--cov=music"
+
+[tool.coverage.report]
+fail_under = 90
+omit = [
+    "src/music/app.py",
 ]
