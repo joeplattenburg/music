@@ -17,10 +17,6 @@ jobs:
           python-version-file: ".python-version"
       - name: Install the project
         run: uv sync --all-extras
-      - name: Unit tests
-        run: uv run pytest tests
-      - name: Linting / formatting
-        run: uv run ruff check
-      - name: Typechecking
-        run: uv run ty check
+      - name: Tox tests
+        run: uv run tox
       - run: echo "This job's status is ${{ job.status }}."
