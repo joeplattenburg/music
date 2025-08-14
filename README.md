@@ -247,9 +247,9 @@ A longer term goal will be to eliminate circular dependencies from the module.
 - [x] Better input for specifying tuning
 - [x] Which fingers to use
 - [x] Improve cost function for position movement
+- [x] Test on other python versions
 - [ ] Sort on different metrics
 - [ ] Refactor CLI tests to be exhaustive
-- [ ] Test on other python versions
 - [ ] Refactor app to DRY out
 - [ ] Remove circular dependencies
 - [ ] Deploy on AWS

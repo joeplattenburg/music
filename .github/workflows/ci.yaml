@@ -11,16 +11,8 @@ jobs:
         uses: astral-sh/setup-uv@v3.1.1
       - name: Clone repo
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-      - name: Install the project
-        run: uv sync --all-extras
-      - name: Unit tests
-        run: uv run pytest tests
-      - name: Linting / formatting
-        run: uv run ruff check
-      - name: Typechecking
-        run: uv run ty check
+      - name: install tox
+        run: uv tool install tox --with tox-uv
+      - name: Tox tests
+        run: tox
       - run: echo "This job's status is ${{ job.status }}."

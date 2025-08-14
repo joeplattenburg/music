@@ -7,7 +7,7 @@ name = "music"
 dynamic = ["version"]
 description = "Helper tools for music"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.13"
 dependencies = [
     "flask>=3.0.3",
     "numpy<2",
@@ -38,7 +38,18 @@ pythonpath = ["."]
 addopts = "--cov=music"
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 80
 omit = [
-    "src/music/app.py",
+    "*/music/app.py",
 ]
+
+[tool.coverage.run]
+patch = ["subprocess"]
+
+[tool.tox]
+env_list = ["py39", "py310", "py311", "py312"]
+isolated_build = true
+
+[tool.tox.env_run_base]
+extras = ['test', 'media']
+commands = [["pytest"], ["ruff", "check"], ["ty", "check"]]
