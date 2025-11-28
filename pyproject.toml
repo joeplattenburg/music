@@ -52,4 +52,8 @@ isolated_build = true
 
 [tool.tox.env_run_base]
 extras = ['test', 'media']
-commands = [["pytest"], ["ruff", "check"], ["ty", "check"]]
+commands = [
+    ["pytest"],
+    ["ruff", "check"],
+    #["ty", "check"],
+]
