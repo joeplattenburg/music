@@ -36,7 +36,7 @@ class Note:
         - octave: int, the number of octaves above C0
         - semitones: int, the number of semitones above C0
         - frequency: float, the frequency [Hz] of the note, using A4=440 convention
-        - staff_line: int, the number of lines/spaces above middle C (C4); e.g., E4 = 2 (1 space + 1 line)
+        - staff_line: int, the number of lines / spaces above middle C (C4); e.g., E4 = 2 (1 space + 1 line)
     """
 
     SEMITONE_MAPPER: dict[str, int] = {
