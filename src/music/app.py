@@ -7,6 +7,9 @@ import time
 from flask import Flask, render_template, request, url_for, flash, redirect
 from markupsafe import escape
 
+import music.graphics
+import music.instruments
+import music.primitives
 from music import music
 
 STATIC_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
@@ -40,12 +43,12 @@ def guitar_positions():
         tuning_name = request.form['tuning_name'].strip()
         tuning = request.form['tuning'].strip()
         try:
-            music.Guitar.parse_tuning(tuning, how='csv')
-        except music.InvalidParseError as e:
+            music.instruments.Guitar.parse_tuning(tuning, how='csv')
+        except music.instruments.InvalidParseError as e:
             flash(f'Invalid tuning! ({e})')
         tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         top_n = request.form['top_n'].strip() or '-1'
-        max_fret_span = request.form['max_fret_span'].strip() or str(music.DEFAULT_MAX_FRET_SPAN)
+        max_fret_span = request.form['max_fret_span'].strip() or str(music.instruments.DEFAULT_MAX_FRET_SPAN)
         notes_string = request.form['notes'].strip()
         chord_name = request.form['chord_name'].strip()
         allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
@@ -65,7 +68,7 @@ def guitar_positions():
             ))
         elif chord_name:
             try:
-                music.ChordName(chord_name)
+                music.primitives.ChordName(chord_name)
                 return redirect(url_for(
                     'guitar_positions_display_name',
                     chord_name=chord_name.replace('/', '_'),
@@ -104,28 +107,28 @@ def guitar_positions_display_notes(
     tuning_ = escape(tuning).split('=')[1]
     show_fingers_: bool = escape(show_fingers).split('=')[1] == 'true'
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
-    notes_list = [music.Note.from_string(note) for note in escape(notes_string).split(',')]
-    chord = music.Chord(notes_list)
+    notes_list = [music.primitives.Note.from_string(note) for note in escape(notes_string).split(',')]
+    chord = music.primitives.Chord(notes_list)
     if music.media_installed:
         chord.to_audio(
             sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
         ).write_wav(
             os.path.join(STATIC_DIR, 'temp.wav')
         )
-        music.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        music.graphics.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
     if tuning_.startswith('custom'):
         tuning_ = tuning_.split(';', maxsplit=1)[1]
-        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+        guitar = music.instruments.Guitar(tuning=music.instruments.Guitar.parse_tuning(tuning_, how='csv'))
     else:
-        guitar = music.Guitar(tuning_name=tuning_)
+        guitar = music.instruments.Guitar(tuning_name=tuning_)
     t1 = time.time()
     positions_playable = chord.guitar_positions(
         guitar=guitar, max_fret_span=max_fret_span_, include_unplayable=False, allow_thumb=allow_thumb_
     )
     positions_all = chord.num_total_guitar_positions
-    positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
+    positions = music.instruments.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
@@ -163,12 +166,12 @@ def guitar_positions_display_name(
     all_voicings_: bool = escape(all_voicings).split('=')[1] == 'true'
     if tuning_.startswith('custom'):
         tuning_ = tuning_.split(';', maxsplit=1)[1]
-        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+        guitar = music.instruments.Guitar(tuning=music.instruments.Guitar.parse_tuning(tuning_, how='csv'))
     else:
-        guitar = music.Guitar(tuning_name=tuning_)
+        guitar = music.instruments.Guitar(tuning_name=tuning_)
     t1 = time.time()
-    chord = music.ChordName(chord_name_)
-    low_chord = chord.get_chord(lower=music.Note('E', 2))
+    chord = music.primitives.ChordName(chord_name_)
+    low_chord = chord.get_chord(lower=music.primitives.Note('E', 2))
     positions_all = music.get_all_guitar_positions_for_chord_name(
         chord_name=chord,
         guitar=guitar,
@@ -180,11 +183,11 @@ def guitar_positions_display_name(
     )
     positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
     if allow_repeats_:
-        positions_playable = music.GuitarPosition.filter_subsets(positions_playable)
+        positions_playable = music.instruments.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
     if music.media_installed:
-        music.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        music.graphics.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
         low_chord.to_audio(
             sample_rate=SAMPLE_RATE, duration=NOTE_DURATION
         ).write_wav(
@@ -192,7 +195,7 @@ def guitar_positions_display_name(
         )
     else:
         cleanup()
-    positions = music.GuitarPosition.sorted(positions_playable)[:top_n_]
+    positions = music.instruments.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in positions]
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
@@ -208,15 +211,15 @@ def guitar_chord_progression():
         tuning_name = request.form['tuning_name'].strip()
         tuning = request.form['tuning'].strip()
         try:
-            music.Guitar.parse_tuning(tuning, how='csv')
-        except music.InvalidParseError as e:
+            music.instruments.Guitar.parse_tuning(tuning, how='csv')
+        except music.instruments.InvalidParseError as e:
             flash(f'Invalid tuning! ({e})')
         tuning = 'custom;' + tuning if tuning_name == 'custom' and tuning else tuning_name
         chords_string = request.form['chords'].strip()
         for chord_name in escape(chords_string).split(','):
             print(chord_name)
             try:
-                music.ChordName(chord_name)
+                music.primitives.ChordName(chord_name)
             except Exception as e:
                 flash(f'Invalid chord name! ({e})')
         allow_repeats = request.form.get('allow_repeats', '').strip() or 'false'
@@ -257,11 +260,11 @@ def guitar_chord_progression_display(
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     if tuning_.startswith('custom'):
         tuning_ = tuning_.split(';', maxsplit=1)[1]
-        guitar = music.Guitar(tuning=music.Guitar.parse_tuning(tuning_, how='csv'))
+        guitar = music.instruments.Guitar(tuning=music.instruments.Guitar.parse_tuning(tuning_, how='csv'))
     else:
-        guitar = music.Guitar(tuning_name=tuning_)
-    chord_progression = music.ChordProgression(
-        [music.ChordName(chord) for chord in escape(chords_string).split(',')]
+        guitar = music.instruments.Guitar(tuning_name=tuning_)
+    chord_progression = music.primitives.ChordProgression(
+        [music.primitives.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
     opt_positions = chord_progression.optimal_guitar_positions(
         guitar=guitar,
@@ -274,7 +277,7 @@ def guitar_chord_progression_display(
     if music.media_installed and opt_chords:
         audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
         audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
-        music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        music.graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
     positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in opt_positions]
@@ -303,16 +306,16 @@ def voice_leading():
 @app.route("/voice_leading/<chords_string>/<lower>/<upper>", methods=('GET', 'POST'))
 def voice_leading_display(chords_string: str, lower: str, upper: str):
     t1 = time.time()
-    chord_progression = music.ChordProgression(
-        [music.ChordName(chord) for chord in escape(chords_string).split(',')]
+    chord_progression = music.primitives.ChordProgression(
+        [music.primitives.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
-    lower_ = music.Note.from_string(escape(lower).split('=')[1])
-    upper_ = music.Note.from_string(escape(upper).split('=')[1])
+    lower_ = music.primitives.Note.from_string(escape(lower).split('=')[1])
+    upper_ = music.primitives.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
     if music.media_installed:
         audio = reduce(add, (chord.to_audio(sample_rate=SAMPLE_RATE, duration=NOTE_DURATION) for chord in opt_chords))
         audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
-        music.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        music.graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
         cleanup()
     elapsed_time = f'{(time.time() - t1):.2f}'
