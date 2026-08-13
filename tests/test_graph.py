@@ -1,8 +1,7 @@
-
-from music import graph
-
 import numpy as np
 import pytest
+
+from music import graph
 
 
 def test_graph() -> None:

@@ -153,8 +153,6 @@ class Chord:
 
     def __init__(self, notes: list[Note]):
         self.notes = sorted(notes)
-        self.num_total_guitar_positions = None
-        self.num_playable_guitar_positions = None
         if notes:
             self.staff_line_gaps = [None]
             for note, next_note in zip(self.notes[:-1], self.notes[1:]):
@@ -165,35 +163,6 @@ class Chord:
     @staticmethod
     def from_string(string: str) -> 'Chord':
         return Chord([Note.from_string(n) for n in string.split(',')])
-
-    def to_audio(self, sample_rate: int = 44_100, duration: float = 1.0, delay: bool = True) -> 'Audio':
-        """
-        Convert a chord to an `Audio` waveform;
-        the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
-        :param sample_rate: int
-        :param duration: float, total duration [s] of audio
-        :param delay: bool, whether to apreggiate the chord
-        """
-        n = int(sample_rate * duration)
-        t = np.linspace(0.0, duration, num=n)
-        tau = duration * 0.2
-        waveform = np.zeros(n)
-        delay_duration = duration / (2 * len(self.notes)) if delay else 0
-        for i, note in enumerate(self.notes):
-            signal = np.zeros(n)
-            n_harmonics = min(10, int((sample_rate / 2) // note.frequency))
-            for harmonic in range(1, n_harmonics + 1):
-                w = 2 * np.pi * note.frequency * harmonic
-                phase = 0.05 * note.frequency * np.sin(0.5 * t)
-                signal += np.sin(w * t + phase) / 1.5 ** harmonic
-            signal /= (2 * np.max(np.abs(signal)))
-            delay_samples = int(sample_rate * delay_duration * i)
-            envelope = np.exp(-(t - delay_duration * i) / tau)
-            envelope[:delay_samples] = 0
-            signal *= envelope
-            waveform += signal
-        waveform /= (2 * np.max(np.abs(waveform)))
-        return Audio(sample_rate=sample_rate, waveform=waveform)
 
     def semitone_distance(self, other: 'Chord') -> int:
         """

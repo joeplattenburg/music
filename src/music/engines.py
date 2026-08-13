@@ -4,8 +4,11 @@ from functools import partial
 from multiprocessing import Pool
 import os
 
+import numpy as np
+
 from music.primitives import Note, Chord, ChordName, ChordProgression
 from music.instruments import Guitar, GuitarPosition
+from music.audio import Audio
 from music import graph
 
 
@@ -165,3 +168,37 @@ class FretboardEngine:
         g = graph.Graph(nodes=nodes, edges=edges)
         prog: list[position_node] = g.shortest_path(initial, terminal)  # type: ignore
         return [p for _, p in prog[1:-1]]
+
+
+class AudioEngine:
+    def __init__(self, sample_rate: int = 44_100):
+        self.sample_rate = sample_rate
+
+    def chord_to_audio(self, chord: Chord, duration: float = 1.0, delay: bool = True) -> 'Audio':
+        """
+        Convert a chord to an `Audio` waveform;
+        the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
+        :param sample_rate: int
+        :param duration: float, total duration [s] of audio
+        :param delay: bool, whether to apreggiate the chord
+        """
+        n = int(self.sample_rate * duration)
+        t = np.linspace(0.0, duration, num=n)
+        tau = duration * 0.2
+        waveform = np.zeros(n)
+        delay_duration = duration / (2 * len(chord.notes)) if delay else 0
+        for i, note in enumerate(chord.notes):
+            signal = np.zeros(n)
+            n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
+            for harmonic in range(1, n_harmonics + 1):
+                w = 2 * np.pi * note.frequency * harmonic
+                phase = 0.05 * note.frequency * np.sin(0.5 * t)
+                signal += np.sin(w * t + phase) / 1.5 ** harmonic
+            signal /= (2 * np.max(np.abs(signal)))
+            delay_samples = int(self.sample_rate * delay_duration * i)
+            envelope = np.exp(-(t - delay_duration * i) / tau)
+            envelope[:delay_samples] = 0
+            signal *= envelope
+            waveform += signal
+        waveform /= (2 * np.max(np.abs(waveform)))
+        return Audio(sample_rate=self.sample_rate, waveform=waveform)
