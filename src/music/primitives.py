@@ -135,6 +135,14 @@ class Note:
         return self.semitones
 
 
+class NoteEvent:
+    """
+    One or more Note(s) coupled with a duration
+    """
+    def __init__(self, notes: list[Note], duration: float = 1.):
+        self.notes = notes
+        self.duration = duration
+
 @total_ordering
 class Chord:
     """
