@@ -1,41 +1,38 @@
 import argparse
 import time
 
-import music.instruments
-import music.primitives
-from music import music
+from music import primitives, instruments, engines
 
 
 def guitar_positions(args: argparse.Namespace):
-    guitar = music.instruments.Guitar(tuning=args.tuning, tuning_name=args.tuning_name, capo=args.capo, frets=args.frets)
+    guitar = instruments.Guitar(tuning=args.tuning, tuning_name=args.tuning_name, capo=args.capo, frets=args.frets)
+    engine = engines.FretboardEngine(max_fret_span=args.max_fret_span)
     if args.notes:
-        note_list = [music.primitives.Note.from_string(note) for note in args.notes.split(',')]
-        chord = music.primitives.Chord(note_list)
+        note_list = [primitives.Note.from_string(note) for note in args.notes.split(',')]
+        chord = primitives.Chord(note_list)
         print(f'You input the chord: {chord}')
-        positions_playable = chord.guitar_positions(
-            guitar=guitar, include_unplayable=False, max_fret_span=args.max_fret_span
+        positions_playable = engine.chord_to_guitar_positions(
+            chord=chord, guitar=guitar, include_unplayable=False,
         )
-        positions_all_count = chord.num_total_guitar_positions
     elif args.name:
         print(f'You input the chord: {args.name}')
-        chord_name = music.primitives.ChordName(args.name)
-        positions_all = music.get_all_guitar_positions_for_chord_name(
-            chord_name=chord_name, guitar=guitar, max_fret_span=args.max_fret_span,
+        chord_name = primitives.ChordName(args.name)
+        positions_all = engine.chord_name_to_all_guitar_positions(
+            chord_name=chord_name, guitar=guitar,
             allow_repeats=args.allow_repeats, allow_identical=args.allow_identical,
             parallel=args.parallel,
         )
         positions_playable = list(filter(lambda x: (x.playable and not x.redundant), positions_all))
-        positions_all_count = len(positions_all)
     else:
         raise ValueError('Either `notes` or `name` is required')
     if args.allow_repeats:
-        positions_playable = music.instruments.GuitarPosition.filter_subsets(positions_playable)
+        positions_playable = instruments.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
-    positions = music.instruments.GuitarPosition.sorted(positions_playable)[:args.top_n]
+    positions = instruments.GuitarPosition.sorted(positions_playable)[:args.top_n]
     tuning_display = guitar.tuning_name if guitar.tuning_name != 'custom' else f'{guitar}'
     print(
         f'There are {len(chords_playable)} playable voicings and {len(positions_playable)} guitar positions '
-        f'(out of {positions_all_count} possible) for a guitar tuned to {tuning_display}.'
+        f'for a guitar tuned to {tuning_display}.'
     )
     if args.top_n:
         print(f'Here are the top {args.top_n}:')
@@ -45,10 +42,11 @@ def guitar_positions(args: argparse.Namespace):
 
 def guitar_optimal_progression(args: argparse.Namespace):
     print(f'You input the chord progression: {args.chords}')
-    cp = music.primitives.ChordProgression([music.primitives.ChordName(n) for n in args.chords])
-    guitar = music.instruments.Guitar(tuning_name=args.tuning_name, tuning=args.tuning)
-    result = cp.optimal_guitar_positions(
-        guitar=guitar, allow_repeats=args.allow_repeats, respect_fingers=args.fingers
+    cp = primitives.ChordProgression([primitives.ChordName(n) for n in args.chords])
+    guitar = instruments.Guitar(tuning_name=args.tuning_name, tuning=args.tuning)
+    engine = engines.FretboardEngine()
+    result = engine.chord_progression_to_optimal_guitar_positions(
+        chord_progression=cp, guitar=guitar, allow_repeats=args.allow_repeats, respect_fingers=args.fingers
     )
     print('The optimal positions for this progression are:')
     for chord, position in zip(args.chords, result):
@@ -58,10 +56,10 @@ def guitar_optimal_progression(args: argparse.Namespace):
 
 def voice_leading(args: argparse.Namespace):
     print(f'You input the chord progresssion: {args.chords}')
-    cp = music.primitives.ChordProgression([music.primitives.ChordName(n) for n in args.chords])
+    cp = primitives.ChordProgression([primitives.ChordName(n) for n in args.chords])
     result = cp.optimal_voice_leading(
-        lower=music.primitives.Note.from_string(args.lower),
-        upper=music.primitives.Note.from_string(args.upper),
+        lower=primitives.Note.from_string(args.lower),
+        upper=primitives.Note.from_string(args.upper),
     )
     print('The optimal voicing for this progression is:')
     for chord, voicing in zip(args.chords, result):
@@ -89,7 +87,7 @@ def main() -> None:
         help='How many positions to return'
     )
     guitar_positions_parser.add_argument(
-        '--max-fret-span', '-f', type=int, default=music.instruments.DEFAULT_MAX_FRET_SPAN,
+        '--max-fret-span', '-f', type=int, default=instruments.DEFAULT_MAX_FRET_SPAN,
         help='Max fret span to consider playable'
     )
     guitar_positions_parser.add_argument(
@@ -110,10 +108,10 @@ def main() -> None:
     )
     guitar_positions_parser.add_argument(
         '--tuning-name', '-t', type=str, default=None,
-        help='Name of alternate tuning', choices=list(music.instruments.Guitar.TUNINGS.keys())
+        help='Name of alternate tuning', choices=list(instruments.Guitar.TUNINGS.keys())
     )
     guitar_positions_parser.add_argument(
-        '--tuning', type=music.instruments.Guitar.parse_tuning, default=None,
+        '--tuning', type=instruments.Guitar.parse_tuning, default=None,
         help=(
             'A json dict or comma/semicolon separated list specifying a custom guitar tuning, '
             'e.g.: {"D": "D2", "A": "A2", ...} or D,D2;A,A2;...'
@@ -124,7 +122,7 @@ def main() -> None:
         help='An int specifying where to fret a capo'
     )
     guitar_positions_parser.add_argument(
-        '--frets', type=int, default=music.instruments.Guitar.DEFAULT_FRETS,
+        '--frets', type=int, default=instruments.Guitar.DEFAULT_FRETS,
         help='How many frets on the guitar'
     )
     guitar_positions_parser.add_argument(
@@ -153,10 +151,10 @@ def main() -> None:
     )
     guitar_optimal_progression_parser.add_argument(
         '--tuning-name', '-t', type=str, default=None,
-        help='Name of alternate tuning', choices=list(music.instruments.Guitar.TUNINGS.keys())
+        help='Name of alternate tuning', choices=list(instruments.Guitar.TUNINGS.keys())
     )
     guitar_optimal_progression_parser.add_argument(
-        '--tuning', type=music.instruments.Guitar.parse_tuning, default=None,
+        '--tuning', type=instruments.Guitar.parse_tuning, default=None,
         help=(
             'A json dict or comma/semicolon separated list specifying a custom guitar tuning, '
             'e.g.: {"D": "D2", "A": "A2", ...} or D,D2;A,A2;...'
