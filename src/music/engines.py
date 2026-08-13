@@ -64,7 +64,6 @@ class FretboardEngine:
             for note in chord.notes
         ]
         valid_combinations = [comb for comb in product(*valid_strings) if len(set(comb)) == len(chord.notes)]
-        num_total_guitar_positions = len(valid_combinations)
         playable_positions = []
         for comb in valid_combinations:
             positions_dict = {
