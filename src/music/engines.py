@@ -196,7 +196,6 @@ class AudioEngine:
                     phase = 0.05 * note.frequency * np.sin(0.5 * t_event)
                     amp = 1 / 1.5 ** harmonic
                     signal_event += amp * np.sin(w * t_event + phase)
-            print(np.max(np.abs(signal_event)))
             if (scale_factor := 2 * np.max(np.abs(signal_event))) > 0:
                 signal_event /= scale_factor
             envelope = np.exp(-t_event / (self.decay * duration_event))
@@ -206,31 +205,25 @@ class AudioEngine:
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
 
 
-    def chord_to_audio(self, chord: Chord, duration: float = 1.0, delay: bool = True) -> 'Audio':
+    def chord_to_audio(self, chord: Chord, duration_beats: float = 1.0, delay: bool = True) -> 'Audio':
         """
         Convert a chord to an `Audio` waveform;
         the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
         :param sample_rate: int
-        :param duration: float, total duration [s] of audio
+        :param duration_beats: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
         """
-        n = int(self.sample_rate * duration)
-        t = np.linspace(0.0, duration, num=n)
-        tau = duration * 0.2
-        waveform = np.zeros(n)
-        delay_duration = duration / (2 * len(chord.notes)) if delay else 0
-        for i, note in enumerate(chord.notes):
-            signal = np.zeros(n)
-            n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
-            for harmonic in range(1, n_harmonics + 1):
-                w = 2 * np.pi * note.frequency * harmonic
-                phase = 0.05 * note.frequency * np.sin(0.5 * t)
-                signal += np.sin(w * t + phase) / 1.5 ** harmonic
-            signal /= (2 * np.max(np.abs(signal)))
-            delay_samples = int(self.sample_rate * delay_duration * i)
-            envelope = np.exp(-(t - delay_duration * i) / tau)
-            envelope[:delay_samples] = 0
-            signal *= envelope
-            waveform += signal
-        waveform /= (2 * np.max(np.abs(waveform)))
-        return Audio(sample_rate=self.sample_rate, waveform=waveform)
+        if delay:
+            n_notes = len(chord.notes)
+            durations = list(reversed([duration_beats / 2 + i * (duration_beats / 2) / n_notes for i in range(n_notes)]))
+            offsets = [duration_beats - d for d in durations]
+            note_sequence = NoteSequence(events=[
+                NoteEvent(notes=[note], duration_beats=d, offset_beats=o)
+                for note, d, o in zip(chord.notes, durations, offsets)
+            ])
+        else:
+            note_sequence = NoteSequence(events=[
+                NoteEvent(notes=[note], duration_beats=duration_beats, offset_beats=0.)
+                for note in chord.notes
+            ])
+        return self.note_sequence_to_audio(note_sequence)
