@@ -76,12 +76,13 @@ def test_validity_of_high_frets_with_capo() -> None:
 
 def test_bias_in_voicings() -> None:
     chord_name = primitives.ChordName('Dmaj7#11')
+    engine = engines.FretboardEngine()
     assert chord_name.note_names == ['D', 'F#', 'A', 'C#']
     assert chord_name.extension_names == ['G#']
-    for chord in chord_name.get_all_guitar_chords():
+    for chord in engine.chord_name_to_guitar_chords(chord_name):
         names = set([n.name for n in chord.notes])
         assert names == {'D', 'F#', 'A', 'C#', 'G#'}
-        for pos in chord.guitar_positions():
+        for pos in engine.chord_to_guitar_positions(chord):
             assert pos.chord == chord
             assert set(n.name for n in pos.chord.notes) == names
 
