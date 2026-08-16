@@ -537,3 +537,15 @@ def test_voice_leading() -> None:
         use_dijkstra=False
     )
     assert result1 == result2
+
+
+def test_note_event() -> None:
+    event = primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25)
+
+
+def test_note_sequence() -> None:
+    sequence = primitives.NoteSequence(events=[
+        primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
+        primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
+        primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
+    ])

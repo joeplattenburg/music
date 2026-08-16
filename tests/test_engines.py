@@ -128,3 +128,17 @@ def test_audio_from_chord_list() -> None:
     audios = [engine.chord_to_audio(chord=chord) for chord in chords]
     audio = reduce(add, audios)
     assert audio.duration == 3.0
+
+
+def test_note_sequence_to_audio(tmp_path) -> None:
+    (tmp_path / 'dir').mkdir()
+    assert not (tmp_path / 'dir' / 'file.wav').exists()
+    engine = engines.AudioEngine()
+    sequence = primitives.NoteSequence(events=[
+        primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
+        primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
+        primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
+    ])
+    audio = engine.note_sequence_to_audio(sequence)
+    audio.write_wav(str(tmp_path / 'dir' / 'file.wav'))
+    assert (tmp_path / 'dir' / 'file.wav').exists()

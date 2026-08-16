@@ -137,11 +137,25 @@ class Note:
 
 class NoteEvent:
     """
-    One or more Note(s) coupled with a duration
+    One or more Note(s) coupled with a duration (number of beats) and offset
     """
-    def __init__(self, notes: list[Note], duration: float = 1.):
+    def __init__(self, notes: list[Note], duration_beats: float = 1., offset_beats: float = 0.):
         self.notes = notes
-        self.duration = duration
+        self.duration_beats = duration_beats
+        self.offset_beats = offset_beats
+
+
+class NoteSequence:
+    """
+    A sequence of note events
+    """
+    def __init__(self, events: list[NoteEvent]):
+        self.events = events
+        self.first_offset = min(e.offset_beats for e in events)
+        self.duration_beats = (
+            max(e.offset_beats + e. duration_beats for e in events) - self.first_offset
+        )
+
 
 @total_ordering
 class Chord:

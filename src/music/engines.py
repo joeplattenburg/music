@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from music.primitives import Note, Chord, ChordName, ChordProgression
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -170,8 +170,41 @@ class FretboardEngine:
 
 
 class AudioEngine:
-    def __init__(self, sample_rate: int = 44_100):
+    def __init__(self, sample_rate: int = 44_100, tempo: float = 120., decay: float = 0.1):
         self.sample_rate = sample_rate
+        self.tempo = tempo
+        self.decay = decay
+
+    def beats_to_seconds(self, beats: float):
+        return (60 / self.tempo) * beats
+
+    def note_sequence_to_audio(self, note_sequence: NoteSequence) -> Audio:
+        duration = self.beats_to_seconds(note_sequence.duration_beats + note_sequence.first_offset)
+        n = int(self.sample_rate * duration)
+        waveform = np.zeros(n)
+        for event in note_sequence.events:
+            duration_event = self.beats_to_seconds(event.duration_beats)
+            offset_event = self.beats_to_seconds(event.offset_beats)
+            n_event = int(self.sample_rate * duration_event)
+            n_offset = int(self.sample_rate * offset_event)
+            t_event = np.linspace(0.0, duration_event, num=n_event)
+            signal_event = np.zeros(n_event)
+            for note in event.notes:
+                n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
+                for harmonic in range(1, n_harmonics + 1):
+                    w = 2 * np.pi * note.frequency * harmonic
+                    phase = 0.05 * note.frequency * np.sin(0.5 * t_event)
+                    amp = 1 / 1.5 ** harmonic
+                    signal_event += amp * np.sin(w * t_event + phase)
+            print(np.max(np.abs(signal_event)))
+            if (scale_factor := 2 * np.max(np.abs(signal_event))) > 0:
+                signal_event /= scale_factor
+            envelope = np.exp(-t_event / (self.decay * duration_event))
+            signal_event *= envelope
+            waveform[n_offset:(n_offset + n_event)] += signal_event
+        waveform /= (2 * np.max(np.abs(waveform)))
+        return Audio(sample_rate=self.sample_rate, waveform=waveform)
+
 
     def chord_to_audio(self, chord: Chord, duration: float = 1.0, delay: bool = True) -> 'Audio':
         """
