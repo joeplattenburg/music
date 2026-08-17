@@ -544,8 +544,16 @@ def test_note_event() -> None:
 
 
 def test_note_sequence() -> None:
-    sequence = primitives.NoteSequence(events=[
-        primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
-        primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
-        primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
-    ])
+    sequence = primitives.NoteSequence(
+        events=[
+            primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
+            primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
+            primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
+            primitives.NoteEvent(notes=[primitives.Note('F', 3)], duration_beats=0.25, offset_beats=0.5),
+        ],
+        volume_control_points=[
+            primitives.ControlPoint(level=1., beat=0., mode='step'),
+            primitives.ControlPoint(level=0.5, beat=0.25, mode='step'),
+            primitives.ControlPoint(level=0.75, beat=0.5, mode='step'),
+        ]
+    )

@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -201,8 +201,20 @@ class AudioEngine:
             envelope = np.exp(-t_event / (self.decay * duration_event))
             signal_event *= envelope
             waveform[n_offset:(n_offset + n_event)] += signal_event
+
         waveform /= (2 * np.max(np.abs(waveform)))
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
+
+    def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
+        envelope = np.ones(n)
+        for this_point, next_point in zip:control_points:
+            if point.mode == 'step':
+                ...
+            elif point.mode == 'linear':
+                ...
+            elif point.mode == 'exponential'
+                ...
+        return envelope
 
 
     def chord_to_audio(self, chord: Chord, duration_beats: float = 1.0, delay: bool = True) -> 'Audio':
