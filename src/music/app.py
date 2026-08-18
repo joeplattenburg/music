@@ -18,8 +18,8 @@ app = Flask(
     template_folder=TEMPLATE_DIR,
 )
 app.config['SECRET_KEY'] = os.urandom(24).hex()
-SAMPLE_RATE = 11_025
-NOTE_DURATION = 2.0
+AUDIO_ENGINE = engines.AudioEngine(sample_rate=11_025, tempo=60., decay=0.25)
+NOTE_DURATION_BEATS = 2.0
 
 
 def cleanup() -> None:
@@ -106,11 +106,8 @@ def guitar_positions_display_notes(
     allow_thumb_: bool = escape(allow_thumb).split('=')[1] == 'true'
     notes_list = [primitives.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = primitives.Chord(notes_list)
-    audio_engine = engines.AudioEngine()
     fretboard_engine = engines.FretboardEngine(max_fret_span=max_fret_span_, allow_thumb=allow_thumb_)
-    audio_engine.chord_to_audio(
-        chord, duration=NOTE_DURATION
-    ).write_wav(
+    AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS).write_wav(
         os.path.join(STATIC_DIR, 'temp.wav')
     )
     graphics.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
@@ -166,7 +163,6 @@ def guitar_positions_display_name(
     else:
         guitar = instruments.Guitar(tuning_name=tuning_)
     fretboard_engine = engines.FretboardEngine(max_fret_span=max_fret_span_, allow_thumb=allow_thumb_)
-    audio_engine = engines.AudioEngine(sample_rate=SAMPLE_RATE)
     t1 = time.time()
     chord = primitives.ChordName(chord_name_)
     low_chord = chord.get_chord(lower=primitives.Note('E', 2))
@@ -183,9 +179,7 @@ def guitar_positions_display_name(
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
     graphics.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
-    audio_engine.chord_to_audio(
-        chord=low_chord, duration=NOTE_DURATION
-    ).write_wav(
+    AUDIO_ENGINE.chord_to_audio(chord=low_chord, duration_beats=NOTE_DURATION_BEATS).write_wav(
         os.path.join(STATIC_DIR, 'temp.wav')
     )
     positions = instruments.GuitarPosition.sorted(positions_playable)[:top_n_]
@@ -260,7 +254,6 @@ def guitar_chord_progression_display(
         [primitives.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
     fretboard_engine = engines.FretboardEngine(allow_thumb=allow_thumb_)
-    audio_engine = engines.AudioEngine(sample_rate=SAMPLE_RATE)
     opt_positions = fretboard_engine.chord_progression_to_optimal_guitar_positions(
         chord_progression=chord_progression,
         guitar=guitar,
@@ -270,7 +263,7 @@ def guitar_chord_progression_display(
     )
     opt_chords = [p.chord for p in opt_positions]
     if opt_chords:
-        audio = reduce(add, (audio_engine.chord_to_audio(chord, duration=NOTE_DURATION) for chord in opt_chords))
+        audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS) for chord in opt_chords))
         audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
         graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
@@ -304,11 +297,10 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     chord_progression = primitives.ChordProgression(
         [primitives.ChordName(chord) for chord in escape(chords_string).split(',')]
     )
-    audio_engine = engines.AudioEngine(sample_rate=SAMPLE_RATE)
     lower_ = primitives.Note.from_string(escape(lower).split('=')[1])
     upper_ = primitives.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
-    audio = reduce(add, (audio_engine.chord_to_audio(chord, duration=NOTE_DURATION) for chord in opt_chords))
+    audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS) for chord in opt_chords))
     audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
     graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     elapsed_time = f'{(time.time() - t1):.2f}'
