@@ -119,7 +119,7 @@ def test_write_wav(tmp_path) -> None:
 
 
 def test_audio_from_chord_list() -> None:
-    engine = engines.AudioEngine()
+    engine = engines.AudioEngine(tempo=60)
     chords = [
         primitives.ChordName('G7').get_chord(),
         primitives.ChordName('C7').get_chord(),
