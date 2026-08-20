@@ -149,9 +149,11 @@ class NoteEvent:
 
 @dataclass
 class ControlPoint:
-    level: float
     beat: float
-    mode: Literal['step', 'linear', 'exponential']
+    level: float
+    mode: Literal['step', 'linear', 'exponential'] = 'step'
+    duration_beats: float | None = None
+    tau: float | None = None
 
 
 class NoteSequence:
@@ -166,8 +168,16 @@ class NoteSequence:
         )
         self.volume_control_points: list[ControlPoint] = volume_control_points
 
-    def add_volume_control_point(self, level: float, beat: float, mode: Literal['step', 'linear', 'exponential']):
-        self.volume_control_points += ControlPoint(level=level, beat=beat, mode=mode)
+    def add_volume_control_point(
+            self, *,
+            beat: float,
+            level: float,
+            mode: Literal['step', 'linear', 'exponential'] = 'step',
+            duration_beats: float = None,
+            tau: float = None,
+    ):
+        self.volume_control_points += ControlPoint(beat=beat, level=level, mode=mode, duration_beats=duration_beats, tau=tau)
+        self.volume_control_points = sorted(self.volume_control_points, key=lambda x: x.beat)
 
 
 @total_ordering
