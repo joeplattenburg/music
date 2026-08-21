@@ -160,13 +160,13 @@ class NoteSequence:
     """
     A sequence of note events
     """
-    def __init__(self, events: list[NoteEvent], volume_control_points: list[ControlPoint]):
+    def __init__(self, events: list[NoteEvent], volume_control_points: list[ControlPoint] | None = None):
         self.events = events
         self.first_offset = min(e.offset_beats for e in events)
         self.duration_beats = (
             max(e.offset_beats + e. duration_beats for e in events) - self.first_offset
         )
-        self.volume_control_points: list[ControlPoint] = volume_control_points
+        self.volume_control_points: list[ControlPoint] = volume_control_points or []
 
     def add_volume_control_point(
             self, *,
