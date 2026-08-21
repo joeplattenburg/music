@@ -248,13 +248,21 @@ class AudioEngine:
             n_notes = len(chord.notes)
             durations = list(reversed([duration_beats / 2 + i * (duration_beats / 2) / n_notes for i in range(n_notes)]))
             offsets = [duration_beats - d for d in durations]
-            note_sequence = NoteSequence(events=[
-                NoteEvent(notes=[note], duration_beats=d, offset_beats=o)
-                for note, d, o in zip(chord.notes, durations, offsets)
-            ])
+            note_sequence = NoteSequence(
+                events=[
+                    NoteEvent(notes=[note], duration_beats=d, offset_beats=o)
+                    for note, d, o in zip(chord.notes, durations, offsets)
+                ],
+            )
+            for o in offsets:
+                note_sequence.add_volume_control_point(beat=o, mode='step', level=1.)
+                note_sequence.add_volume_control_point(beat=o + 0.01, mode='exponential', level=0., tau=0.2)
         else:
-            note_sequence = NoteSequence(events=[
-                NoteEvent(notes=[note], duration_beats=duration_beats, offset_beats=0.)
-                for note in chord.notes
-            ])
+            note_sequence = NoteSequence(
+                events=[
+                    NoteEvent(notes=[note], duration_beats=duration_beats, offset_beats=0.)
+                    for note in chord.notes
+                ],
+                volume_control_points=[ControlPoint(level=0., beat=0.01, mode='exponential', tau=0.1)]
+            )
         return self.note_sequence_to_audio(note_sequence)

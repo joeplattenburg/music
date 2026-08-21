@@ -176,8 +176,8 @@ class NoteSequence:
             duration_beats: float = None,
             tau: float = None,
     ):
-        self.volume_control_points += ControlPoint(beat=beat, level=level, mode=mode, duration_beats=duration_beats, tau=tau)
-        self.volume_control_points = sorted(self.volume_control_points, key=lambda x: x.beat)
+        self.volume_control_points.append(ControlPoint(beat=beat, level=level, mode=mode, duration_beats=duration_beats, tau=tau))
+        self.volume_control_points.sort(key=lambda x: x.beat)
 
 
 @total_ordering
