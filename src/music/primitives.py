@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from functools import total_ordering
 from itertools import product, chain, combinations, combinations_with_replacement
 from typing import Optional, Literal
@@ -145,16 +147,37 @@ class NoteEvent:
         self.offset_beats = offset_beats
 
 
+@dataclass
+class ControlPoint:
+    beat: float
+    level: float
+    mode: Literal['step', 'linear', 'exponential'] = 'step'
+    duration_beats: Optional[float] = None
+    tau: Optional[float] = None
+
+
 class NoteSequence:
     """
     A sequence of note events
     """
-    def __init__(self, events: list[NoteEvent]):
+    def __init__(self, events: list[NoteEvent], volume_control_points: Optional[list[ControlPoint]] = None):
         self.events = events
         self.first_offset = min(e.offset_beats for e in events)
         self.duration_beats = (
             max(e.offset_beats + e. duration_beats for e in events) - self.first_offset
         )
+        self.volume_control_points: list[ControlPoint] = volume_control_points or []
+
+    def add_volume_control_point(
+            self, *,
+            beat: float,
+            level: float,
+            mode: Literal['step', 'linear', 'exponential'] = 'step',
+            duration_beats: float = None,
+            tau: float = None,
+    ):
+        self.volume_control_points.append(ControlPoint(beat=beat, level=level, mode=mode, duration_beats=duration_beats, tau=tau))
+        self.volume_control_points.sort(key=lambda x: x.beat)
 
 
 @total_ordering

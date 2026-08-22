@@ -18,7 +18,7 @@ app = Flask(
     template_folder=TEMPLATE_DIR,
 )
 app.config['SECRET_KEY'] = os.urandom(24).hex()
-AUDIO_ENGINE = engines.AudioEngine(sample_rate=11_025, tempo=60., decay=0.25)
+AUDIO_ENGINE = engines.AudioEngine(sample_rate=11_025, tempo=60.)
 NOTE_DURATION_BEATS = 2.0
 
 
