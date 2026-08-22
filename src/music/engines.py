@@ -211,7 +211,7 @@ class AudioEngine:
 
     def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
         envelope = np.ones(n)
-        total_beats = self.seconds_to_beats(n // self.sample_rate)
+        total_beats = self.seconds_to_beats(n / self.sample_rate)
         last_point = ControlPoint(beat=total_beats, level=0.)
         for point, next_point in zip(control_points, [*control_points[1:], last_point]):
             index = self.beats_to_index(point.beat)
