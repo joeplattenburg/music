@@ -152,15 +152,15 @@ class ControlPoint:
     beat: float
     level: float
     mode: Literal['step', 'linear', 'exponential'] = 'step'
-    duration_beats: float | None = None
-    tau: float | None = None
+    duration_beats: Optional[float] = None
+    tau: Optional[float] = None
 
 
 class NoteSequence:
     """
     A sequence of note events
     """
-    def __init__(self, events: list[NoteEvent], volume_control_points: list[ControlPoint] | None = None):
+    def __init__(self, events: list[NoteEvent], volume_control_points: Optional[list[ControlPoint]] = None):
         self.events = events
         self.first_offset = min(e.offset_beats for e in events)
         self.duration_beats = (
