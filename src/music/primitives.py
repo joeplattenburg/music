@@ -160,12 +160,18 @@ class NoteSequence:
     """
     A sequence of note events
     """
-    def __init__(self, events: list[NoteEvent], volume_control_points: Optional[list[ControlPoint]] = None):
+    def __init__(
+            self,
+            events: list[NoteEvent],
+            voice: 'Voice',
+            volume_control_points: Optional[list[ControlPoint]] = None
+    ):
         self.events = events
         self.first_offset = min(e.offset_beats for e in events)
         self.duration_beats = (
             max(e.offset_beats + e. duration_beats for e in events) - self.first_offset
         )
+        self.voice = voice
         self.volume_control_points: list[ControlPoint] = volume_control_points or []
 
     def add_volume_control_point(
@@ -491,6 +497,16 @@ class ChordProgression:
                 })
             motions = sorted(motions, key=lambda x: x['motion'])
             return motions[0]['progression']
+
+
+class Voice:
+    VOICES = [
+        'pure', 'guitar', 'piano'
+    ]
+    def __init__(self, name: str = 'guitar', decay: bool = None):
+        assert name in self.VOICES
+        self.name = name
+        self.decay = decay if decay is not None else self.name in {'guitar', 'piano'}
 
 
 def constrained_powerset(

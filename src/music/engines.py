@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -188,26 +188,34 @@ class AudioEngine:
         n = int(self.sample_rate * duration)
         waveform = np.zeros(n)
         for event in note_sequence.events:
-            duration_event = self.beats_to_seconds(event.duration_beats)
             offset_event = self.beats_to_seconds(event.offset_beats)
-            n_event = int(self.sample_rate * duration_event)
             n_offset = int(self.sample_rate * offset_event)
-            t_event = np.linspace(0.0, duration_event, num=n_event)
-            signal_event = np.zeros(n_event)
-            for note in event.notes:
-                n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
-                for harmonic in range(1, n_harmonics + 1):
-                    w = 2 * np.pi * note.frequency * harmonic
-                    phase = 0.05 * note.frequency * np.sin(0.5 * t_event)
-                    amp = 1 / 1.5 ** harmonic
-                    signal_event += amp * np.sin(w * t_event + phase)
-            if (scale_factor := 2 * np.max(np.abs(signal_event))) > 0:
-                signal_event /= scale_factor
-            waveform[n_offset:(n_offset + n_event)] += signal_event
+            signal = self.synthesize_note_event(event, note_sequence.voice)
+            waveform[n_offset:(n_offset + len(signal))] += signal
         envelope = self.construct_envelope(n, control_points=note_sequence.volume_control_points)
         waveform *= envelope
         waveform /= (2 * np.max(np.abs(waveform)))
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
+
+    def synthesize_note_event(self, event: NoteEvent, voice: Voice) -> np.ndarray:
+        duration = self.beats_to_seconds(event.duration_beats)
+        n = int(self.sample_rate * duration)
+        t = np.linspace(0.0, duration, num=n)
+        x = np.zeros(n)
+        if voice.name == 'guitar':
+            for note in event.notes:
+                n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
+                for harmonic in range(1, n_harmonics + 1):
+                    w = 2 * np.pi * note.frequency * harmonic
+                    phase = 0.05 * note.frequency * np.sin(0.5 * t)
+                    amp = 1 / 1.5 ** harmonic
+                    x += amp * np.sin(w * t + phase)
+        if voice.decay:
+            x *= np.exp(-t / (0.2 * duration))
+        if (scale_factor := 2 * np.max(np.abs(x))) > 0:
+            x /= scale_factor
+        return x
+
 
     def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
         envelope = np.ones(n)
@@ -234,7 +242,6 @@ class AudioEngine:
                 t = np.linspace(0., duration, n)
                 envelope[index:next_index] = (start_level - point.level) * np.exp(-t / (point.tau * duration)) + point.level
         return envelope
-
 
     def chord_to_audio(self, chord: Chord, duration_beats: float = 1.0, delay: bool = True) -> 'Audio':
         """
