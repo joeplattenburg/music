@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -202,16 +202,16 @@ class AudioEngine:
         n = int(self.sample_rate * duration)
         t = np.linspace(0.0, duration, num=n)
         x = np.zeros(n)
-        if voice.name == 'guitar':
-            for note in event.notes:
-                n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
-                for harmonic in range(1, n_harmonics + 1):
-                    w = 2 * np.pi * note.frequency * harmonic
-                    phase = 0.05 * note.frequency * np.sin(0.5 * t)
-                    amp = 1 / 1.5 ** harmonic
-                    x += amp * np.sin(w * t + phase)
-        if voice.decay:
-            x *= np.exp(-t / (0.2 * duration))
+        for note in event.notes:
+            unaliased_harmonics = int((self.sample_rate / 2) // note.frequency)
+            for harmonic, amp in voice.harmonics:
+                if harmonic > unaliased_harmonics:
+                    continue
+                w = 2 * np.pi * note.frequency * harmonic
+                phase = 0.  #0.05 * note.frequency * np.sin(0.5 * t)
+                x += amp * voice.wave_func(w * t + phase)
+        if voice.decay is not None:
+            x *= np.exp(-t / (voice.decay * duration))
         if (scale_factor := 2 * np.max(np.abs(x))) > 0:
             x /= scale_factor
         return x
@@ -260,6 +260,7 @@ class AudioEngine:
                     NoteEvent(notes=[note], duration_beats=d, offset_beats=o)
                     for note, d, o in zip(chord.notes, durations, offsets)
                 ],
+                voice=CleanGuitarVoice,
             )
             for o in offsets:
                 note_sequence.add_volume_control_point(beat=o, mode='step', level=1.)

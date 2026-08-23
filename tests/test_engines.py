@@ -134,11 +134,14 @@ def test_note_sequence_to_audio(tmp_path) -> None:
     (tmp_path / 'dir').mkdir()
     assert not (tmp_path / 'dir' / 'file.wav').exists()
     engine = engines.AudioEngine()
-    sequence = primitives.NoteSequence(events=[
-        primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
-        primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
-        primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
-    ])
+    sequence = primitives.NoteSequence(
+        events=[
+            primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=0.25, offset_beats=0.),
+            primitives.NoteEvent(notes=[primitives.Note('D', 3)], duration_beats=0.25, offset_beats=0.25),
+            primitives.NoteEvent(notes=[primitives.Note('E', 3)], duration_beats=0.25, offset_beats=0.25),
+        ],
+        voice=primitives.PureVoice
+    )
     audio = engine.note_sequence_to_audio(sequence)
     audio.write_wav(str(tmp_path / 'dir' / 'file.wav'))
     assert (tmp_path / 'dir' / 'file.wav').exists()
@@ -147,5 +150,5 @@ def test_note_sequence_to_audio(tmp_path) -> None:
 def test_synthesize_note() -> None:
     engine = engines.AudioEngine(sample_rate=100, tempo=100.)
     event = primitives.NoteEvent(notes=[primitives.Note('C', 3)], duration_beats=1., offset_beats=0.)
-    signal = engine.synthesize_note_event(event, voice=primitives.Voice('guitar'))
+    signal = engine.synthesize_note_event(event, voice=primitives.PureVoice)
     assert len(signal) == engine.beats_to_index(event.duration_beats)

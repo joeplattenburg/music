@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
-from functools import total_ordering
+from functools import total_ordering, partial
 from itertools import product, chain, combinations, combinations_with_replacement
-from typing import Optional, Literal
+from typing import Optional, Literal, Callable
 
 import numpy as np
+import scipy
 
 from music import graph, utils
 from music.audio import Audio
@@ -163,7 +164,7 @@ class NoteSequence:
     def __init__(
             self,
             events: list[NoteEvent],
-            voice: 'Voice',
+            voice: Optional['Voice'] = None,
             volume_control_points: Optional[list[ControlPoint]] = None
     ):
         self.events = events
@@ -171,7 +172,7 @@ class NoteSequence:
         self.duration_beats = (
             max(e.offset_beats + e. duration_beats for e in events) - self.first_offset
         )
-        self.voice = voice
+        self.voice = voice or PureVoice
         self.volume_control_points: list[ControlPoint] = volume_control_points or []
 
     def add_volume_control_point(
@@ -499,15 +500,48 @@ class ChordProgression:
             return motions[0]['progression']
 
 
+@dataclass(kw_only=True)
 class Voice:
-    VOICES = [
-        'pure', 'guitar', 'piano'
-    ]
-    def __init__(self, name: str = 'guitar', decay: bool = None):
-        assert name in self.VOICES
-        self.name = name
-        self.decay = decay if decay is not None else self.name in {'guitar', 'piano'}
+    name: str = ''
+    wave: Literal['sine', 'triange', 'sawtooth']
+    harmonics: list[tuple[float, float]]
+    decay: Optional[float] = None
+    gain: float = 1.
 
+    @property
+    def wave_func(self) -> Callable[[np.ndarray], np.ndarray]:
+        return {
+            'sine': np.sin,
+            'triangle': partial(scipy.signal.sawtooth, width=0.5),
+            'sawtooth': partial(scipy.signal.sawtooth, width=1.0),
+        }[self.wave]
+
+
+PureVoice = Voice(
+    name='pure_tone',
+    wave='sine',
+    harmonics=[(1., 1.)]
+)
+
+CleanGuitarVoice = Voice(
+    name='clean_guitar',
+    wave='sine',
+    harmonics=[
+        (float(i), 1 / (1.5 ** i))
+        for i in range(1, 10)
+    ],
+    decay=0.3,
+)
+
+BrassVoice = Voice(
+    name='clean_guitar',
+    wave='sine',
+    harmonics=[
+        (float(i), 1 / i)
+        for i in range(1, 10)
+    ],
+    decay=None,
+)
 
 def constrained_powerset(
         note_list: list[Note],
