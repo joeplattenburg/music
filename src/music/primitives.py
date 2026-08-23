@@ -500,9 +500,9 @@ class ChordProgression:
             return motions[0]['progression']
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Voice:
-    name: str = ''
+    name: str
     wave: Literal['sine', 'triange', 'sawtooth']
     harmonics: list[tuple[float, float]]
     decay: Optional[float] = None
