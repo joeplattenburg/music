@@ -212,6 +212,7 @@ class AudioEngine:
                 x += amp * voice.wave_func(w * t + phase)
         if voice.decay is not None:
             x *= np.exp(-t / (voice.decay * duration))
+        x = np.clip(x * voice.gain, -1, 1)
         if (scale_factor := 2 * np.max(np.abs(x))) > 0:
             x /= scale_factor
         return x
