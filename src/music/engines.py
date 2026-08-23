@@ -208,7 +208,7 @@ class AudioEngine:
                 if harmonic > unaliased_harmonics:
                     continue
                 w = 2 * np.pi * note.frequency * harmonic
-                phase = 0.  #0.05 * note.frequency * np.sin(0.5 * t)
+                phase = 0.
                 x += amp * voice.wave_func(w * t + phase)
         if voice.decay is not None:
             x *= np.exp(-t / (voice.decay * duration))
