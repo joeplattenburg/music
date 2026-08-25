@@ -127,7 +127,7 @@ def test_audio_from_chord_list() -> None:
     ]
     audios = [engine.chord_to_audio(chord=chord) for chord in chords]
     audio = reduce(add, audios)
-    assert audio.duration == 3.0
+    assert audio.duration == 4 * 3 * 2
 
 
 def test_note_sequence_to_audio(tmp_path) -> None:

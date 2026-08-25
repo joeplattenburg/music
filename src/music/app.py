@@ -7,7 +7,7 @@ import time
 from flask import Flask, render_template, request, url_for, flash, redirect
 from markupsafe import escape
 
-from music import primitives, instruments, graphics, audio, engines
+from music import primitives, instruments, graphics, engines
 
 STATIC_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 TEMPLATE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'templates')
@@ -18,8 +18,7 @@ app = Flask(
     template_folder=TEMPLATE_DIR,
 )
 app.config['SECRET_KEY'] = os.urandom(24).hex()
-AUDIO_ENGINE = engines.AudioEngine(sample_rate=11_025, tempo=60.)
-NOTE_DURATION_BEATS = 2.0
+AUDIO_ENGINE = engines.AudioEngine(sample_rate=11_025, tempo=120.)
 
 
 def cleanup() -> None:
@@ -107,7 +106,7 @@ def guitar_positions_display_notes(
     notes_list = [primitives.Note.from_string(note) for note in escape(notes_string).split(',')]
     chord = primitives.Chord(notes_list)
     fretboard_engine = engines.FretboardEngine(max_fret_span=max_fret_span_, allow_thumb=allow_thumb_)
-    AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS).write_wav(
+    AUDIO_ENGINE.chord_to_audio(chord).write_wav(
         os.path.join(STATIC_DIR, 'temp.wav')
     )
     graphics.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
@@ -179,7 +178,7 @@ def guitar_positions_display_name(
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
     graphics.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
-    AUDIO_ENGINE.chord_to_audio(chord=low_chord, duration_beats=NOTE_DURATION_BEATS).write_wav(
+    AUDIO_ENGINE.chord_to_audio(chord=low_chord).write_wav(
         os.path.join(STATIC_DIR, 'temp.wav')
     )
     positions = instruments.GuitarPosition.sorted(positions_playable)[:top_n_]
@@ -263,7 +262,7 @@ def guitar_chord_progression_display(
     )
     opt_chords = [p.chord for p in opt_positions]
     if opt_chords:
-        audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS) for chord in opt_chords))
+        audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
         audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
         graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     else:
@@ -300,7 +299,7 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     lower_ = primitives.Note.from_string(escape(lower).split('=')[1])
     upper_ = primitives.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
-    audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord, duration_beats=NOTE_DURATION_BEATS) for chord in opt_chords))
+    audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
     audio.write_wav(os.path.join(STATIC_DIR, 'temp.wav'))
     graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
     elapsed_time = f'{(time.time() - t1):.2f}'
