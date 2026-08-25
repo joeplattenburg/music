@@ -502,11 +502,11 @@ class ChordProgression:
 
 @dataclass
 class Voice:
-    name: str
     wave: Literal['sine', 'triange', 'sawtooth']
     harmonics: list[tuple[float, float]]
     decay: Optional[float] = None
     gain: float = 1.
+    name: Optional[str] = None
 
     @property
     def wave_func(self) -> Callable[[np.ndarray], np.ndarray]:
@@ -534,7 +534,7 @@ CleanGuitarVoice = Voice(
 )
 
 BrassVoice = Voice(
-    name='clean_guitar',
+    name='brass',
     wave='sine',
     harmonics=[
         (float(i), 1 / i)
