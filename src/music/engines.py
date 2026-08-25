@@ -6,7 +6,7 @@ import os
 
 import numpy as np
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -188,26 +188,35 @@ class AudioEngine:
         n = int(self.sample_rate * duration)
         waveform = np.zeros(n)
         for event in note_sequence.events:
-            duration_event = self.beats_to_seconds(event.duration_beats)
             offset_event = self.beats_to_seconds(event.offset_beats)
-            n_event = int(self.sample_rate * duration_event)
             n_offset = int(self.sample_rate * offset_event)
-            t_event = np.linspace(0.0, duration_event, num=n_event)
-            signal_event = np.zeros(n_event)
-            for note in event.notes:
-                n_harmonics = min(10, int((self.sample_rate / 2) // note.frequency))
-                for harmonic in range(1, n_harmonics + 1):
-                    w = 2 * np.pi * note.frequency * harmonic
-                    phase = 0.05 * note.frequency * np.sin(0.5 * t_event)
-                    amp = 1 / 1.5 ** harmonic
-                    signal_event += amp * np.sin(w * t_event + phase)
-            if (scale_factor := 2 * np.max(np.abs(signal_event))) > 0:
-                signal_event /= scale_factor
-            waveform[n_offset:(n_offset + n_event)] += signal_event
+            signal = self.synthesize_note_event(event, note_sequence.voice)
+            waveform[n_offset:(n_offset + len(signal))] += signal
         envelope = self.construct_envelope(n, control_points=note_sequence.volume_control_points)
         waveform *= envelope
         waveform /= (2 * np.max(np.abs(waveform)))
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
+
+    def synthesize_note_event(self, event: NoteEvent, voice: Voice) -> np.ndarray:
+        duration = self.beats_to_seconds(event.duration_beats)
+        n = int(self.sample_rate * duration)
+        t = np.linspace(0.0, duration, num=n)
+        x = np.zeros(n)
+        for note in event.notes:
+            unaliased_harmonics = int((self.sample_rate / 2) // note.frequency)
+            for harmonic, amp in voice.harmonics:
+                if harmonic > unaliased_harmonics:
+                    continue
+                w = 2 * np.pi * note.frequency * harmonic
+                phase = 0.
+                x += amp * voice.wave_func(w * t + phase)
+        if voice.decay is not None:
+            x *= np.exp(-t / (voice.decay * duration))
+        x = np.clip(x * voice.gain, -1, 1)
+        if (scale_factor := 2 * np.max(np.abs(x))) > 0:
+            x /= scale_factor
+        return x
+
 
     def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
         envelope = np.ones(n)
@@ -235,8 +244,7 @@ class AudioEngine:
                 envelope[index:next_index] = (start_level - point.level) * np.exp(-t / (point.tau * duration)) + point.level
         return envelope
 
-
-    def chord_to_audio(self, chord: Chord, duration_beats: float = 1.0, delay: bool = True) -> 'Audio':
+    def chord_to_audio(self, chord: Chord) -> 'Audio':
         """
         Convert a chord to an `Audio` waveform;
         the chord is arpeggiated over the first half of the `duration`, and then rings for the second half
@@ -244,25 +252,11 @@ class AudioEngine:
         :param duration_beats: float, total duration [s] of audio
         :param delay: bool, whether to apreggiate the chord
         """
-        if delay:
-            n_notes = len(chord.notes)
-            durations = list(reversed([duration_beats / 2 + i * (duration_beats / 2) / n_notes for i in range(n_notes)]))
-            offsets = [duration_beats - d for d in durations]
-            note_sequence = NoteSequence(
-                events=[
-                    NoteEvent(notes=[note], duration_beats=d, offset_beats=o)
-                    for note, d, o in zip(chord.notes, durations, offsets)
-                ],
-            )
-            for o in offsets:
-                note_sequence.add_volume_control_point(beat=o, mode='step', level=1.)
-                note_sequence.add_volume_control_point(beat=o + 0.01, mode='exponential', level=0., tau=0.2)
-        else:
-            note_sequence = NoteSequence(
-                events=[
-                    NoteEvent(notes=[note], duration_beats=duration_beats, offset_beats=0.)
-                    for note in chord.notes
-                ],
-                volume_control_points=[ControlPoint(level=0., beat=0.01, mode='exponential', tau=0.1)]
-            )
+        note_sequence = NoteSequence(
+            events=[
+                NoteEvent(notes=[note], duration_beats=2 * len(chord.notes) - o, offset_beats=o)
+                for o, note in enumerate(chord.notes)
+            ],
+            voice=CleanGuitarVoice,
+        )
         return self.note_sequence_to_audio(note_sequence)
