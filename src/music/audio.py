@@ -1,4 +1,5 @@
-from typing import Iterable
+import io
+from typing import Iterable, Optional
 
 import numpy as np
 
@@ -15,7 +16,7 @@ class Audio:
         self.waveform = list(waveform)
         self.duration = len(self.waveform) / sample_rate
 
-    def write_wav(self, path: str) -> None:
+    def write_wav(self, path: Optional[str] = None) -> Optional[bytes]:
         """
         Write a wave file of the audio signal
         :param path: str, path to write to
@@ -24,11 +25,21 @@ class Audio:
         audio = np.array([self.waveform, self.waveform]).T
         # Convert to (little-endian) 16 bit integers.
         audio_norm = (audio * (2 ** 15 - 1)).astype("<h")
-        with wave.open(path, "w") as f:
-            f.setnchannels(2)
-            f.setsampwidth(2)
-            f.setframerate(self.sample_rate)
-            f.writeframes(audio_norm.tobytes())
+        if not path:
+            buffer = io.BytesIO()
+            with wave.open(buffer, "wb") as f:
+                f.setnchannels(2)
+                f.setsampwidth(2)
+                f.setframerate(self.sample_rate)
+                f.writeframes(audio_norm.tobytes())
+                buffer.seek(0)
+                return buffer.read()
+        else:
+            with wave.open(path, "w") as f:
+                f.setnchannels(2)
+                f.setsampwidth(2)
+                f.setframerate(self.sample_rate)
+                f.writeframes(audio_norm.tobytes())
 
     def __add__(self, other: 'Audio') -> 'Audio':
         assert self.sample_rate == other.sample_rate
