@@ -107,7 +107,7 @@ def guitar_positions_display_notes(
     chord = primitives.Chord(notes_list)
     fretboard_engine = engines.FretboardEngine(max_fret_span=max_fret_span_, allow_thumb=allow_thumb_)
     audio_bytes = AUDIO_ENGINE.chord_to_audio(chord).write_wav()
-    graphics.Staff(chords=[chord]).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    graphics_bytes = graphics.Staff(chords=[chord]).write_png()
     if tuning_.startswith('custom'):
         tuning_ = tuning_.split(';', maxsplit=1)[1]
         guitar = instruments.Guitar(tuning=instruments.Guitar.parse_tuning(tuning_, how='csv'))
@@ -125,7 +125,8 @@ def guitar_positions_display_notes(
         'guitar_positions_display.html',
         chord=chord, tuning=tuning_, positions=positions_printable, chords_n=1,
         playable_n=len(positions_playable), elapsed_time=elapsed_time,
-        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}"
+        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}",
+        graphics_data_uri=f"data:image/png;base64,{utils.bytes_to_base64(graphics_bytes)}",
     )
 
 
@@ -176,7 +177,7 @@ def guitar_positions_display_name(
         positions_playable = instruments.GuitarPosition.filter_subsets(positions_playable)
     chords_playable = sorted(list(set(p.chord for p in positions_playable)))
     chords_print = chords_playable if all_voicings_ else [low_chord]
-    graphics.Staff(chords=chords_print).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    graphics_bytes = graphics.Staff(chords=chords_print).write_png()
     audio_bytes = AUDIO_ENGINE.chord_to_audio(low_chord).write_wav()
     positions = instruments.GuitarPosition.sorted(positions_playable)[:top_n_]
     positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in positions]
@@ -185,7 +186,8 @@ def guitar_positions_display_name(
         'guitar_positions_display.html',
         chord=chord_name_, tuning=tuning_, positions=positions_printable, chords_n=len(chords_playable),
         playable_n=len(positions_playable), elapsed_time=elapsed_time,
-        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}"
+        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}",
+        graphics_data_uri=f"data:image/png;base64,{utils.bytes_to_base64(graphics_bytes)}",
     )
 
 
@@ -262,7 +264,7 @@ def guitar_chord_progression_display(
     if opt_chords:
         audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
         audio_bytes = audio.write_wav()
-        graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+        graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     else:
         audio_bytes = b''
     positions_printable = ['<br>'.join(p.printable(fingers=show_fingers_)) for p in opt_positions]
@@ -270,7 +272,8 @@ def guitar_chord_progression_display(
     return render_template(
         'guitar_chord_progression_display.html',
         chords=chords_string, tuning=tuning_, positions=positions_printable, elapsed_time=elapsed_time,
-        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}"
+        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}",
+        graphics_data_uri=f"data:image/png;base64,{utils.bytes_to_base64(graphics_bytes)}",
     )
 
 
@@ -300,13 +303,14 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
     audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
     audio_bytes = audio.write_wav()
-    graphics.Staff(chords=opt_chords).write_png(os.path.join(STATIC_DIR, 'temp.png'))
+    graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     elapsed_time = f'{(time.time() - t1):.2f}'
     return render_template(
         'voice_leading_display.html',
         chords=chords_string,
         elapsed_time=elapsed_time,
-        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}"
+        audio_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(audio_bytes)}",
+        graphics_data_uri=f"data:audio/wav;base64,{utils.bytes_to_base64(graphics_bytes)}",
     )
 
 

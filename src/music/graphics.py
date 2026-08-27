@@ -1,8 +1,13 @@
+import io
 import os
 from typing import Optional
 
+import matplotlib
+import matplotlib.pyplot as plt
+
 from music.primitives import Chord
 
+matplotlib.use('Agg')
 IMAGE_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static')
 
 
@@ -27,11 +32,7 @@ class Staff:
                 max(max(chord.notes).staff_line & ~1, 10)
             ))
 
-    def write_png(self, path: str) -> None:
-        """Write a png of the staff to a file"""
-        import matplotlib
-        matplotlib.use('Agg')
-        import matplotlib.pyplot as plt
+    def generate_fig(self) -> plt.Figure:
         figsize = (len(self.chords) + 1, 1.75)
         fig, ax = plt.subplots(figsize=figsize)
         # matplotlib axes will have origin (0, 0) at left of staff, middle c, so staff goes from y = 2 to 10
@@ -70,4 +71,15 @@ class Staff:
         ax.set_aspect(0.9)
         ax.axis('off')
         plt.tight_layout()
-        fig.savefig(path, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        return fig
+
+    def write_png(self, path: Optional[str] = None) -> Optional[bytes]:
+        if not path:
+            buffer = io.BytesIO()
+            self.generate_fig().savefig(buffer, bbox_inches='tight', pad_inches=0)
+            buffer.seek(0)
+            return buffer.read()
+        else:
+            self.generate_fig().savefig(path, bbox_inches='tight', pad_inches=0)
+
