@@ -5,6 +5,7 @@ from multiprocessing import Pool
 import os
 
 import numpy as np
+import scipy
 
 from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice
 from music.instruments import Guitar, GuitarPosition
@@ -170,9 +171,10 @@ class FretboardEngine:
 
 
 class AudioEngine:
-    def __init__(self, sample_rate: int = 44_100, tempo: float = 120.):
+    def __init__(self, sample_rate: int = 44_100, tempo: float = 120., smoothing_tau: float = 0.005):
         self.sample_rate = sample_rate
         self.tempo = tempo
+        self.smoothing_tau = smoothing_tau
 
     def beats_to_seconds(self, beats: float) -> float:
         return (60 / self.tempo) * beats
@@ -242,6 +244,12 @@ class AudioEngine:
                 duration = self.beats_to_seconds(next_point.beat - point.beat)
                 t = np.linspace(0., duration, n)
                 envelope[index:next_index] = (start_level - point.level) * np.exp(-t / (point.tau * duration)) + point.level
+
+        if self.smoothing_tau:
+            alpha = 1.0 - np.exp(-1.0 / (self.sample_rate * self.smoothing_tau))
+            b = [alpha]
+            a = [1.0, -(1.0 - alpha)]
+            envelope = scipy.signal.lfilter(b, a, envelope)
         return envelope
 
     def chord_to_audio(self, chord: Chord) -> 'Audio':
