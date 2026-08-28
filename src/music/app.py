@@ -1,6 +1,6 @@
 import argparse
 from functools import reduce
-from operator import add
+from operator import matmul
 import os
 import time
 
@@ -262,7 +262,7 @@ def guitar_chord_progression_display(
     )
     opt_chords = [p.chord for p in opt_positions]
     if opt_chords:
-        audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
+        audio = reduce(matmul, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
         audio_bytes = audio.write_wav()
         graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     else:
@@ -301,7 +301,7 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     lower_ = primitives.Note.from_string(escape(lower).split('=')[1])
     upper_ = primitives.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
-    audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
+    audio = reduce(matmul, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
     audio_bytes = audio.write_wav()
     graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     elapsed_time = f'{(time.time() - t1):.2f}'

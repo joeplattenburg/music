@@ -43,7 +43,18 @@ class Audio:
 
     def __add__(self, other: 'Audio') -> 'Audio':
         assert self.sample_rate == other.sample_rate
+        assert len(self.waveform) == len(other.waveform)
+        return Audio(
+            sample_rate=self.sample_rate,
+            waveform=np.array(self.waveform) + np.array(other.waveform)
+        )
+
+    def concat(self, other: 'Audio') -> 'Audio':
+        assert self.sample_rate == other.sample_rate
         return Audio(
             sample_rate=self.sample_rate,
             waveform=self.waveform + other.waveform
         )
+
+    def __matmul__(self, other) -> 'Audio':
+        return self.concat(other)

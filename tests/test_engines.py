@@ -1,6 +1,6 @@
 import os
 from functools import reduce
-from operator import add
+from operator import matmul
 
 import pytest
 
@@ -126,7 +126,7 @@ def test_audio_from_chord_list() -> None:
         primitives.ChordName('F7').get_chord(),
     ]
     audios = [engine.chord_to_audio(chord=chord) for chord in chords]
-    audio = reduce(add, audios)
+    audio = reduce(matmul, audios)
     assert audio.duration == 4 * 3 * 2
 
 

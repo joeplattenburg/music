@@ -9,4 +9,8 @@ def test_audio_add() -> None:
     x1 = audio.Audio(sample_rate=sample_rate, waveform=np.sin(t))
     x2 = audio.Audio(sample_rate=sample_rate, waveform=np.sin(2 * t))
     x3 = x1 + x2
-    assert x3.duration == 2.0
+    x4 = x1 @ x2
+    assert x3.duration == 1.0
+    assert x4.duration == 2.0
+    assert max(x3.waveform) > max(x1.waveform)
+    assert max(x4.waveform) == max(max(x1.waveform), max(x2.waveform))
