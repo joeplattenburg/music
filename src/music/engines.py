@@ -171,7 +171,7 @@ class FretboardEngine:
 
 
 class AudioEngine:
-    def __init__(self, sample_rate: int = 44_100, tempo: float = 120., smoothing_tau: float = 0.005):
+    def __init__(self, sample_rate: int = 44_100, tempo: float = 120., smoothing_tau: Optional[float] = 0.005):
         self.sample_rate = sample_rate
         self.tempo = tempo
         self.smoothing_tau = smoothing_tau
@@ -213,12 +213,15 @@ class AudioEngine:
                 phase = 0.
                 x += amp * voice.wave_func(w * t + phase)
         if voice.decay is not None:
-            x *= np.exp(-t / (voice.decay * duration))
+            envelope = np.exp(-t / (voice.decay * duration))
+        else:
+            envelope = np.ones_like(t)
+        envelope = self.apply_filter(envelope)
+        x = envelope * x
         x = np.clip(x * voice.gain, -1, 1)
         if (scale_factor := 2 * np.max(np.abs(x))) > 0:
             x /= scale_factor
         return x
-
 
     def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
         envelope = np.ones(n)
@@ -244,13 +247,16 @@ class AudioEngine:
                 duration = self.beats_to_seconds(next_point.beat - point.beat)
                 t = np.linspace(0., duration, n)
                 envelope[index:next_index] = (start_level - point.level) * np.exp(-t / (point.tau * duration)) + point.level
+        envelope = self.apply_filter(envelope)
+        return envelope
 
+    def apply_filter(self, x: np.ndarray) -> np.ndarray:
         if self.smoothing_tau:
             alpha = 1.0 - np.exp(-1.0 / (self.sample_rate * self.smoothing_tau))
             b = [alpha]
             a = [1.0, -(1.0 - alpha)]
-            envelope = scipy.signal.lfilter(b, a, envelope)
-        return envelope
+            x = scipy.signal.lfilter(b, a, x)
+        return x
 
     def chord_to_audio(self, chord: Chord) -> 'Audio':
         """
