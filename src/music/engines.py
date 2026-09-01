@@ -140,33 +140,11 @@ class FretboardEngine:
         ]
         if any(len(p) == 0 for p in positions):
             return []
-        position_node = tuple[int, Optional[GuitarPosition]]
-        # for each chord, add the index to ensure the nodes are unique
-        positions_flat = [(i, pp) for i, p in enumerate(positions) for pp in p]
-        initial, terminal = (-1, None), (chord_progression.n_chords, None)
-        nodes: list[position_node] = [initial, *positions_flat, terminal]
-        edges: list[graph.Edge] = []
-        initial_edges = [
-            graph.Edge(start=initial, end=(0, p), weight=0.)
-            for p in positions[0]
-        ]
-        terminal_edges = [
-            graph.Edge(start=(chord_progression.n_chords - 1, p), end=terminal, weight=0.)
-            for p in positions[-1]
-        ]
-        for i, p in enumerate(positions[:-1]):
-            p_next = positions[i + 1]
-            for start, end in product(p, p_next):
-                edge = graph.Edge(
-                    start=(i, start),
-                    end=(i + 1, end),
-                    weight=start.motion_distance(end, respect_fingers=respect_fingers)
-                )
-                edges.append(edge)
-        edges = initial_edges + edges + terminal_edges
-        g = graph.Graph(nodes=nodes, edges=edges)
-        prog: list[position_node] = g.shortest_path(initial, terminal)  # type: ignore
-        return [p for _, p in prog[1:-1]]
+        return (
+            graph.LayeredGraph(
+                layers=positions, cost=lambda x, y: x.motion_distance(y, respect_fingers=respect_fingers)
+            ).shortest_path()
+        )
 
 
 class AudioEngine:

@@ -485,8 +485,7 @@ def test_chord_comparison() -> None:
     assert primitives.Chord([primitives.Note('C', 0)]) == primitives.Chord([primitives.Note('C', 0)])
     assert primitives.Chord([primitives.Note('C', 0)]) < primitives.Chord([primitives.Note('D', 0)])
     assert primitives.Chord([primitives.Note('C', 0)]) < primitives.Chord([primitives.Note('C', 0), primitives.Note('D', 1)])
-    assert primitives.Chord([primitives.Note('C', 0), primitives.Note('D', 1)]) < primitives.Chord([
-                                                                                                                               primitives.Note('C', 0), primitives.Note('E', 1)])
+    assert primitives.Chord([primitives.Note('C', 0), primitives.Note('D', 1)]) < primitives.Chord([primitives.Note('C', 0), primitives.Note('E', 1)])
 
 
 def test_semitone_distance() -> None:
@@ -529,14 +528,7 @@ def test_voice_leading() -> None:
     result1 = cp.optimal_voice_leading(
         lower=primitives.Note('C', 2),
         upper=primitives.Note('C', 4),
-        use_dijkstra=True
     )
-    result2 = cp.optimal_voice_leading(
-        lower=primitives.Note('C', 2),
-        upper=primitives.Note('C', 4),
-        use_dijkstra=False
-    )
-    assert result1 == result2
 
 
 def test_note_event() -> None:

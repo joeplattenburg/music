@@ -454,50 +454,12 @@ class ChordProgression:
         self.chords = chords
         self.n_chords = len(chords)
 
-    def optimal_voice_leading(self, lower: Note, upper: Note, use_dijkstra: bool = True) -> list[Chord]:
+    def optimal_voice_leading(self, lower: Note, upper: Note) -> list[Chord]:
         voicings = [
             chord.get_all_chords(lower=lower, upper=upper)
             for chord in self.chords
         ]
-        if use_dijkstra:
-            # for each chord, add the index to ensure the nodes are unique
-            chord_node = tuple[int, Optional[Chord]]
-            voicings_flat = [(i, vv) for i, v in enumerate(voicings) for vv in v]
-            initial: chord_node = (-1, None)
-            terminal: chord_node = (self.n_chords, None)
-            nodes: list[chord_node] = [initial, *voicings_flat, terminal]
-            edges: list[graph.Edge] = []
-            initial_edges = [
-                graph.Edge(start=initial, end=(0, v), weight=0.)
-                for v in voicings[0]
-            ]
-            terminal_edges = [
-                graph.Edge(start=(self.n_chords - 1, v), end=terminal, weight=0.)
-                for v in voicings[-1]
-            ]
-            for i, v in enumerate(voicings[:-1]):
-                v_next = voicings[i + 1]
-                for start, end in product(v, v_next):
-                    edge = graph.Edge(start=(i, start), end=(i + 1, end), weight=start.semitone_distance(end))
-                    edges.append(edge)
-            edges = initial_edges + edges + terminal_edges
-            g = graph.Graph(nodes=nodes, edges=edges)
-            prog: list[chord_node] = g.shortest_path(initial, terminal)  # type: ignore
-            return [c for _, c in prog[1:-1]]
-        else:
-            motions = []
-            for prog_ in product(*voicings):
-                prog: list[Chord] = list(prog_)
-                motion = sum([
-                    c.semitone_distance(prog[i + 1])
-                    for i, c in enumerate(prog[:-1])
-                ])
-                motions.append({
-                    'progression': prog,
-                    'motion': motion
-                })
-            motions = sorted(motions, key=lambda x: x['motion'])
-            return motions[0]['progression']
+        return graph.LayeredGraph(layers=voicings, cost=lambda x, y: x.semitone_distance(y)).shortest_path()
 
 
 @dataclass
