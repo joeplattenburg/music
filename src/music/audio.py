@@ -44,10 +44,21 @@ class Audio:
     def __add__(self, other: 'Audio') -> 'Audio':
         assert self.sample_rate == other.sample_rate
         assert len(self.waveform) == len(other.waveform)
-        return Audio(
-            sample_rate=self.sample_rate,
-            waveform=np.array(self.waveform) + np.array(other.waveform)
-        )
+        new = np.array(self.waveform) + np.array(other.waveform)
+        if (scale_factor := 2 * np.max(np.abs(new))) > 0:
+            new /= scale_factor
+        return Audio(sample_rate=self.sample_rate, waveform=new)
+
+    @staticmethod
+    def sum(audios: list['Audio']) -> 'Audio':
+        assert all(audios[0].sample_rate == a.sample_rate for a in audios)
+        assert all(len(audios[0].waveform) == len(a.waveform) for a in audios)
+        new = np.zeros(len(audios[0].waveform))
+        for a in audios:
+            new += a.waveform
+        if (scale_factor := 2 * np.max(np.abs(new))) > 0:
+            new /= scale_factor
+        return Audio(sample_rate=audios[0].sample_rate, waveform=new)
 
     def concat(self, other: 'Audio') -> 'Audio':
         assert self.sample_rate == other.sample_rate

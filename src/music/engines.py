@@ -196,7 +196,8 @@ class AudioEngine:
             waveform[n_offset:(n_offset + len(signal))] += signal
         envelope = self.construct_envelope(n, control_points=note_sequence.volume_control_points)
         waveform *= envelope
-        waveform /= (2 * np.max(np.abs(waveform)))
+        if (scale_factor := 2 * np.max(np.abs(waveform))) > 0:
+            waveform /= scale_factor
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
 
     def synthesize_note_event(self, event: NoteEvent, voice: Voice) -> np.ndarray:
