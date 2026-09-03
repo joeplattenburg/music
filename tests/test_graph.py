@@ -1,8 +1,7 @@
-
-from music import graph
-
 import numpy as np
 import pytest
+
+from music import graph
 
 
 def test_graph() -> None:
@@ -16,6 +15,19 @@ def test_graph() -> None:
     g = graph.Graph(nodes=nodes, edges=edges)
     expected = ['a', 'c', 'd']
     actual = g.shortest_path('a', 'd')
+    assert actual == expected
+
+def test_layered_graph() -> None:
+    layers = [['a', 'b'], ['c', 'd']]
+    def cost(self, other) -> float:
+        if self == 'a':
+            return 1. if other == 'c' else 2.
+        else:
+            return 2. if other == 'c' else 3.
+
+    g = graph.LayeredGraph(layers=layers, cost=cost)
+    expected = ['a', 'c']
+    actual = g.shortest_path()
     assert actual == expected
 
 
