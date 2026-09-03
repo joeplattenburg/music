@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Optional
+from typing import Optional, Literal
 from functools import partial
 from multiprocessing import Pool
 import os
@@ -7,7 +7,7 @@ import os
 import numpy as np
 import scipy
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice, PureVoice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
 from music import graph
@@ -275,3 +275,42 @@ class AudioEngine:
             voice=CleanGuitarVoice,
         )
         return self.note_sequence_to_audio(note_sequence)
+
+
+class SonogramEngine:
+    def __init__(
+            self, *,
+            tempo: float = 120.,
+            scale: Literal['pentatonic', 'diatonic', 'chromatic', 'whole_tone'] = 'diatonic',
+            voice: Literal['pure_tone'] = 'pure_tone'
+    ):
+        self.tempo = tempo
+        self.scale = scale
+        self.notes = {
+            'pentatonic': ['C', 'D', 'E', 'G', 'A'],
+            'diatonic': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+            'chromatic': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+            'whole_tone': ['C', 'D', 'E', 'F#', 'G#', 'A#'],
+        }[self.scale]
+        self.audio_engine = AudioEngine(tempo=tempo)
+        self.voice = {
+            'pure_tone': PureVoice,
+        }[voice]
+
+    def image_to_audio(self, image: np.ndarray) -> Audio:
+        N = len(self.notes)
+        notes, duration = image.shape
+        audios = []
+        for y in range(notes):
+            note, octave = y % N, y // N
+            envelope = image[y, :]
+            sequence = NoteSequence(
+                events=[NoteEvent([Note(self.notes[note], octave + 3)], duration_beats=duration)],
+                volume_control_points=[
+                    ControlPoint(beat=float(i), level=l, mode='step')
+                    for i, l in enumerate(envelope)
+                ],
+                voice=self.voice,
+            )
+            audios.append(self.audio_engine.note_sequence_to_audio(sequence))
+        return Audio.sum(audios)
