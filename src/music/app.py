@@ -2,10 +2,13 @@ import argparse
 from functools import reduce
 from operator import matmul
 import os
+import io
 import time
+from PIL import Image
 
-from flask import Flask, render_template, request, url_for, flash, redirect
+from flask import Flask, render_template, request, url_for, flash, redirect, send_file
 from markupsafe import escape
+import numpy as np
 
 from music import primitives, instruments, graphics, engines, utils
 
@@ -32,6 +35,26 @@ def cleanup() -> None:
 def home():
     return render_template('base.html')
 
+@app.route("/sonogram")
+def sonogram():
+    return render_template('sonogram.html')
+
+
+@app.route("/sonogram", methods=["POST"])
+def sonogram_display():
+    data = request.get_json()
+    image_data_uri = data.get("image_data")
+    header, encoded_string = image_data_uri.split(",", 1)
+    image_bytes = utils.base64_to_bytes(encoded_string)
+    engine = engines.SonogramEngine(tempo=500)
+    matrix = engine.bytes_to_image_matrix(image_bytes)
+    audio_ = engine.image_to_audio(matrix)
+    audio_bytes = audio_.write_wav()
+    return send_file(
+        io.BytesIO(audio_bytes),
+        mimetype="audio/wav",
+        as_attachment=False
+    )
 
 @app.route("/guitar_positions", methods=('GET', 'POST'))
 def guitar_positions():

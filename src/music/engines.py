@@ -3,6 +3,8 @@ from typing import Optional, Literal
 from functools import partial
 from multiprocessing import Pool
 import os
+import io
+from PIL import Image
 
 import numpy as np
 import scipy
@@ -10,7 +12,7 @@ import scipy
 from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice, PureVoice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
-from music import graph
+from music import graph, utils
 
 
 class FretboardEngine:
@@ -316,3 +318,9 @@ class SonogramEngine:
             )
             audios.append(self.audio_engine.note_sequence_to_audio(sequence))
         return Audio.sum(audios)
+
+    def bytes_to_image_matrix(self, b: bytes, block_size: int = 10) -> np.ndarray:
+        image_matrix = np.array(Image.open(io.BytesIO(b)).convert("L"))
+        image_matrix = (255 - image_matrix) / 255.
+        height, width = image_matrix.shape
+        return image_matrix.reshape(height // block_size, block_size, width // block_size, block_size).mean(axis=(1, 3))
