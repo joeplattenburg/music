@@ -281,6 +281,7 @@ class SonogramEngine:
     def __init__(
             self, *,
             tempo: float = 120.,
+            sample_rate: int = 44_100,
             scale: Literal['pentatonic', 'diatonic', 'chromatic', 'whole_tone'] = 'diatonic',
             voice: Literal['pure_tone'] = 'pure_tone'
     ):
@@ -292,16 +293,17 @@ class SonogramEngine:
             'chromatic': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
             'whole_tone': ['C', 'D', 'E', 'F#', 'G#', 'A#'],
         }[self.scale]
-        self.audio_engine = AudioEngine(tempo=tempo)
+        self.audio_engine = AudioEngine(tempo=tempo, sample_rate=sample_rate)
         self.voice = {
             'pure_tone': PureVoice,
         }[voice]
 
     def image_to_audio(self, image: np.ndarray) -> Audio:
+        image = image[::-1, :]
         N = len(self.notes)
         notes, duration = image.shape
         audios = []
-        for y in range(notes):
+        for y in range(notes - 1, 0, -1):
             note, octave = y % N, y // N
             envelope = image[y, :]
             sequence = NoteSequence(

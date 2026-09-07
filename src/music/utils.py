@@ -23,3 +23,7 @@ def best_match(s: str, choices: list[str]) -> str:
 
 def bytes_to_base64(b: bytes) -> str:
     return base64.b64encode(b).decode('utf-8')
+
+
+def base64_to_bytes(s: str) -> base64:
+    return base64.b64decode(s)
