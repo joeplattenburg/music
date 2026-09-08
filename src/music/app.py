@@ -4,11 +4,9 @@ from operator import matmul
 import os
 import io
 import time
-from PIL import Image
 
 from flask import Flask, render_template, request, url_for, flash, redirect, send_file
 from markupsafe import escape
-import numpy as np
 
 from music import primitives, instruments, graphics, engines, utils
 
