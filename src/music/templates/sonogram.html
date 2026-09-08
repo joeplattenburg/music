@@ -29,20 +29,36 @@
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
             }
-
-            canvas.addEventListener('mousedown', () => isDrawing = true);
-            canvas.addEventListener('mouseup', () => isDrawing = false);
-            canvas.addEventListener('mousemove', draw);
-
-            function draw(event) {
-                if (!isDrawing) return;
-                ctx.fillStyle = 'black';
-                ctx.fillRect(event.offsetX, event.offsetY, 4, 4);
-            }
-
             function clearCanvas() {
                 ctx.fillStyle = "white";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; drawMouse(e); });
+            canvas.addEventListener('mousemove', drawMouse);
+            window.addEventListener('mouseup', () => isDrawing = false);
+
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; drawTouch(e); e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { drawTouch(e); e.preventDefault(); }, { passive: false });
+            window.addEventListener('touchend', () => isDrawing = false);
+
+            function drawMouse(event) {
+                if (!isDrawing) return;
+                paintPixelBlock(event.offsetX, event.offsetY);
+            }
+
+            function drawTouch(event) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = event.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                paintPixelBlock(x, y);
+            }
+
+            function paintPixelBlock(x, y) {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(x, y, 4, 4);
             }
 
             async function synthesizeAudio() {
