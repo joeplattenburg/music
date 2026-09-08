@@ -5,9 +5,9 @@
 <p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
 <p>
     The chord progression you entered was: {{ chords }}<br>
-    <audio src="/static/temp.wav" controls></audio>
+    <audio src="{{ audio_data_uri }}" controls></audio>
     <br>
-    <img src="/static/temp.png"></img>
+    <img src="{{ graphics_data_uri }}"></img>
     <br>
     For a guitar tuned to {{ tuning }}, the optimal positions are:
 </p>

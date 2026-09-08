@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{% block title %} Sonogram {% endblock %}</h2>
+    <style>
+        canvas { border: 2px solid black; cursor: crosshair; background: white; }
+    </style>
+
+    <body>
+        <p>Draw a picture to convert to sound</p>
+
+        <canvas id="canvas" width="400" height="300"></canvas>
+        <br><br>
+
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="synthesizeAudio()">Synthesize & Play</button>
+        <br><br>
+
+        <audio id="audioPlayer" controls></audio>
+
+        <script>
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const audioPlayer = document.getElementById('audioPlayer');
+            let isDrawing = false;
+
+            initializeCanvas();
+            function initializeCanvas() {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            function clearCanvas() {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; drawMouse(e); });
+            canvas.addEventListener('mousemove', drawMouse);
+            window.addEventListener('mouseup', () => isDrawing = false);
+
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; drawTouch(e); e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { drawTouch(e); e.preventDefault(); }, { passive: false });
+            window.addEventListener('touchend', () => isDrawing = false);
+
+            function drawMouse(event) {
+                if (!isDrawing) return;
+                paintPixelBlock(event.offsetX, event.offsetY);
+            }
+
+            function drawTouch(event) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = event.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                paintPixelBlock(x, y);
+            }
+
+            function paintPixelBlock(x, y) {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(x, y, 4, 4);
+            }
+
+            async function synthesizeAudio() {
+                const imageDataUrl = canvas.toDataURL('image/png');
+                const response = await fetch('/sonogram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image_data: imageDataUrl })
+                });
+
+                const audioBlob = await response.blob();
+                const blobUrl = URL.createObjectURL(audioBlob);
+
+                audioPlayer.src = blobUrl;
+                audioPlayer.play();
+            }
+        </script>
+    </body>
+
+{% endblock %}
