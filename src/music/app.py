@@ -1,10 +1,11 @@
 import argparse
 from functools import reduce
-from operator import add
+from operator import matmul
 import os
+import io
 import time
 
-from flask import Flask, render_template, request, url_for, flash, redirect
+from flask import Flask, render_template, request, url_for, flash, redirect, send_file
 from markupsafe import escape
 
 from music import primitives, instruments, graphics, engines, utils
@@ -32,6 +33,26 @@ def cleanup() -> None:
 def home():
     return render_template('base.html')
 
+@app.route("/sonogram")
+def sonogram():
+    return render_template('sonogram.html')
+
+
+@app.route("/sonogram", methods=["POST"])
+def sonogram_display():
+    data = request.get_json()
+    image_data_uri = data.get("image_data")
+    header, encoded_string = image_data_uri.split(",", 1)
+    image_bytes = utils.base64_to_bytes(encoded_string)
+    engine = engines.SonogramEngine(tempo=500)
+    matrix = engine.bytes_to_image_matrix(image_bytes)
+    audio_ = engine.image_to_audio(matrix)
+    audio_bytes = audio_.write_wav()
+    return send_file(
+        io.BytesIO(audio_bytes),
+        mimetype="audio/wav",
+        as_attachment=False
+    )
 
 @app.route("/guitar_positions", methods=('GET', 'POST'))
 def guitar_positions():
@@ -262,7 +283,7 @@ def guitar_chord_progression_display(
     )
     opt_chords = [p.chord for p in opt_positions]
     if opt_chords:
-        audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
+        audio = reduce(matmul, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
         audio_bytes = audio.write_wav()
         graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     else:
@@ -301,7 +322,7 @@ def voice_leading_display(chords_string: str, lower: str, upper: str):
     lower_ = primitives.Note.from_string(escape(lower).split('=')[1])
     upper_ = primitives.Note.from_string(escape(upper).split('=')[1])
     opt_chords = chord_progression.optimal_voice_leading(lower=lower_, upper=upper_)
-    audio = reduce(add, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
+    audio = reduce(matmul, (AUDIO_ENGINE.chord_to_audio(chord) for chord in opt_chords))
     audio_bytes = audio.write_wav()
     graphics_bytes = graphics.Staff(chords=opt_chords).write_png()
     elapsed_time = f'{(time.time() - t1):.2f}'

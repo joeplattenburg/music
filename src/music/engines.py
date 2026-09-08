@@ -1,15 +1,18 @@
 from itertools import product
-from typing import Optional
+from typing import Optional, Literal
 from functools import partial
 from multiprocessing import Pool
 import os
+import io
+from PIL import Image
 
 import numpy as np
+import scipy
 
-from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice
+from music.primitives import Note, NoteEvent, NoteSequence, Chord, ChordName, ChordProgression, ControlPoint, Voice, CleanGuitarVoice, PureVoice
 from music.instruments import Guitar, GuitarPosition
 from music.audio import Audio
-from music import graph
+from music import graph, utils
 
 
 class FretboardEngine:
@@ -148,9 +151,10 @@ class FretboardEngine:
 
 
 class AudioEngine:
-    def __init__(self, sample_rate: int = 44_100, tempo: float = 120.):
+    def __init__(self, sample_rate: int = 44_100, tempo: float = 120., smoothing_tau: Optional[float] = 0.005):
         self.sample_rate = sample_rate
         self.tempo = tempo
+        self.smoothing_tau = smoothing_tau
 
     def beats_to_seconds(self, beats: float) -> float:
         return (60 / self.tempo) * beats
@@ -172,7 +176,8 @@ class AudioEngine:
             waveform[n_offset:(n_offset + len(signal))] += signal
         envelope = self.construct_envelope(n, control_points=note_sequence.volume_control_points)
         waveform *= envelope
-        waveform /= (2 * np.max(np.abs(waveform)))
+        if (scale_factor := 2 * np.max(np.abs(waveform))) > 0:
+            waveform /= scale_factor
         return Audio(sample_rate=self.sample_rate, waveform=waveform)
 
     def synthesize_note_event(self, event: NoteEvent, voice: Voice) -> np.ndarray:
@@ -189,12 +194,15 @@ class AudioEngine:
                 phase = 0.
                 x += amp * voice.wave_func(w * t + phase)
         if voice.decay is not None:
-            x *= np.exp(-t / (voice.decay * duration))
+            envelope = np.exp(-t / (voice.decay * duration))
+        else:
+            envelope = np.ones_like(t)
+        envelope = self.apply_filter(envelope)
+        x = envelope * x
         x = np.clip(x * voice.gain, -1, 1)
         if (scale_factor := 2 * np.max(np.abs(x))) > 0:
             x /= scale_factor
         return x
-
 
     def construct_envelope(self, n: int, control_points: list[ControlPoint]) -> np.ndarray:
         envelope = np.ones(n)
@@ -220,7 +228,16 @@ class AudioEngine:
                 duration = self.beats_to_seconds(next_point.beat - point.beat)
                 t = np.linspace(0., duration, n)
                 envelope[index:next_index] = (start_level - point.level) * np.exp(-t / (point.tau * duration)) + point.level
+        envelope = self.apply_filter(envelope)
         return envelope
+
+    def apply_filter(self, x: np.ndarray) -> np.ndarray:
+        if self.smoothing_tau:
+            alpha = 1.0 - np.exp(-1.0 / (self.sample_rate * self.smoothing_tau))
+            b = [alpha]
+            a = [1.0, -(1.0 - alpha)]
+            x = scipy.signal.lfilter(b, a, x)
+        return x
 
     def chord_to_audio(self, chord: Chord) -> 'Audio':
         """
@@ -238,3 +255,50 @@ class AudioEngine:
             voice=CleanGuitarVoice,
         )
         return self.note_sequence_to_audio(note_sequence)
+
+
+class SonogramEngine:
+    def __init__(
+            self, *,
+            tempo: float = 120.,
+            sample_rate: int = 44_100,
+            scale: Literal['pentatonic', 'diatonic', 'chromatic', 'whole_tone'] = 'diatonic',
+            voice: Literal['pure_tone'] = 'pure_tone'
+    ):
+        self.tempo = tempo
+        self.scale = scale
+        self.notes = {
+            'pentatonic': ['C', 'D', 'E', 'G', 'A'],
+            'diatonic': ['C', 'D', 'E', 'F', 'G', 'A', 'B'],
+            'chromatic': ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'],
+            'whole_tone': ['C', 'D', 'E', 'F#', 'G#', 'A#'],
+        }[self.scale]
+        self.audio_engine = AudioEngine(tempo=tempo, sample_rate=sample_rate)
+        self.voice = {
+            'pure_tone': PureVoice,
+        }[voice]
+
+    def image_to_audio(self, image: np.ndarray) -> Audio:
+        image = image[::-1, :]
+        N = len(self.notes)
+        notes, duration = image.shape
+        audios = []
+        for y in range(notes - 1, 0, -1):
+            note, octave = y % N, y // N
+            envelope = image[y, :]
+            sequence = NoteSequence(
+                events=[NoteEvent([Note(self.notes[note], octave + 3)], duration_beats=duration)],
+                volume_control_points=[
+                    ControlPoint(beat=float(i), level=l, mode='step')
+                    for i, l in enumerate(envelope)
+                ],
+                voice=self.voice,
+            )
+            audios.append(self.audio_engine.note_sequence_to_audio(sequence))
+        return Audio.sum(audios)
+
+    def bytes_to_image_matrix(self, b: bytes, block_size: int = 10) -> np.ndarray:
+        image_matrix = np.array(Image.open(io.BytesIO(b)).convert("L"))
+        image_matrix = (255 - image_matrix) / 255.
+        height, width = image_matrix.shape
+        return image_matrix.reshape(height // block_size, block_size, width // block_size, block_size).mean(axis=(1, 3))
