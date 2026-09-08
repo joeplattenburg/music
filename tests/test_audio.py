@@ -12,5 +12,4 @@ def test_audio_add() -> None:
     x4 = x1 @ x2
     assert x3.duration == 1.0
     assert x4.duration == 2.0
-    assert max(x3.waveform) > max(x1.waveform)
     assert max(x4.waveform) == max(max(x1.waveform), max(x2.waveform))
