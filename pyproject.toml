@@ -7,7 +7,7 @@ name = "music"
 dynamic = ["version"]
 description = "Helper tools for music"
 readme = "README.md"
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.12,<3.15"
 dependencies = [
     "numpy<2",
     "scipy>=1.13.1",
@@ -49,11 +49,12 @@ omit = [
 patch = ["subprocess"]
 
 [tool.tox]
-env_list = ["py39", "py310", "py311", "py312"]
+env_list = ["3.12", "3.13", "3.14"]
 isolated_build = true
 
 [tool.tox.env_run_base]
-extras = ['test', 'media']
+extras = ['app']
+dependency_groups = ['dev']
 commands = [
     ["pytest"],
     #["ruff", "check"],
