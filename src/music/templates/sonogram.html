@@ -12,8 +12,30 @@
         <canvas id="canvas" width="400" height="300"></canvas>
         <br><br>
 
+        <label for="voice">Voice:</label>
+        <select name="voice" id="voice">
+          <option value="pure_tone">Pure</option>
+          <option value="triangle">Triangle</option>
+          <option value="sawtooth">Sawtooth</option>
+        </select>
+        <br><br>
+
+        <label for="scale">Scale:</label>
+        <select name="scale" id="scale">
+          <option value="diatonic">Diatonic</option>
+          <option value="pentatonic">Pentatonic</option>
+          <option value="chromatic">Chromatic</option>
+          <option value="whole_tone">Whole Tone</option>
+        </select>
+        <br><br>
+
+        <label for="speed">Speed:</label>
+        <input type="range" id="speed" name="speed" min="1" max="10" step="1" />
+
+        <br><br>
+
         <button onclick="clearCanvas()">Clear</button>
-        <button onclick="synthesizeAudio()">Synthesize & Play</button>
+        <button onclick="synthesizeAudio()">Synthesize Audio</button>
         <br><br>
 
         <audio id="audioPlayer" controls></audio>
@@ -62,11 +84,20 @@
             }
 
             async function synthesizeAudio() {
+                const selectedVoice = document.getElementById('voice').value;
+                const selectedScale = document.getElementById('scale').value;
+                const selectedSpeed = document.getElementById('speed').value;
                 const imageDataUrl = canvas.toDataURL('image/png');
+
                 const response = await fetch('/sonogram', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ image_data: imageDataUrl })
+                    body: JSON.stringify({
+                        image_data: imageDataUrl,
+                        voice: selectedVoice,
+                        scale: selectedScale,
+                        speed: parseInt(selectedSpeed)
+                    })
                 });
 
                 const audioBlob = await response.blob();

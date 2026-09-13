@@ -41,10 +41,11 @@ def sonogram():
 @app.route("/sonogram", methods=["POST"])
 def sonogram_display():
     data = request.get_json()
+    tempo = 500 + 100 * (data['speed'] - 5)
     image_data_uri = data.get("image_data")
     header, encoded_string = image_data_uri.split(",", 1)
     image_bytes = utils.base64_to_bytes(encoded_string)
-    engine = engines.SonogramEngine(tempo=500)
+    engine = engines.SonogramEngine(tempo=tempo, scale=data['scale'], voice=data['voice'])
     matrix = engine.bytes_to_image_matrix(image_bytes)
     audio_ = engine.image_to_audio(matrix)
     audio_bytes = audio_.write_wav()

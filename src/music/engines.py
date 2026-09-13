@@ -276,6 +276,8 @@ class SonogramEngine:
         self.audio_engine = AudioEngine(tempo=tempo, sample_rate=sample_rate)
         self.voice = {
             'pure_tone': PureVoice,
+            'triangle': Voice(wave='triangle', harmonics=[(1, 1)]),
+            'sawtooth': Voice(wave='sawtooth', harmonics=[(1, 1)])
         }[voice]
 
     def image_to_audio(self, image: np.ndarray) -> Audio:
