@@ -8,9 +8,18 @@
 
     <body>
         <p>Draw a picture to convert to sound</p>
+        <div>
+        <input type="radio" id="draw" name="draw_mode" value="draw" checked />
+        <label for="draw">Draw</label>
+        </div>
 
+        <div>
+        <input type="radio" id="erase" name="draw_mode" value="erase" />
+        <label for="erase">Erase</label>
+         </div>
+        <br>
         <canvas id="canvas" width="400" height="300"></canvas>
-        <br><br>
+        <br>
 
         <label for="voice">Voice:</label>
         <select name="voice" id="voice">
@@ -79,8 +88,14 @@
             }
 
             function paintPixelBlock(x, y) {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(x, y, 4, 4);
+                const drawMode = document.getElementById('draw');
+                if (drawMode.checked) {
+                    ctx.fillStyle = 'black';
+                    ctx.fillRect(x, y, 4, 4);
+                } else {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(x - 2, y - 2, 8, 8);
+                }
             }
 
             async function synthesizeAudio() {
