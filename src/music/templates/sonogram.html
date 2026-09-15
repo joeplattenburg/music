@@ -12,12 +12,14 @@
         <input type="radio" id="draw" name="draw_mode" value="draw" checked />
         <label for="draw">Draw</label>
         </div>
-
         <div>
         <input type="radio" id="erase" name="draw_mode" value="erase" />
         <label for="erase">Erase</label>
          </div>
         <br>
+        <label for="darkness">Darkness:</label>
+        <input type="range" id="darkness" name="darkness" min="0.1" max="1.0" step="0.1" />
+        <br><br>
         <canvas id="canvas" width="400" height="300"></canvas>
         <br>
 
@@ -89,20 +91,29 @@
 
             function paintPixelBlock(x, y) {
                 const drawMode = document.getElementById('draw');
+                const darkness = document.getElementById('darkness').value ** 2;
                 if (drawMode.checked) {
-                    ctx.fillStyle = 'black';
+                    ctx.fillStyle = `rgba(0, 0, 0, ${darkness})`
                     ctx.fillRect(x, y, 4, 4);
                 } else {
-                    ctx.fillStyle = 'white';
+                    ctx.fillStyle = 'rgb(255, 255, 255)';
                     ctx.fillRect(x - 2, y - 2, 8, 8);
                 }
             }
 
             async function synthesizeAudio() {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.fillStyle = 'white';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
+
                 const selectedVoice = document.getElementById('voice').value;
                 const selectedScale = document.getElementById('scale').value;
                 const selectedSpeed = document.getElementById('speed').value;
-                const imageDataUrl = canvas.toDataURL('image/png');
+                const imageDataUrl = tempCanvas.toDataURL('image/png');
 
                 const response = await fetch('/sonogram', {
                     method: 'POST',
