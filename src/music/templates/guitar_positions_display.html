@@ -4,11 +4,11 @@
 
 <p><i>(Computed in {{ elapsed_time }} seconds)</i></p>
 <p>The chord you entered was: {{ chord }}</p>
-<audio src="/static/temp.wav" controls></audio>
+<audio src="{{ audio_data_uri }}" controls></audio>
 <br>
-<img src="/static/temp.png"></img>
+<img src="{{ graphics_data_uri }}"></img>
 <p>For a guitar tuned to {{ tuning }}, there are {{ chords_n }} unique voicings
-    and {{ playable_n }} playable guitar positions (out of {{ total_n }} possible).<br>
+    and {{ playable_n }} playable guitar positions.<br>
     {% if positions|length < playable_n %}
         <p>Here are the top {{ positions|length }}, ranked by playability:</p>
     {% else %}
