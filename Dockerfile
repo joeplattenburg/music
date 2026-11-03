@@ -10,4 +10,4 @@ RUN uv sync --frozen --no-dev --no-cache --extra app
 
 EXPOSE 8000
 
-CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:8000", "music.app:app", "--workers", "2"]
+CMD ["uv", "run", "gunicorn", "--bind", "0.0.0.0:80", "music.app:app", "--workers", "2"]

@@ -9,7 +9,7 @@ description = "Helper tools for music"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
 dependencies = [
-    "numpy<2",
+    "numpy<3",
     "scipy>=1.13.1",
     "matplotlib>=3.9.2",
 ]
