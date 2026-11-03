@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>{% block title %} Sonogram {% endblock %}</h2>
+    <style>
+        canvas { border: 2px solid black; cursor: crosshair; background: white; }
+    </style>
+
+    <body>
+        <p>Draw a picture to convert to sound</p>
+        <div>
+        <input type="radio" id="draw" name="draw_mode" value="draw" checked />
+        <label for="draw">Draw</label>
+        </div>
+        <div>
+        <input type="radio" id="erase" name="draw_mode" value="erase" />
+        <label for="erase">Erase</label>
+         </div>
+        <br>
+        <label for="darkness">Darkness:</label>
+        <input type="range" id="darkness" name="darkness" min="0.1" max="1.0" step="0.1" />
+        <br><br>
+        <canvas id="canvas" width="400" height="300"></canvas>
+        <br>
+
+        <label for="voice">Voice:</label>
+        <select name="voice" id="voice">
+          <option value="pure_tone">Pure</option>
+          <option value="triangle">Triangle</option>
+          <option value="sawtooth">Sawtooth</option>
+        </select>
+        <br><br>
+
+        <label for="scale">Scale:</label>
+        <select name="scale" id="scale">
+          <option value="diatonic">Diatonic</option>
+          <option value="pentatonic">Pentatonic</option>
+          <option value="chromatic">Chromatic</option>
+          <option value="whole_tone">Whole Tone</option>
+        </select>
+        <br><br>
+
+        <label for="speed">Speed:</label>
+        <input type="range" id="speed" name="speed" min="1" max="10" step="1" />
+
+        <br><br>
+
+        <button onclick="clearCanvas()">Clear</button>
+        <button onclick="synthesizeAudio()">Synthesize Audio</button>
+        <br><br>
+
+        <audio id="audioPlayer" controls></audio>
+
+        <script>
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const audioPlayer = document.getElementById('audioPlayer');
+            let isDrawing = false;
+
+            initializeCanvas();
+            function initializeCanvas() {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            function clearCanvas() {
+                ctx.fillStyle = "white";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            canvas.addEventListener('mousedown', (e) => { isDrawing = true; drawMouse(e); });
+            canvas.addEventListener('mousemove', drawMouse);
+            window.addEventListener('mouseup', () => isDrawing = false);
+
+            canvas.addEventListener('touchstart', (e) => { isDrawing = true; drawTouch(e); e.preventDefault(); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { drawTouch(e); e.preventDefault(); }, { passive: false });
+            window.addEventListener('touchend', () => isDrawing = false);
+
+            function drawMouse(event) {
+                if (!isDrawing) return;
+                paintPixelBlock(event.offsetX, event.offsetY);
+            }
+
+            function drawTouch(event) {
+                if (!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const touch = event.touches[0];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                paintPixelBlock(x, y);
+            }
+
+            function paintPixelBlock(x, y) {
+                const drawMode = document.getElementById('draw');
+                const darkness = document.getElementById('darkness').value ** 2;
+                if (drawMode.checked) {
+                    ctx.fillStyle = `rgba(0, 0, 0, ${darkness})`
+                    ctx.fillRect(x, y, 4, 4);
+                } else {
+                    ctx.fillStyle = 'rgb(255, 255, 255)';
+                    ctx.fillRect(x - 2, y - 2, 8, 8);
+                }
+            }
+
+            async function synthesizeAudio() {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width;
+                tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.fillStyle = 'white';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
+
+                const selectedVoice = document.getElementById('voice').value;
+                const selectedScale = document.getElementById('scale').value;
+                const selectedSpeed = document.getElementById('speed').value;
+                const imageDataUrl = tempCanvas.toDataURL('image/png');
+
+                const response = await fetch('/sonogram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image_data: imageDataUrl,
+                        voice: selectedVoice,
+                        scale: selectedScale,
+                        speed: parseInt(selectedSpeed)
+                    })
+                });
+
+                const audioBlob = await response.blob();
+                const blobUrl = URL.createObjectURL(audioBlob);
+
+                audioPlayer.src = blobUrl;
+                audioPlayer.play();
+            }
+        </script>
+    </body>
+
+{% endblock %}

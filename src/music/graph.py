@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Hashable, Optional, TypeVar
+from typing import Hashable, Optional, TypeVar, Callable
 
 import numpy as np
 from scipy.optimize import linear_sum_assignment
@@ -64,3 +64,31 @@ def assign(cost_matrix: np.ndarray, assign_surplus: bool = True) -> list[Optiona
     for s in surplus:
         assignments.append([s, cost_matrix[s, :].argmin() if assign_surplus else None])
     return [col for _, col in sorted(assignments)]
+
+
+class LayeredGraph:
+    def __init__(self, layers: list[list[A]], cost: Callable[[A, A], float]):
+        self.layers = layers
+        self.cost = cost
+
+    def shortest_path(self) -> list[A]:
+        if not self.layers or not self.layers[0]:
+            return []
+        previous_layer_states = {node: (0.0, [node]) for node in self.layers[0]}
+        for i, layer in enumerate(self.layers[1:]):
+            current_layer_states = {}
+            for node in layer:
+                best_incoming_cost = float('inf')
+                best_incoming_path = []
+                for prev_node, (prev_accumulated_cost, path_so_far) in previous_layer_states.items():
+                    transition_cost = self.cost(prev_node, node)
+                    total_cost = prev_accumulated_cost + transition_cost
+                    if total_cost < best_incoming_cost:
+                        best_incoming_cost = total_cost
+                        best_incoming_path = path_so_far + [node]
+                current_layer_states[node] = (best_incoming_cost, best_incoming_path)
+            previous_layer_states = current_layer_states
+        if not previous_layer_states:
+            return []
+        winning_cost, winning_path = min(previous_layer_states.values(), key=lambda state: state[0])
+        return winning_path
