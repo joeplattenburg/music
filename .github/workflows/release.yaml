@@ -1,54 +1,83 @@
-name: Create release
+name: Release Package and Image
 
 on:
-  pull_request:
+  push:
     branches:
       - main
-    types:
-      - closed
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-  release:
-    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release')
-    name: Create GitHub Release
+  release-and-publish:
+    if: |
+      contains(github.event.head_commit.message, 'Merge branch ''release/') || 
+      contains(github.event.head_commit.message, 'Merge pull request') && contains(github.event.head_commit.message, 'release/')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Python setup uv
-        uses: astral-sh/setup-uv@v3.1.1
 
-      - name: Checkout code
+    steps:
+      - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      
+      - name: Infer new version number
+        run: >
+          VERSION_NUM=$(grep "__version__" ${{ github.workspace }}/src/music/__init__.py | head -n 1 | cut -d'"' -f2 | cut -d"'" -f2 | tr -d '\r\n ')
+          echo "VERSION=v$VERSION_NUM" >> $GITHUB_ENV
+
+      - name: Generate Release Notes & Tag
+        id: release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version-file: ".python-version"
+          python-version-file: "pyproject.toml"
 
-      - name: Build a binary wheel and a source tarball
+      - name: Build Wheel
         run: uv build
 
-      - name: Infer new version number
-        run: >
-          VERSION=v$(cat ${{github.workspace}}/src/music/__init__.py | cut -d '=' -f 2 | sed 's/"//g;s/^ *//g') &&
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Upload Wheel to GitHub Release
+        run: |
+          gh release upload ${{ env.VERSION }} dist/*.whl dist/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get release notes
-        id: release_notes
-        uses: mathieudutour/github-tag-action@v6.2
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create release
-        uses: ncipollo/release-action@v1
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          tag: ${{ env.VERSION }}
-          name: Release ${{ env.VERSION }}
-          body: ${{ steps.release_notes.outputs.changelog }}
-          generateReleaseNotes: true
-          artifacts: "dist/*.whl,dist/*.tar.gz"
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ env.VERSION }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ id.meta.outputs.tags }}
+          labels: ${{ id.meta.outputs.labels }}
 
       - run: echo "This job's status is ${{ job.status }}."
