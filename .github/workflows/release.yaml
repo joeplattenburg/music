@@ -23,7 +23,7 @@ jobs:
           fetch-depth: 0
       
       - name: Infer new version number
-        run: >
+        run: |
           VERSION_NUM=$(grep "__version__" ${{ github.workspace }}/src/music/__init__.py | head -n 1 | cut -d'"' -f2 | cut -d"'" -f2 | tr -d '\r\n ')
           echo "VERSION=v$VERSION_NUM" >> $GITHUB_ENV
 
@@ -77,7 +77,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ id.meta.outputs.tags }}
-          labels: ${{ id.meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
       - run: echo "This job's status is ${{ job.status }}."
