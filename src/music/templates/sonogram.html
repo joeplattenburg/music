@@ -6,7 +6,6 @@
         canvas { border: 2px solid black; cursor: crosshair; background: white; }
     </style>
 
-    <body>
         <p>Draw a picture to convert to sound</p>
         <div>
         <input type="radio" id="draw" name="draw_mode" value="draw" checked />
@@ -102,37 +101,43 @@
             }
 
             async function synthesizeAudio() {
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = canvas.width;
-                tempCanvas.height = canvas.height;
-                const tempCtx = tempCanvas.getContext('2d');
-                tempCtx.fillStyle = 'white';
-                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                tempCtx.drawImage(canvas, 0, 0);
+                const overlay = document.getElementById('loading-overlay');
+                overlay.hidden = false;
 
-                const selectedVoice = document.getElementById('voice').value;
-                const selectedScale = document.getElementById('scale').value;
-                const selectedSpeed = document.getElementById('speed').value;
-                const imageDataUrl = tempCanvas.toDataURL('image/png');
+                try {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = canvas.width;
+                    tempCanvas.height = canvas.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.fillStyle = 'white';
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tempCtx.drawImage(canvas, 0, 0);
 
-                const response = await fetch('/sonogram', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image_data: imageDataUrl,
-                        voice: selectedVoice,
-                        scale: selectedScale,
-                        speed: parseInt(selectedSpeed)
-                    })
-                });
+                    const selectedVoice = document.getElementById('voice').value;
+                    const selectedScale = document.getElementById('scale').value;
+                    const selectedSpeed = document.getElementById('speed').value;
+                    const imageDataUrl = tempCanvas.toDataURL('image/png');
 
-                const audioBlob = await response.blob();
-                const blobUrl = URL.createObjectURL(audioBlob);
+                    const response = await fetch('/sonogram', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            image_data: imageDataUrl,
+                            voice: selectedVoice,
+                            scale: selectedScale,
+                            speed: parseInt(selectedSpeed)
+                        })
+                    });
 
-                audioPlayer.src = blobUrl;
-                audioPlayer.play();
+                    const audioBlob = await response.blob();
+                    const blobUrl = URL.createObjectURL(audioBlob);
+
+                    audioPlayer.src = blobUrl;
+                    audioPlayer.play();
+                } finally {
+                    overlay.hidden = true;
+                }
             }
         </script>
-    </body>
 
 {% endblock %}

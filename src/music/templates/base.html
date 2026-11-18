@@ -12,6 +12,10 @@
     </head>
 </head>
 <body>
+    <div id="loading-overlay" hidden>
+        <div class="spinner"></div>
+        <p>Computing...</p>
+    </div>
     <h1>Music Helpers</h1>
     <p>This website provides tools for music:</p>
     <ul>
@@ -30,4 +34,17 @@
         {% block content %}
         {% endblock %}
     </div>
+
+  <script>
+    document.querySelectorAll("form").forEach((form) => {
+      form.addEventListener("submit", () => {
+        document.getElementById("loading-overlay").hidden = false;
+      });
+    });
+
+    // Hide the spinner again if the user hits the browser Back button
+    window.addEventListener("pageshow", () => {
+      document.getElementById("loading-overlay").hidden = true;
+    });
+  </script>
 </body>
