@@ -2,17 +2,20 @@
 
 <head>
     <title>Music Helpers</title>
-    <style>
-        .alert {
-            padding: 20px;
-            margin: 5px;
-            color: #970020;
-            background-color: #ffd5de;
-        }
-
-    </style>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
+        <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='custom.css') }}">
+        <title>Hello world!</title>
+    </head>
 </head>
 <body>
+    <div id="loading-overlay" hidden>
+        <div class="spinner"></div>
+        <p>Computing...</p>
+    </div>
     <h1>Music Helpers</h1>
     <p>This website provides tools for music:</p>
     <ul>
@@ -31,4 +34,17 @@
         {% block content %}
         {% endblock %}
     </div>
+
+  <script>
+    document.querySelectorAll("form").forEach((form) => {
+      form.addEventListener("submit", () => {
+        document.getElementById("loading-overlay").hidden = false;
+      });
+    });
+
+    // Hide the spinner again if the user hits the browser Back button
+    window.addEventListener("pageshow", () => {
+      document.getElementById("loading-overlay").hidden = true;
+    });
+  </script>
 </body>
