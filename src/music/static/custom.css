@@ -1,0 +1,16 @@
+:root {
+  --accent: #79c2d0;
+}
+
+
+:root {
+  --accent: #044368;   
+  --accent-hover: #044368;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --accent: #79c2d0;
+    --accent-hover: #79c2d0;
+  }
+}
