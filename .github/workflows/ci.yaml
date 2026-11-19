@@ -1,5 +1,5 @@
 name: CI Build
-run-name: Running CI build for branch ${{ github.ref_name }}
+run-name: Running CI build for branch ${{ github.head_ref || github.ref_name }}
 on: [pull_request]
 permissions:
   contents: read
@@ -11,6 +11,15 @@ jobs:
         uses: astral-sh/setup-uv@v3.1.1
       - name: Clone repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify version bump on release branches
+        if: startsWith(github.head_ref, 'release')
+        run: |
+          if ! git diff -U0 origin/${{ github.base_ref }}...HEAD -- src/music/__init__.py | grep -q '^[+-]__version__'; then
+            echo "::error::Release branch must bump __version__ in src/music/__init__.py!"
+            exit 1
+          fi
       - name: install tox
         run: uv tool install tox --with tox-uv
       - name: Tox tests
